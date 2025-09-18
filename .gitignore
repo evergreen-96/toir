@@ -1,0 +1,27 @@
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.venv/
+*.log
+
+# Django collected static & user uploads
+staticfiles/
+media/
+
+# Migrations cache (но сами миграции коммитим!)
+# (папки migrations оставляем, только pycache игнорим)
+**/migrations/__pycache__/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Backups/exports
+backup/
