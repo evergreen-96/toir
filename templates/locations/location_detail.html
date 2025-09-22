@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between">
+  <h1>{{ object.name }}</h1>
+  <a class="btn btn-primary" href="{% url 'locations:location_edit' object.pk %}">Редактировать</a>
+  <a class="btn btn-danger" href="{% url 'locations:location_delete' object.pk %}">Удалить</a>
+
+</div>
+<p><b>Уровень:</b> {{ object.level }}</p>
+<p><b>Родитель:</b> {{ object.parent|default:"—" }}</p>
+<p><b>Ответственный:</b> {{ object.responsible|default:"—" }}</p>
+{% endblock %}

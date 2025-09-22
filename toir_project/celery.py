@@ -3,6 +3,6 @@ from celery import Celery
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "toir_project.settings")
 
-app = Celery("toir")
+app = Celery("toir_project")
 app.config_from_object("django.conf:settings", namespace="CELERY")
-app.autodiscover_tasks()
+app.autodiscover_tasks()  # найдёт tasks.py во всех приложениях

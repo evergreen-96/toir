@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h1 class="mb-3">{{ object.name }}</h1>
+  <div class="btn-group">
+    <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">← К списку</a>
+    <a class="btn btn-primary" href="{% url 'maintenance:wo_edit' object.pk %}">Редактировать</a>
+    <a class="btn btn-danger" href="{% url 'maintenance:wo_delete' object.pk %}">Удалить</a>
+
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <p><b>Статус:</b> {{ object.get_status_display }}</p>
+        <p><b>Приоритет:</b> {{ object.get_priority_display }}</p>
+        <p><b>Категория:</b> {{ object.get_category_display }}</p>
+        <p><b>Ответственный:</b> {{ object.responsible }}</p>
+        <p><b>Оборудование:</b> {{ object.workstation|default:"—" }}</p>
+        <p><b>Локация:</b> {{ object.location|default:"—" }}</p>
+        <p><b>Даты:</b> {{ object.date_start|default:"—" }} — {{ object.date_finish|default:"—" }}</p>
+        <p><b>Трудоёмкость (план/факт, ч):</b> {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}</p>
+        <p><b>Описание:</b><br>{{ object.description|linebreaks }}</p>
+        {% if object.files %}
+          <p><b>Файл:</b> <a href="{{ object.files.url }}" target="_blank" rel="noopener">скачать</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Материалы</h5>
+        <ul class="list-group">
+          {% for m in object.materials.all %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{ m.material.name }}</span>
+              <span>план: {{ m.qty_planned }} • факт: {{ m.qty_used }}</span>
+            </li>
+          {% empty %}
+            <li class="list-group-item">Материалы не добавлены</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

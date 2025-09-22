@@ -29,7 +29,12 @@ class Material(models.Model):
     qty_available = models.FloatField("Количество (свободно)", default=0)
     qty_reserved  = models.FloatField("Количество (резерв)", default=0)
     warehouse = models.ForeignKey(Warehouse, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Склад")
-    suitable = models.ManyToManyRel()
+    suitable_for = models.ManyToManyField(
+        Workstation,
+        blank=True,
+        related_name="compatible_materials",
+        verbose_name="Подходит для оборудования",
+    )
 
     class Meta:
         verbose_name = "Номенклатура"

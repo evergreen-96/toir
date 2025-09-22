@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{% if create %}Новый сотрудник{% else %}Редактирование сотрудника{% endif %}{% endblock %}
+{% block content %}
+<h1 class="mb-3">{% if create %}Новый сотрудник{% else %}Редактирование{% endif %}</h1>
+<form method="post" class="mt-3">{% csrf_token %}
+  {{ form.as_p }}
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'hr:hr_list' %}">Отмена</a>
+    <button class="btn btn-primary" type="submit">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

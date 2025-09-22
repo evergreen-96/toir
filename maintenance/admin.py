@@ -13,10 +13,17 @@ class WorkOrderAdmin(admin.ModelAdmin):
     inlines = [WorkOrderMaterialInline]
 
 
-
-
 @admin.register(PlannedOrder)
 class PlannedOrderAdmin(admin.ModelAdmin):
-    list_display = ("name", "frequency", "workstation", "location", "next_run", "is_active")
-    list_filter = ("frequency", "category", "is_active")
+    list_display = ("name", "workstation", "location", "next_run", "interval_value", "interval_unit", "is_active")
+    list_filter = ("interval_unit", "category", "is_active")
     search_fields = ("name", "description")
+    fields = (
+        "name", "description",
+        "workstation", "location",
+        "responsible_default",
+        "category", "priority", "labor_plan_hours",
+        "start_from", "next_run",
+        "interval_value", "interval_unit",
+        "is_active",
+    )

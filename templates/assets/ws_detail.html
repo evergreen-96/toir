@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between">
+  <h1>{{ object.name }}</h1>
+  <a class="btn btn-primary" href="{% url 'assets:asset_edit' object.pk %}">Редактировать</a>
+  <a class="btn btn-danger" href="{% url 'assets:asset_delete' object.pk %}">Удалить</a>
+</div>
+<div class="row g-3 mt-2">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <p><b>Категория:</b> {{ object.get_category_display }}</p>
+      <p><b>Статус:</b> {{ object.get_status_display }}</p>
+      <p><b>Тип:</b> {{ object.type_name|default:"—" }}</p>
+      <p><b>Производитель/Модель:</b> {{ object.manufacturer|default:"—" }} {{ object.model|default:"" }}</p>
+      <p><b>Серийный №:</b> {{ object.serial_number|default:"—" }}</p>
+      <p><b>Локация:</b> {{ object.location|default:"—" }}</p>
+      <p><b>Ввод в экспл.:</b> {{ object.commissioning_date|default:"—" }}</p>
+      <p><b>Гарантия до:</b> {{ object.warranty_until|default:"—" }}</p>
+      <p><b>Ответственный:</b> {{ object.responsible|default:"—" }}</p>
+      <p><b>Инв. №:</b> {{ object.inventory_number|default:"—" }}</p>
+      <p><b>Описание:</b><br>{{ object.description|linebreaks }}</p>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    {% if object.photo %}<img src="{{ object.photo.url }}" class="img-fluid rounded">{% endif %}
+  </div>
+</div>
+{% endblock %}

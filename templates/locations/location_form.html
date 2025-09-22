@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{% if create %}Новая локация{% else %}Редактирование локации{% endif %}{% endblock %}
+{% block content %}
+<h1 class="mb-3">{% if create %}Новая локация{% else %}Редактирование{% endif %}</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'locations:location_list' %}">Отмена</a>
+    <button class="btn btn-primary">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

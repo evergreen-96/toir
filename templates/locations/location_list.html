@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Локации{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="mb-0">Локации</h1>
+  <a class="btn btn-success" href="{% url 'locations:location_new' %}">+ Локация</a>
+</div>
+<ul class="list-group">
+  {% for x in object_list %}
+    <li class="list-group-item d-flex justify-content-between">
+      <a href="{% url 'locations:location_detail' x.pk %}">{{ x.name }}</a>
+      <small class="text-muted">уровень {{ x.level }}{% if x.parent %}, родитель: {{ x.parent.name }}{% endif %}</small>
+    </li>
+  {% empty %}
+    <li class="list-group-item">Пусто</li>
+  {% endfor %}
+</ul>
+{% endblock %}

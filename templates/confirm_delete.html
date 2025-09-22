@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Удаление{% endblock %}
+{% block content %}
+<h1 class="mb-3">Удалить «{{ object }}»?</h1>
+<div class="alert alert-warning">
+  Это действие необратимо. Если есть связанные объекты с защитой (PROTECT), удаление может быть запрещено.
+</div>
+<form method="post">{% csrf_token %}
+  <a class="btn btn-outline-secondary" href="{{ cancel_url|default:'/' }}">Отмена</a>
+  <button class="btn btn-danger" type="submit">Удалить</button>
+</form>
+{% endblock %}

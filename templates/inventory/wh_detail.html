@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between">
+  <h1>{{ object.name }}</h1>
+  <a class="btn btn-primary" href="{% url 'inventory:warehouse_edit' object.pk %}">Редактировать</a>
+  <a class="btn btn-danger" href="{% url 'inventory:warehouse_delete' object.pk %}">Удалить</a>
+
+</div>
+{% endblock %}

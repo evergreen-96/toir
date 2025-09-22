@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between">
+  <h1>{{ object.name }}</h1>
+  <a class="btn btn-primary" href="{% url 'hr:hr_edit' object.pk %}">Редактировать</a>
+  <a class="btn btn-danger" href="{% url 'hr:hr_delete' object.pk %}">Удалить</a>
+
+</div>
+<p><b>Должность:</b> {{ object.job_title|default:"—" }}</p>
+{% endblock %}

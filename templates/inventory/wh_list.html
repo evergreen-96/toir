@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Склады{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="mb-0">Склады</h1>
+  <a class="btn btn-success" href="{% url 'inventory:warehouse_new' %}">+ Склад</a>
+</div>
+<ul class="list-group">
+  {% for x in object_list %}
+    <li class="list-group-item d-flex justify-content-between">
+      <a href="{% url 'inventory:warehouse_detail' x.pk %}">{{ x.name }}</a>
+    </li>
+  {% empty %}
+    <li class="list-group-item">Пусто</li>
+  {% endfor %}
+</ul>
+{% endblock %}

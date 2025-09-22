@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Оборудование{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="mb-0">Оборудование</h1>
+  <a class="btn btn-success" href="{% url 'assets:asset_new' %}">+ Оборудование</a>
+</div>
+
+<div class="row g-3">
+  {% for x in object_list %}
+    <div class="col-md-6 col-lg-4">
+      <a class="card text-decoration-none" href="{% url 'assets:asset_detail' x.pk %}">
+        {% if x.photo %}<img src="{{ x.photo.url }}" class="card-img-top" style="object-fit:cover;height:180px">{% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ x.name }}</h5>
+          <p class="card-text mb-1">
+            <small class="text-muted">{{ x.get_category_display }}{% if x.type_name %} • {{ x.type_name }}{% endif %}</small>
+          </p>
+          <small class="text-muted">{{ x.get_status_display }} • {{ x.location }}</small>
+        </div>
+      </a>
+    </div>
+  {% empty %}
+    <div class="col-12"><div class="alert alert-secondary">Пусто</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}ТОиР{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root { --sidebar-width: 270px; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar { height: 56px; border-bottom: 1px solid var(--bs-border-color); }
+    .layout { flex: 1 1 auto; }
+    .sidebar { width: var(--sidebar-width); border-right: 1px solid var(--bs-border-color); }
+    .sidebar .brand { font-weight: 700; letter-spacing: .2px; display: inline-flex; align-items: center; gap: .5rem; font-size: 1.1rem; }
+    .sidebar .nav-link { border-radius: .5rem; display: flex; align-items: center; gap: .6rem; padding: .5rem .75rem; }
+    .sidebar .nav-link.active { background: var(--bs-primary-bg-subtle); color: var(--bs-primary-text); font-weight: 600; }
+    .sidebar .section-title { font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; color: var(--bs-secondary-color); margin: 1rem 0 .25rem; }
+    .content-wrap { min-width: 0; }
+    .badge-pill { border-radius: 999px; padding: .35rem .65rem; font-weight: 500; }
+    .card + .card { margin-top: 1rem; }
+    .table td, .table th { vertical-align: middle; }
+    @media (max-width: 991.98px) { .sidebar { display: none; } }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body data-bs-theme="auto">
+
+<!-- Верхняя панель (моб. меню + переключатель темы) -->
+<nav class="topbar d-lg-none d-flex align-items-center px-2 bg-body">
+  <button class="btn btn-outline-secondary me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
+    <i class="bi bi-list"></i>
+  </button>
+  <a class="brand text-decoration-none text-body" href="{% url 'home' %}">
+    <i class="bi bi-wrench-adjustable-circle me-1"></i> ТОиР
+  </a>
+  <div class="ms-auto d-flex align-items-center gap-1">
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/" target="_blank" rel="noopener" title="Админка"><i class="bi bi-speedometer2"></i></a>
+    <button class="btn btn-outline-secondary btn-sm" id="themeToggleMobile" title="Тема"><i class="bi bi-circle-half"></i></button>
+  </div>
+</nav>
+
+<div class="layout container-fluid">
+  <div class="row">
+    <!-- Сайдбар (desktop) -->
+    <aside class="col-lg-3 col-xl-2 d-none d-lg-block sidebar p-3">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <a class="brand text-decoration-none text-body" href="{% url 'home' %}">
+          <i class="bi bi-wrench-adjustable-circle"></i> ТОиР
+        </a>
+        <button class="btn btn-outline-secondary btn-sm" id="themeToggle" title="Тема">
+          <i class="bi bi-circle-half"></i>
+        </button>
+      </div>
+
+      <!-- Быстрый поиск задач -->
+      <form class="mb-3" method="get" action="{% url 'maintenance:wo_list' %}">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+          <input class="form-control border-start-0" type="search" name="q" placeholder="Поиск задач…">
+        </div>
+      </form>
+
+      <!-- Быстрое создание -->
+      <div class="d-grid gap-2 mb-3">
+        <a class="btn btn-primary btn-sm" href="{% url 'maintenance:wo_new' %}">
+          <i class="bi bi-clipboard-plus me-1"></i> Новая задача
+        </a>
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'maintenance:plan_new' %}">
+          <i class="bi bi-calendar-plus me-1"></i> Новый план
+        </a>
+      </div>
+
+      {% with rm=request.resolver_match %}
+      <nav class="nav flex-column">
+        <div class="section-title">Работа</div>
+        <a class="nav-link {% if rm and rm.namespace == 'maintenance' and rm.url_name|slice:':3' == 'wo_' %}active{% endif %}"
+           href="{% url 'maintenance:wo_list' %}">
+          <i class="bi bi-list-check"></i> Текущие задачи
+        </a>
+        <a class="nav-link {% if rm and rm.namespace == 'maintenance' and rm.url_name|slice:':4' == 'plan' %}active{% endif %}"
+           href="{% url 'maintenance:plan_list' %}">
+          <i class="bi bi-calendar2-week"></i> Плановые задачи
+        </a>
+
+        <div class="section-title">Справочники</div>
+        <a class="nav-link {% if rm and rm.namespace == 'assets' and rm.url_name|slice:':5' == 'asset' %}active{% endif %}"
+           href="{% url 'assets:asset_list' %}">
+          <i class="bi bi-cpu"></i> Оборудование
+        </a>
+
+        <!-- ВАЖНО: отдельные условия для Номенклатуры и Складов -->
+        <a class="nav-link {% if rm and rm.namespace == 'inventory' and rm.url_name|slice:':8' == 'material' %}active{% endif %}"
+           href="{% url 'inventory:material_list' %}">
+          <i class="bi bi-box-seam"></i> Номенклатура
+        </a>
+        <a class="nav-link {% if rm and rm.namespace == 'inventory' and rm.url_name|slice:':9' == 'warehouse' %}active{% endif %}"
+           href="{% url 'inventory:warehouse_list' %}">
+          <i class="bi bi-building"></i> Склады
+        </a>
+
+        <a class="nav-link {% if rm and rm.namespace == 'locations' and rm.url_name|slice:':8' == 'location' %}active{% endif %}"
+           href="{% url 'locations:location_list' %}">
+          <i class="bi bi-geo-alt"></i> Локации
+        </a>
+        <a class="nav-link {% if rm and rm.namespace == 'hr' and rm.url_name|slice:':2' == 'hr' %}active{% endif %}"
+           href="{% url 'hr:hr_list' %}">
+          <i class="bi bi-people"></i> Персонал
+        </a>
+
+        <div class="section-title">Сервис</div>
+        <a class="nav-link" href="/admin/" target="_blank" rel="noopener">
+          <i class="bi bi-speedometer2"></i> Админка
+        </a>
+      </nav>
+      {% endwith %}
+    </aside>
+
+    <!-- Контент -->
+    <main class="col-lg-9 col-xl-10 px-3 py-3 content-wrap">
+      {% if messages %}
+        <div class="mb-2">
+          {% for m in messages %}
+            <div class="alert alert-{{ m.tags|default:'secondary' }} alert-dismissible fade show" role="alert">
+              {{ m }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Offcanvas меню (мобильный сайдбар) -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="mobileMenuLabel"><i class="bi bi-wrench-adjustable-circle me-1"></i> ТОиР</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+  </div>
+  <div class="offcanvas-body">
+    <!-- Поиск -->
+    <form class="mb-3" method="get" action="{% url 'maintenance:wo_list' %}">
+      <div class="input-group">
+        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+        <input class="form-control border-start-0" type="search" name="q" placeholder="Поиск задач…">
+      </div>
+    </form>
+
+    <!-- Быстрое создание -->
+    <div class="d-grid gap-2 mb-3">
+      <a class="btn btn-primary" href="{% url 'maintenance:wo_new' %}">
+        <i class="bi bi-clipboard-plus me-1"></i> Новая задача
+      </a>
+      <a class="btn btn-outline-primary" href="{% url 'maintenance:plan_new' %}">
+        <i class="bi bi-calendar-plus me-1"></i> Новый план
+      </a>
+    </div>
+
+    {% with rm=request.resolver_match %}
+    <div class="list-group">
+      <div class="text-uppercase small text-secondary mb-2">Работа</div>
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'maintenance' and rm.url_name|slice:':3' == 'wo_' %}active{% endif %}"
+         href="{% url 'maintenance:wo_list' %}">
+        <i class="bi bi-list-check me-1"></i> Текущие задачи
+      </a>
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'maintenance' and rm.url_name|slice:':4' == 'plan' %}active{% endif %}"
+         href="{% url 'maintenance:plan_list' %}">
+        <i class="bi bi-calendar2-week me-1"></i> Плановые задачи
+      </a>
+
+      <div class="text-uppercase small text-secondary my-2">Справочники</div>
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'assets' and rm.url_name|slice:':5' == 'asset' %}active{% endif %}"
+         href="{% url 'assets:asset_list' %}">
+        <i class="bi bi-cpu me-1"></i> Оборудование
+      </a>
+
+      <!-- Раздельная подсветка Номенклатура/Склады -->
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'inventory' and rm.url_name|slice:':8' == 'material' %}active{% endif %}"
+         href="{% url 'inventory:material_list' %}">
+        <i class="bi bi-box-seam me-1"></i> Номенклатура
+      </a>
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'inventory' and rm.url_name|slice:':9' == 'warehouse' %}active{% endif %}"
+         href="{% url 'inventory:warehouse_list' %}">
+        <i class="bi bi-building me-1"></i> Склады
+      </a>
+
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'locations' and rm.url_name|slice:':8' == 'location' %}active{% endif %}"
+         href="{% url 'locations:location_list' %}">
+        <i class="bi bi-geo-alt me-1"></i> Локации
+      </a>
+      <a class="list-group-item list-group-item-action {% if rm and rm.namespace == 'hr' and rm.url_name|slice:':2' == 'hr' %}active{% endif %}"
+         href="{% url 'hr:hr_list' %}">
+        <i class="bi bi-people me-1"></i> Персонал
+      </a>
+
+      <div class="text-uppercase small text-secondary my-2">Сервис</div>
+      <a class="list-group-item list-group-item-action" href="/admin/" target="_blank" rel="noopener">
+        <i class="bi bi-speedometer2 me-1"></i> Админка
+      </a>
+      <button class="btn btn-outline-secondary mt-3" id="themeToggleMobile">
+        <i class="bi bi-circle-half me-1"></i> Тема
+      </button>
+    </div>
+    {% endwith %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Переключатель темы (light/dark/auto)
+  (function() {
+    const STORAGE_KEY = 'toir-theme';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    function applyTheme(mode) {
+      let theme = mode;
+      if (mode === 'auto') theme = prefersDark.matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    }
+    const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
+    applyTheme(saved);
+    function cycle() {
+      const current = localStorage.getItem(STORAGE_KEY) || 'auto';
+      const next = current === 'light' ? 'dark' : (current === 'dark' ? 'auto' : 'light');
+      localStorage.setItem(STORAGE_KEY, next);
+      applyTheme(next);
+    }
+    const btn = document.getElementById('themeToggle');
+    const btnM1 = document.getElementById('themeToggleMobile');
+    const btnM2 = document.querySelector('#mobileMenu #themeToggleMobile');
+    if (btn) btn.addEventListener('click', cycle);
+    if (btnM1) btnM1.addEventListener('click', cycle);
+    if (btnM2) btnM2.addEventListener('click', cycle);
+    prefersDark.addEventListener('change', () => {
+      if ((localStorage.getItem(STORAGE_KEY) || 'auto') === 'auto') applyTheme('auto');
+    });
+  })();
+
+  // Автозакрытие оффканваса при клике по ссылке
+  (function() {
+    const ocEl = document.getElementById('mobileMenu');
+    if (!ocEl) return;
+    ocEl.addEventListener('click', function(e) {
+      const link = e.target.closest('a.list-group-item');
+      if (link) {
+        const oc = bootstrap.Offcanvas.getInstance(ocEl);
+        if (oc) oc.hide();
+      }
+    });
+  })();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

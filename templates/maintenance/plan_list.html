@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Плановые обслуживания{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Плановые обслуживания</h1>
+  <a class="btn btn-success" href="{% url 'maintenance:plan_new' %}">+ План</a>
+</div>
+
+<table class="table table-hover align-middle">
+  <thead class="table-light"><tr>
+    <th>Название</th><th>Оборудование</th><th>Локация</th>
+    <th>Следующий запуск</th><th>Интервал</th><th>Статус</th><th class="text-end">Действия</th>
+  </tr></thead>
+  <tbody>
+  {% for p in object_list %}
+    <tr>
+      <td class="fw-semibold">{{ p.name }}</td>
+      <td>{{ p.workstation }}</td>
+      <td>{{ p.location }}</td>
+      <td>{% if p.next_run %}{{ p.next_run|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+      <td><span class="badge text-bg-secondary badge-pill">{{ p.interval_value }} {{ p.get_interval_unit_display }}</span></td>
+      <td>{% if p.is_active %}<span class="badge text-bg-success badge-pill">Активен</span>{% else %}<span class="badge text-bg-secondary badge-pill">Выключен</span>{% endif %}</td>
+      <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'maintenance:plan_edit' p.pk %}">Править</a>
+        <a class="btn btn-sm btn-outline-danger" href="{% url 'maintenance:plan_delete' p.pk %}">Удалить</a>
+
+        <form method="post" action="{% url 'maintenance:plan_run_now' p.pk %}" style="display:inline">{% csrf_token %}
+          <button class="btn btn-sm btn-secondary">Создать сейчас</button>
+        </form>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7"><div class="alert alert-secondary mb-0">Пусто</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,38 +1,61 @@
 from celery import shared_task
 from django.utils import timezone
-from maintenance.models import PlannedOrder, PlannedFrequency, WorkOrder, Priority, WorkCategory
-from hr.models import HumanResource
+from django.db import transaction
 from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
-def _next_date(freq, current):
-    if freq == PlannedFrequency.DAILY: return current + timedelta(days=1)
-    if freq == PlannedFrequency.WEEKLY: return current + timedelta(weeks=1)
-    if freq == PlannedFrequency.MONTHLY: return current + timedelta(days=30)
-    return current + timedelta(weeks=1)
+from .models import PlannedOrder, WorkOrder, WorkCategory, Priority, IntervalUnit
+from hr.models import HumanResource
 
-@shared_task
+
+def _add_interval(dt, val, unit):
+    if unit == IntervalUnit.MINUTE:
+        return dt + timedelta(minutes=val)
+    if unit == IntervalUnit.DAY:
+        return dt + relativedelta(days=val)
+    if unit == IntervalUnit.WEEK:
+        return dt + relativedelta(weeks=val)
+    if unit == IntervalUnit.MONTH:
+        return dt + relativedelta(months=val)
+    return dt
+
+
+@shared_task(name="maintenance.tasks.generate_planned_orders_task")
 def generate_planned_orders_task():
-    today = timezone.localdate()
+    """
+    Раз в минуту:
+    - берём активные планы с next_run <= now
+    - создаём WorkOrder
+    - двигаем next_run ровно на один интервал ОТ предыдущего next_run
+      (не «догоняем» пропуски, не привязываемся к now)
+    """
+    now = timezone.now()
+    qs = (PlannedOrder.objects
+          .select_related("workstation", "location", "responsible_default")
+          .filter(is_active=True, next_run__isnull=False, next_run__lte=now))
+
     created = 0
-    for p in PlannedOrder.objects.filter(is_active=True):
-        if not p.next_run:
-            p.next_run = p.start_from or today
-        # одна задача в день на план — защита от дублей
-        if p.next_run and p.next_run <= today:
+    for p in qs:
+        with transaction.atomic():
             resp = p.responsible_default or HumanResource.objects.first()
-            if not resp:
-                continue
-            WorkOrder.objects.create(
-                name=p.name,
-                responsible=resp,
-                workstation=p.workstation,
-                location=p.location,
-                description=p.description,
-                category=p.category or WorkCategory.PM,
-                labor_plan_hours=p.labor_plan_hours,
-                priority=p.priority or Priority.MED,
-            )
-            p.next_run = _next_date(p.frequency, today)
+            if resp:
+                WorkOrder.objects.create(
+                    name=p.name,
+                    responsible=resp,
+                    workstation=p.workstation,
+                    location=p.location,
+                    description=p.description,
+                    category=p.category or WorkCategory.PM,
+                    labor_plan_hours=p.labor_plan_hours,
+                    priority=p.priority or Priority.MED,
+                )
+                created += 1
+
+            # сдвиг на ОДИН интервал от предыдущего времени срабатывания
+            next_due = _add_interval(p.next_run, p.interval_value, p.interval_unit)
+            if p.interval_unit == IntervalUnit.MINUTE:
+                next_due = next_due.replace(second=0, microsecond=0)
+            p.next_run = next_due
             p.save(update_fields=["next_run"])
-            created += 1
+
     return created

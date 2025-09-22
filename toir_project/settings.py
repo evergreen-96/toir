@@ -14,9 +14,10 @@ from pathlib import Path
 from celery.schedules import crontab
 import os
 
+from django.conf.global_settings import DATA_UPLOAD_MAX_NUMBER_FIELDS
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -28,9 +29,11 @@ SECRET_KEY = 'django-insecure-kr74)a-tp!ya$cm#lah6kj@2-2%0*ukgn*e($31xk&^&n*^@of
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
-
+APPEND_SLASH = True
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 # Application definition
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -62,7 +65,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        "DIRS": [BASE_DIR / "templates"],  # ← корень для глобальных шаблонов
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -114,14 +117,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+LANGUAGE_CODE = 'ru-rus'
 USE_I18N = True
-
+TIME_ZONE = 'Asia/Yekaterinburg'
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -146,9 +145,13 @@ CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 
+
+FAST_BEAT = os.getenv("FAST_BEAT") == "1"
+
+from celery.schedules import crontab
 CELERY_BEAT_SCHEDULE = {
-    "planned-orders-daily-03": {
+    "generate_planned_orders_every_minute": {
         "task": "maintenance.tasks.generate_planned_orders_task",
-        "schedule": crontab(hour=3, minute=0),  # каждый день в 03:00
+        "schedule": crontab(minute="*"),  # каждую минуту
     },
 }
