@@ -1,10 +1,14 @@
 from django.db import models
 
 from assets.models import Workstation
+from hr.models import HumanResource
+from locations.models import Location
 
 
 class Warehouse(models.Model):
     name = models.CharField("Название склада", max_length=255)
+    responsible = models.ForeignKey(HumanResource, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name='Ответственный')
+    location = models.ForeignKey(Location, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name='Локация')
 
     class Meta:
         verbose_name = "Склад"
@@ -29,6 +33,7 @@ class Material(models.Model):
     qty_available = models.FloatField("Количество (свободно)", default=0)
     qty_reserved  = models.FloatField("Количество (резерв)", default=0)
     warehouse = models.ForeignKey(Warehouse, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Склад")
+    vendor = models.CharField("Производитель", max_length=255, blank=True)
     suitable_for = models.ManyToManyField(
         Workstation,
         blank=True,

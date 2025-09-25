@@ -2,7 +2,7 @@
 {% block title %}{% if create %}Новый план{% else %}Редактирование плана{% endif %}{% endblock %}
 {% block content %}
 <h1 class="mb-3">{% if create %}Новый план обслуживания{% else %}Редактирование плана{% endif %}</h1>
-
+<!--TODO: скрыть поле следующий запуск-->
 <form method="post" class="row g-3">
   {% csrf_token %}
   <div class="col-lg-8">

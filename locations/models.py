@@ -3,7 +3,6 @@ from hr.models import HumanResource
 
 class Location(models.Model):
     name = models.CharField("Название локации", max_length=255)
-    level = models.PositiveIntegerField("Уровень локации", default=0)
     parent = models.ForeignKey(
         "self",
         verbose_name="Родительская локация",

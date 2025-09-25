@@ -10,14 +10,11 @@ class WorkstationCategory(models.TextChoices):
     OTHER = "other", "Другое"
 
 class WorkstationGlobalState(models.TextChoices):
-    WAIT = "wait", "Ожидание ввода в эксплуатацию"
     ACTIVE = "active", "Введено в эксплуатацию"
     ARCHIVED = "arch", "В архиве"
 
 class WorkstationStatus(models.TextChoices):
     PROD = "prod", "Работает"
-    OFF = "off", "Выключено"
-    IDLE = "idle", "Простой"
     PROBLEM = "problem", "Аварийный ремонт"
     MAINT = "maint", "Техническое обслуживание"
     SETUP = "setup", "Пусконаладочные работы"
@@ -37,13 +34,14 @@ class Workstation(models.Model):
         "Глобальное состояние",
         max_length=20,
         choices=WorkstationGlobalState.choices,
-        default=WorkstationGlobalState.WAIT,
+        default=WorkstationGlobalState.ACTIVE,
+
     )
     status = models.CharField(
         "Текущее состояние",
         max_length=20,
         choices=WorkstationStatus.choices,
-        default=WorkstationStatus.OFF,
+        default=WorkstationStatus.PROD,
     )
     description = models.TextField("Описание", blank=True)
     serial_number = models.CharField("Серийный номер", max_length=255, blank=True)
