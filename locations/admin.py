@@ -3,6 +3,5 @@ from .models import Location
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ("name", "level", "parent", "responsible")
-    list_filter = ("level",)
+    list_display = ("name", "parent", "responsible")
     search_fields = ("name",)

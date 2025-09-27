@@ -9,13 +9,13 @@ from .models import Location
 class LocationForm(forms.ModelForm):
     class Meta:
         model = Location
-        fields = ["name", "level", "parent", "responsible"]
+        fields = ["name", "parent", "responsible"]
 
 class LocationListView(ListView):
     model = Location
     template_name = "locations/location_list.html"
     paginate_by = 20
-    ordering = ["level", "name"]
+    ordering = ["name",]
 
 class LocationDetailView(DetailView):
     model = Location
