@@ -6,4 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 ENV DJANGO_SETTINGS_MODULE=toir_project.settings
-CMD ["gunicorn", "toir_project.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+
+# Для разработки - используем runserver с авто-перезагрузкой
+# В production можно оставить gunicorn
+CMD ["bash", "-lc", "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"]

@@ -9,8 +9,59 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
+<!-- Потом Select2 -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <style>
+
+      .input-group {
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+  }
+
+  .input-group select {
+    width: auto;
+    min-width: 80px;
+    padding: 0.375rem 0.75rem;
+  }
+
+  /* Для Bootstrap dropdown — если используется */
+  .dropdown-menu {
+    z-index: 1050 !important;
+  }
+
+  /* Стили радиокнопок */
+  .form-check-input[type="radio"] {
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 0.5em;
+  }
+  .form-check-label {
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .form-check-inline {
+    margin-right: 1.5rem;
+  }
+
+  #custom-interval-fields {
+    background: #2c3f53;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
     :root { --sidebar-width: 270px; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
     .topbar { height: 56px; border-bottom: 1px solid var(--bs-border-color); }
