@@ -1,5 +1,7 @@
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, DeleteView
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
@@ -8,6 +10,7 @@ from django.utils import timezone
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
+from assets.models import Workstation
 from .models import WorkOrder, WorkOrderStatus, Priority, WorkCategory, PlannedOrder, IntervalUnit
 from .forms import WorkOrderForm, WorkOrderMaterialFormSet
 from hr.models import HumanResource
@@ -64,41 +67,84 @@ class WorkOrderDetailView(DetailView):
     model = WorkOrder
     template_name = "maintenance/wo_detail.html"
 
-def workorder_create(request):
-    if request.method == "POST":
-        form = WorkOrderForm(request.POST, request.FILES)
-        formset = WorkOrderMaterialFormSet(request.POST)
-        if form.is_valid() and formset.is_valid():
-            wo = form.save()
-            if wo.workstation and not wo.location:
-                wo.location = wo.workstation.location
-                wo.save(update_fields=["location"])
-            formset.instance = wo
-            formset.save()
-            messages.success(request, "Задача создана.")
-            return redirect("maintenance:wo_detail", pk=wo.pk)
-    else:
-        form = WorkOrderForm()
-        formset = WorkOrderMaterialFormSet()
-    return render(request, "maintenance/wo_form.html", {"form": form, "formset": formset, "create": True})
-
-def workorder_update(request, pk:int):
+def workorder_update(request, pk: int):
     wo = get_object_or_404(WorkOrder, pk=pk)
+
     if request.method == "POST":
         form = WorkOrderForm(request.POST, request.FILES, instance=wo)
         formset = WorkOrderMaterialFormSet(request.POST, instance=wo)
         if form.is_valid() and formset.is_valid():
+            # Сохраняем основную форму
             wo = form.save()
+
+            # Автоматически устанавливаем location из workstation если не задан
             if wo.workstation and not wo.location:
                 wo.location = wo.workstation.location
                 wo.save(update_fields=["location"])
-            formset.save()
+
+            # Сохраняем formset
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.workorder = wo
+                instance.save()
+
+            # Удаляем отмеченные на удаление
+            for obj in formset.deleted_objects:
+                obj.delete()
+
             messages.success(request, "Изменения сохранены.")
             return redirect("maintenance:wo_detail", pk=wo.pk)
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+            print("Form errors:", form.errors)
+            print("Formset errors:", formset.errors)
     else:
         form = WorkOrderForm(instance=wo)
         formset = WorkOrderMaterialFormSet(instance=wo)
-    return render(request, "maintenance/wo_form.html", {"form": form, "formset": formset, "create": False, "wo": wo})
+
+    return render(request, "maintenance/wo_form.html", {
+        "form": form,
+        "formset": formset,
+        "create": False,
+        "wo": wo
+    })
+
+
+def workorder_create(request):
+    if request.method == "POST":
+        form = WorkOrderForm(request.POST, request.FILES)
+        formset = WorkOrderMaterialFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            wo = form.save(commit=False)
+
+            # Автоматически устанавливаем location из workstation если не задан
+            if wo.workstation and not wo.location:
+                wo.location = wo.workstation.location
+
+            wo.save()
+
+            # Сохраняем formset
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.workorder = wo
+                instance.save()
+
+            messages.success(request, "Задача создана.")
+            return redirect("maintenance:wo_detail", pk=wo.pk)
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+            print("Form errors:", form.errors)
+            print("Formset errors:", formset.errors)
+    else:
+        form = WorkOrderForm()
+        formset = WorkOrderMaterialFormSet(queryset=WorkOrderMaterial.objects.none())
+
+    return render(request, "maintenance/wo_form.html", {
+        "form": form,
+        "formset": formset,
+        "create": True
+    })
 
 class WorkOrderDeleteView(DeleteView):
     model = WorkOrder
@@ -120,21 +166,72 @@ class WorkOrderDeleteView(DeleteView):
             messages.error(request, "Нельзя удалить: есть связанные объекты.")
             return redirect("maintenance:wo_detail", pk=self.object.pk)
 
+
 # ---------- PLANNED ORDERS ----------
 from django import forms
 class PlannedOrderForm(forms.ModelForm):
+    # Виртуальные поля для UI
+    frequency_choice = forms.ChoiceField(
+        label="Периодичность работ",
+        choices=[
+            ('daily', 'Ежедневно'),
+            ('weekly', 'Еженедельно'),
+            ('monthly', 'Ежемесячно'),
+            ('custom', 'По заданному интервалу'),
+        ],
+        widget=forms.RadioSelect,
+        required=True
+    )
+
     class Meta:
         model = PlannedOrder
+        # УБРАЛИ start_from и next_run из fields
         fields = [
-            "name","description","workstation","location","responsible_default",
-            "category","priority","labor_plan_hours",
-            "start_from","next_run","interval_value","interval_unit","is_active"
+            "name", "description", "workstation", "location", "responsible_default",
+            "category", "priority", "labor_plan_hours",
+            "interval_value", "interval_unit", "is_active"
         ]
         widgets = {
-            "start_from": forms.DateTimeInput(attrs={"type":"datetime-local"}),
-            "next_run": forms.DateTimeInput(attrs={"type":"datetime-local"}),
-            "description": forms.Textarea(attrs={"rows":3}),
+            "description": forms.Textarea(attrs={"rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['interval_value'].label = ""
+        self.fields['interval_unit'].label = ""
+
+        if self.instance.pk:
+            if self.instance.interval_unit == IntervalUnit.DAY and self.instance.interval_value == 1:
+                self.fields['frequency_choice'].initial = 'daily'
+            elif self.instance.interval_unit == IntervalUnit.WEEK and self.instance.interval_value == 1:
+                self.fields['frequency_choice'].initial = 'weekly'
+            elif self.instance.interval_unit == IntervalUnit.MONTH and self.instance.interval_value == 1:
+                self.fields['frequency_choice'].initial = 'monthly'
+            else:
+                self.fields['frequency_choice'].initial = 'custom'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        freq = cleaned_data.get('frequency_choice')
+
+        if freq == 'daily':
+            cleaned_data['interval_unit'] = IntervalUnit.DAY
+            cleaned_data['interval_value'] = 1
+        elif freq == 'weekly':
+            cleaned_data['interval_unit'] = IntervalUnit.WEEK
+            cleaned_data['interval_value'] = 1
+        elif freq == 'monthly':
+            cleaned_data['interval_unit'] = IntervalUnit.MONTH
+            cleaned_data['interval_value'] = 1
+        elif freq == 'custom':
+            if not cleaned_data.get('interval_value'):
+                self.add_error('interval_value', 'Обязательное поле.')
+            if not cleaned_data.get('interval_unit'):
+                self.add_error('interval_unit', 'Обязательное поле.')
+
+        return cleaned_data
+
 
 class PlannedOrderListView(ListView):
     model = PlannedOrder
@@ -215,3 +312,33 @@ def planned_order_run_now(request, pk:int):
             obj.save(update_fields=["next_run"])
             messages.success(request, "Задача создана из плана.")
     return redirect("maintenance:plan_list")
+
+@require_POST
+def wo_set_status(request, pk, status):
+    wo = get_object_or_404(WorkOrder, pk=pk)
+
+    # допустимые значения — подгони под свои choices
+    allowed = {"new", "in_progress", "done", "canceled", "failed"}
+    if status not in allowed:
+        messages.error(request, "Недопустимый статус.")
+        return redirect("maintenance:wo_detail", pk=pk)
+
+    wo.status = status
+    wo.save(update_fields=["status"])
+    human = {
+        "new": "Новый",
+        "in_progress": "В работе",
+        "done": "Завершено",
+        'failed': "Не выполнено",
+        "canceled": "Отмена"
+    }.get(status, status)
+    messages.success(request, f"Статус изменён на «{human}».")
+    return redirect("maintenance:wo_detail", pk=pk)
+
+def get_workstations_by_location(request):
+    location_id = request.GET.get('location_id')
+    if location_id:
+        workstations = Workstation.objects.filter(location_id=location_id).values('id', 'name')
+    else:
+        workstations = Workstation.objects.none()
+    return JsonResponse(list(workstations), safe=False)

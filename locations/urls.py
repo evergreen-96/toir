@@ -1,4 +1,5 @@
 from django.urls import path
+
 from .views import LocationListView, LocationDetailView, location_create, location_update, LocationDeleteView
 
 app_name = "locations"

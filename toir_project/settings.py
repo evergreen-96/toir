@@ -25,9 +25,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-kr74)a-tp!ya$cm#lah6kj@2-2%0*ukgn*e($31xk&^&n*^@of'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
 ALLOWED_HOSTS = []
 APPEND_SLASH = True
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
@@ -47,6 +44,7 @@ INSTALLED_APPS = [
     "assets",
     "inventory",
     "maintenance",
+    'django_select2',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +57,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ROOT_URLCONF = 'toir_project.urls'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

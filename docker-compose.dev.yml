@@ -1,0 +1,6 @@
+services:
+  web:
+    command: bash -lc "python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DEBUG=True
+      - PYTHONUNBUFFERED=1

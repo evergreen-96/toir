@@ -1,30 +1,280 @@
 {% extends "base.html" %}
 {% block title %}{% if create %}Новый план{% else %}Редактирование плана{% endif %}{% endblock %}
 {% block content %}
+
+<!-- Подключаем Select2 и jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <h1 class="mb-3">{% if create %}Новый план обслуживания{% else %}Редактирование плана{% endif %}</h1>
-<!--TODO: скрыть поле следующий запуск-->
+
 <form method="post" class="row g-3">
   {% csrf_token %}
+
+  <!-- Скрытые поля для interval_value и interval_unit -->
+  <input type="hidden" name="interval_value" value="{{ form.interval_value.value|default:'' }}">
+  <input type="hidden" name="interval_unit" value="{{ form.interval_unit.value|default:'' }}">
+
   <div class="col-lg-8">
-    <div class="card">
+    <div class="card shadow-sm">
       <div class="card-body">
-        {{ form.non_field_errors }}
-        <div class="row g-3">
-          {% for field in form %}
-            <div class="col-md-6">
-              <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-              {{ field }}
-              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-              {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-            </div>
-          {% endfor %}
+
+        <!-- Основные данные -->
+        <h5 class="mb-4 fw-semibold">Основные данные</h5>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.name.label }}{% if form.name.field.required %} *{% endif %}</label>
+            {{ form.name }}
+            {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.category.label }}{% if form.category.field.required %} *{% endif %}</label>
+            {{ form.category }}
+            {% for e in form.category.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
         </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.description.label }}</label>
+          {{ form.description }}
+          {% for e in form.description.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+
+        <!-- Локация и оборудование -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.location.label }}{% if form.location.field.required %} *{% endif %}</label>
+            {{ form.location }}
+            {% for e in form.location.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.workstation.label }}{% if form.workstation.field.required %} *{% endif %}</label>
+            {{ form.workstation }}
+            {% for e in form.workstation.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <!-- Ответственный и приоритет -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.responsible_default.label }}</label>
+            {{ form.responsible_default }}
+            {% for e in form.responsible_default.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.priority.label }}{% if form.priority.field.required %} *{% endif %}</label>
+            {{ form.priority }}
+            {% for e in form.priority.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <!-- Трудоёмкость -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.labor_plan_hours.label }}{% if form.labor_plan_hours.field.required %} *{% endif %}</label>
+            {{ form.labor_plan_hours }}
+            {% for e in form.labor_plan_hours.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <!-- Периодичность работ -->
+        <div class="mt-4 border-top pt-3">
+          <h5 class="fw-semibold mb-3">Периодичность работ</h5>
+
+          <div class="d-flex flex-wrap gap-4 mb-3">
+            {% for choice in form.frequency_choice.field.choices %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="{{ form.frequency_choice.name }}" id="{{ form.frequency_choice.id_for_label }}_{{ choice.0 }}" value="{{ choice.0 }}" {% if form.frequency_choice.value == choice.0 %}checked{% endif %}>
+                <label class="form-check-label" for="{{ form.frequency_choice.id_for_label }}_{{ choice.0 }}">
+                  {{ choice.1 }}
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div id="custom-interval-fields" style="display: none;">
+            <div class="row g-3 align-items-center mb-2">
+              <div class="col-auto">
+                <span class="fw-medium">Проводить работы каждые</span>
+              </div>
+              <div class="col-auto">
+                <div class="input-group" style="width: 120px; position: relative; z-index: 10;">
+                  <input type="number" min="1" value="1" class="form-control" id="custom_interval_value" placeholder="число">
+                </div>
+              </div>
+              <div class="col-auto">
+                <div class="input-group" style="position: relative; z-index: 10;">
+                  <select class="form-select" id="custom_interval_unit">
+                    <option value="">-- выберите --</option>
+                    {% for unit in form.interval_unit.field.choices %}
+                      <option value="{{ unit.0 }}">{{ unit.1 }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 align-items-center">
+              <div class="col-auto">
+                <span class="fw-medium">Создать задачу за</span>
+              </div>
+              <div class="col-auto">
+                <div class="input-group" style="width: 100px;">
+                  <input type="number" min="0" value="2" class="form-control" id="lead_days" placeholder="число">
+                </div>
+              </div>
+              <div class="col-auto">
+                <span class="fw-medium">рабочих дней до события</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Активно -->
+        <div class="mt-4">
+          <div class="form-check">
+            {{ form.is_active }}
+            <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
+              Активно
+            </label>
+          </div>
+        </div>
+
       </div>
     </div>
+
     <div class="mt-3 d-flex gap-2">
       <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">Отмена</a>
-      <button class="btn btn-primary" type="submit">Сохранить</button>
+      <button class="btn btn-primary px-4" type="submit">Сохранить</button>
     </div>
   </div>
 </form>
+
+<style>
+  .form-check-input[type="radio"] {
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 0.5em;
+  }
+  .form-check-label {
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .form-check-inline {
+    margin-right: 1.5rem;
+  }
+  #custom-interval-fields {
+    border-radius: 0.5rem;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // === 1. Инициализация Select2 для локации и оборудования ===
+    $('#id_location').select2({
+        placeholder: "Выберите локацию",
+        allowClear: true,
+        width: '100%'
+    });
+
+    $('#id_workstation').select2({
+        placeholder: "Выберите оборудование",
+        allowClear: true,
+        width: '100%'
+    });
+
+    // === 2. Динамическая загрузка оборудования по локации ===
+    function updateWorkstations() {
+        const locationId = $('#id_location').val();
+        const currentWorkstation = $('#id_workstation').val();
+
+        if (!locationId) {
+            $('#id_workstation').empty().append('<option value="">---------</option>');
+            $('#id_workstation').trigger('change');
+            return;
+        }
+
+        $('#id_workstation').empty().append('<option value="">Загрузка...</option>');
+        $('#id_workstation').trigger('change');
+
+        fetch(`{% url 'maintenance:workstations_by_location' %}?location_id=${locationId}`)
+            .then(response => response.json())
+            .then(data => {
+                const select = $('#id_workstation');
+                select.empty();
+                select.append('<option value="">---------</option>');
+                data.forEach(item => {
+                    const option = new Option(item.name, item.id, false, item.id == currentWorkstation);
+                    select.append(option);
+                });
+                select.trigger('change');
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки оборудования:', error);
+                $('#id_workstation').empty().append('<option value="">Ошибка загрузки</option>');
+                $('#id_workstation').trigger('change');
+            });
+    }
+
+    $('#id_location').on('change', updateWorkstations);
+    if ($('#id_location').val()) {
+        updateWorkstations();
+    }
+
+    // === 3. Периодичность работ ===
+    const frequencyRadios = document.querySelectorAll('input[name="frequency_choice"]');
+    const customFields = document.getElementById('custom-interval-fields');
+    const customIntervalValue = document.getElementById('custom_interval_value');
+    const customIntervalUnit = document.getElementById('custom_interval_unit');
+
+    function updateFrequencyUI() {
+        const selectedValue = Array.from(frequencyRadios).find(r => r.checked)?.value || '';
+        if (selectedValue === 'custom') {
+            customFields.style.display = 'block';
+            customIntervalValue.focus();
+        } else {
+            customFields.style.display = 'none';
+        }
+    }
+
+    frequencyRadios.forEach(radio => {
+        radio.addEventListener('change', updateFrequencyUI);
+    });
+    updateFrequencyUI();
+
+    // При изменении кастомных полей — обновляем hidden поля
+    customIntervalValue.addEventListener('input', function() {
+        document.querySelector('[name="interval_value"]').value = this.value;
+    });
+    customIntervalUnit.addEventListener('change', function() {
+        document.querySelector('[name="interval_unit"]').value = this.value;
+    });
+
+    // При загрузке — подставляем значения из hidden полей
+    const hiddenValue = document.querySelector('[name="interval_value"]').value;
+    const hiddenUnit = document.querySelector('[name="interval_unit"]').value;
+    if (hiddenValue) customIntervalValue.value = hiddenValue;
+    if (hiddenUnit) customIntervalUnit.value = hiddenUnit;
+
+    // Если форма с ошибками — показываем кастомный блок
+    if (document.querySelector('.is-invalid')) {
+        const hasError = document.querySelector('#custom_interval_value.is-invalid') ||
+                         document.querySelector('#custom_interval_unit.is-invalid');
+        if (hasError) {
+            const customRadio = document.querySelector('input[value="custom"]');
+            if (customRadio) {
+                customRadio.checked = true;
+                updateFrequencyUI();
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

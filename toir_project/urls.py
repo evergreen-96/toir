@@ -16,6 +16,8 @@ urlpatterns = [
     path("inventory/", include(("inventory.urls", "inventory"), namespace="inventory")),
     path("locations/", include(("locations.urls", "locations"), namespace="locations")),
     path("hr/", include(("hr.urls", "hr"), namespace="hr")),
+    path('select2/', include('django_select2.urls')),
+    path('maintenance/', include('maintenance.urls')),
 ]
 
 if settings.DEBUG:
