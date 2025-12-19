@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-kr74)a-tp!ya$cm#lah6kj@2-2%0*ukgn*e($31xk&^&n*^@of'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 APPEND_SLASH = True
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 # Application definition

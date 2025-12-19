@@ -1,232 +1,224 @@
 {% extends "base.html" %}
-{% block title %}{% if create %}Новая задача{% else %}Редактирование{% endif %}{% endblock %}
+{% block title %}
+    {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+{% endblock %}
+
 {% block content %}
-<h1 class="mb-4">{% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}</h1>
+<h1 class="mb-4">
+    {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+</h1>
+
+<style>
+.material-row {
+    position: relative;
+}
+
+.material-row.is-deleted {
+    opacity: 0.5;
+    background-color: #f1f3f5;
+}
+
+.material-row.is-deleted * {
+    text-decoration: line-through;
+    pointer-events: none;
+}
+
+.material-row.is-deleted .material-remove-btn {
+    pointer-events: auto;
+    opacity: 1;
+}
+</style>
 
 <form method="post" enctype="multipart/form-data" class="row g-3">
-  {% csrf_token %}
-  <div class="col-12 col-lg-8">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        {{ form.non_field_errors }}
-        <div class="row g-3">
-          {% for field in form %}
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-              {{ field }}
-              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-              {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    {% csrf_token %}
+
+    <!-- Левая колонка -->
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                {{ form.non_field_errors }}
+
+                <div class="row g-3">
+                    {% for field in form %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                {{ field.label }}{% if field.field.required %} *{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for e in field.errors %}
+                                <div class="text-danger small">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
-          {% endfor %}
         </div>
-      </div>
     </div>
-  </div>
 
-  <div class="col-12 col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h5 class="fw-semibold mb-3">Материалы</h5>
+    <!-- Правая колонка: материалы -->
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-3">Материалы</h5>
 
-        {{ formset.management_form }}
+                {{ formset.management_form }}
 
-        <div id="materials-container">
-          {% for f in formset %}
-            <div class="border rounded p-3 mb-3 bg-light-subtle material-row">
-              {% for hf in f.hidden_fields %}
-                {{ hf }}
-              {% endfor %}
+                <div id="materials-container">
+                    {% for f in formset %}
+                        <div class="border rounded p-3 mb-3 material-row bg-light-subtle">
 
-              <div class="mb-2">
-                <label class="form-label fw-medium">{{ f.material.label }}</label>
-                {{ f.material }}
-                {% for e in f.material.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-              </div>
+                            {% for hf in f.hidden_fields %}
+                                {{ hf }}
+                            {% endfor %}
 
-              <div class="row g-2 mb-2">
-                <div class="col">
-                  <label class="form-label">{{ f.qty_planned.label }}</label>
-                  {{ f.qty_planned }}
-                  {% for e in f.qty_planned.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                            <!-- кнопка удаления -->
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn"
+                                title="Удалить материал"
+                            >
+                                <i class="bi bi-trash"></i>
+                            </button>
+
+                            <!-- скрытый DELETE -->
+                            <div class="d-none">
+                                {{ f.DELETE }}
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label fw-medium">{{ f.material.label }}</label>
+                                {{ f.material }}
+                                {% for e in f.material.errors %}
+                                    <div class="text-danger small">{{ e }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col">
+                                    <label class="form-label">{{ f.qty_planned.label }}</label>
+                                    {{ f.qty_planned }}
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">{{ f.qty_used.label }}</label>
+                                    {{ f.qty_used }}
+                                </div>
+                            </div>
+
+                            {% if f.non_field_errors %}
+                                <div class="text-danger small mt-2">
+                                    {% for error in f.non_field_errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="text-muted small">Материалы не добавлены.</div>
+                    {% endfor %}
                 </div>
-                <div class="col">
-                  <label class="form-label">{{ f.qty_used.label }}</label>
-                  {{ f.qty_used }}
-                  {% for e in f.qty_used.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                </div>
-              </div>
 
-              <div class="form-check">
-                {{ f.DELETE }}
-                <label class="form-check-label text-danger" for="{{ f.DELETE.id_for_label }}">
-                  Удалить этот материал
-                </label>
-              </div>
+                <button type="button" class="btn btn-outline-primary mt-3" id="add-material">
+                    <i class="bi bi-plus-lg"></i> Добавить материал
+                </button>
 
-              {% if f.non_field_errors %}
-                <div class="text-danger small mt-2">
-                  {% for error in f.non_field_errors %}
-                    <div>{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
+                <!-- Шаблон новой строки -->
+                <template id="material-template">
+                    <div class="border rounded p-3 mb-3 material-row bg-light">
+
+                        {% for hf in formset.empty_form.hidden_fields %}
+                            {{ hf }}
+                        {% endfor %}
+
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn"
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                        <div class="d-none">
+                            {{ formset.empty_form.DELETE }}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label fw-medium">{{ formset.empty_form.material.label }}</label>
+                            {{ formset.empty_form.material }}
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col">
+                                <label class="form-label">{{ formset.empty_form.qty_planned.label }}</label>
+                                {{ formset.empty_form.qty_planned }}
+                            </div>
+                            <div class="col">
+                                <label class="form-label">{{ formset.empty_form.qty_used.label }}</label>
+                                {{ formset.empty_form.qty_used }}
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
-          {% empty %}
-            <div class="text-muted small">Нет материалов.</div>
-          {% endfor %}
         </div>
 
-        <button type="button" class="btn btn-outline-primary mt-3" id="add-material">
-          <i class="bi bi-plus-lg"></i> Добавить материал
-        </button>
-
-        <!-- Шаблон -->
-        <template id="material-template">
-          <div class="border rounded p-3 mb-3 bg-light material-row">
-            {% for hf in formset.empty_form.hidden_fields %}
-              {{ hf }}
-            {% endfor %}
-            <div class="mb-2">
-              <label class="form-label fw-medium">{{ formset.empty_form.material.label }}</label>
-              {{ formset.empty_form.material }}
-            </div>
-            <div class="row g-2 mb-2">
-              <div class="col">
-                <label class="form-label">{{ formset.empty_form.qty_planned.label }}</label>
-                {{ formset.empty_form.qty_planned }}
-              </div>
-              <div class="col">
-                <label class="form-label">{{ formset.empty_form.qty_used.label }}</label>
-                {{ formset.empty_form.qty_used }}
-              </div>
-            </div>
-            <div class="form-check">
-              {{ formset.empty_form.DELETE }}
-              <label class="form-check-label text-danger" for="{{ formset.empty_form.DELETE.id_for_label }}">
-                Удалить этот материал
-              </label>
-            </div>
-          </div>
-        </template>
-      </div>
+        <div class="d-flex gap-2 mt-4">
+            <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
+                Отмена
+            </a>
+            <button class="btn btn-primary px-4" type="submit">
+                Сохранить
+            </button>
+        </div>
     </div>
-
-    <div class="d-flex gap-2 mt-4">
-      <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">Отмена</a>
-      <button class="btn btn-primary px-4" type="submit">Сохранить</button>
-    </div>
-  </div>
 </form>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Подключаем зависимости (убедитесь, что jQuery и Select2 загружены!)
-    if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
-        console.error('jQuery или Select2 не загружены!');
-        return;
-    }
+document.addEventListener("DOMContentLoaded", function () {
 
-    // Инициализация Select2
-    $('#id_location').select2({
-        placeholder: "Выберите локацию",
-        allowClear: true,
-        width: '100%'
+    // === удаление / восстановление строки ===
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".material-remove-btn");
+        if (!btn) return;
+
+        const row = btn.closest(".material-row");
+        const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+        if (!deleteInput) return;
+
+        deleteInput.checked = !deleteInput.checked;
+        row.classList.toggle("is-deleted", deleteInput.checked);
     });
 
-    $('#id_workstation').select2({
-        placeholder: "Выберите оборудование",
-        allowClear: true,
-        width: '100%'
-    });
+    // === добавление новой строки ===
+    const container = document.getElementById("materials-container");
+    const addButton = document.getElementById("add-material");
+    const template = document.getElementById("material-template");
 
-    // Инициализация для материалов
-    $('#materials-container select[name$="material"]').select2({
-        placeholder: "Выберите материал",
-        allowClear: true,
-        width: '100%'
-    });
+    const prefix = "{{ formset.prefix }}";
+    const totalForms = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+    let index = parseInt(totalForms.value, 10);
 
-    // === Динамическая загрузка оборудования ===
-    function updateWorkstations() {
-        const locationId = $('#id_location').val(); // ✅ правильно
-        const currentWorkstation = $('#id_workstation').val();
-
-        if (!locationId) {
-            // Очищаем оборудование
-            $('#id_workstation').empty().append('<option value="">---------</option>');
-            $('#id_workstation').trigger('change'); // уведомляем Select2
-            return;
-        }
-
-        // Показываем "загрузку"
-        $('#id_workstation').empty().append('<option value="">Загрузка...</option>');
-        $('#id_workstation').trigger('change');
-
-        fetch(`{% url 'maintenance:workstations_by_location' %}?location_id=${locationId}`)
-            .then(response => response.json())
-            .then(data => {
-                const select = $('#id_workstation');
-                select.empty();
-                select.append('<option value="">---------</option>');
-                data.forEach(item => {
-                    const option = new Option(item.name, item.id, false, item.id == currentWorkstation);
-                    select.append(option);
-                });
-                select.trigger('change'); // обновить Select2
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки оборудования:', error);
-                $('#id_workstation').empty().append('<option value="">Ошибка загрузки</option>');
-                $('#id_workstation').trigger('change');
-            });
-    }
-
-    // Слушаем изменение локации через jQuery (Select2 генерирует событие 'change')
-    $('#id_location').on('change', updateWorkstations);
-
-    // При первой загрузке
-    if ($('#id_location').val()) {
-        updateWorkstations();
-    }
-
-    // === Добавление материалов ===
-    const container = document.getElementById('materials-container');
-    const addButton = document.getElementById('add-material');
-    const template = document.getElementById('material-template');
-    const prefix = '{{ formset.prefix }}';
-    const totalFormsInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
-    let nextIndex = parseInt(totalFormsInput.value, 10) || 0;
-
-    function addForm() {
+    addButton.addEventListener("click", function () {
         const clone = document.importNode(template.content, true);
-        clone.querySelectorAll('*').forEach(el => {
-            if (el.hasAttribute('name')) {
-                el.setAttribute('name', el.getAttribute('name').replace(/__prefix__/g, nextIndex));
-            }
-            if (el.hasAttribute('id')) {
-                el.setAttribute('id', el.getAttribute('id').replace(/__prefix__/g, nextIndex));
-            }
-            if (el.hasAttribute('for')) {
-                el.setAttribute('for', el.getAttribute('for').replace(/__prefix__/g, nextIndex));
-            }
+
+        clone.querySelectorAll("[name],[id],[for]").forEach(el => {
+            ["name", "id", "for"].forEach(attr => {
+                if (el.hasAttribute(attr)) {
+                    el.setAttribute(
+                        attr,
+                        el.getAttribute(attr).replace(/__prefix__/g, index)
+                    );
+                }
+            });
         });
 
-        const newRow = clone.firstElementChild;
-        container.appendChild(newRow);
+        container.appendChild(clone);
+        totalForms.value = index + 1;
+        index += 1;
+    });
 
-        // Инициализируем Select2 для нового материала
-        const newSelect = $(newRow).find('select[name$="material"]');
-        newSelect.select2({
-            placeholder: "Выберите материал",
-            allowClear: true,
-            width: '100%'
-        });
-
-        totalFormsInput.value = nextIndex + 1;
-        nextIndex += 1;
-    }
-
-    addButton.addEventListener('click', addForm);
 });
 </script>
 {% endblock %}

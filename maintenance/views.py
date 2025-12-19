@@ -11,7 +11,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
 from assets.models import Workstation
-from .models import WorkOrder, WorkOrderStatus, Priority, WorkCategory, PlannedOrder, IntervalUnit
+from .models import WorkOrder, WorkOrderStatus, Priority, WorkCategory, PlannedOrder, IntervalUnit, WorkOrderMaterial
 from .forms import WorkOrderForm, WorkOrderMaterialFormSet
 from hr.models import HumanResource
 
@@ -113,32 +113,31 @@ def workorder_update(request, pk: int):
 def workorder_create(request):
     if request.method == "POST":
         form = WorkOrderForm(request.POST, request.FILES)
-        formset = WorkOrderMaterialFormSet(request.POST)
 
-        if form.is_valid() and formset.is_valid():
+        if form.is_valid():
             wo = form.save(commit=False)
 
-            # Автоматически устанавливаем location из workstation если не задан
             if wo.workstation and not wo.location:
                 wo.location = wo.workstation.location
 
-            wo.save()
+            wo.save()  # ← тут PK уже есть
 
-            # Сохраняем formset
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.workorder = wo
-                instance.save()
+            formset = WorkOrderMaterialFormSet(
+                request.POST,
+                instance=wo   # 🔥 КЛЮЧЕВО
+            )
 
-            messages.success(request, "Задача создана.")
-            return redirect("maintenance:wo_detail", pk=wo.pk)
+            if formset.is_valid():
+                formset.save()
+                messages.success(request, "Задача создана.")
+                return redirect("maintenance:wo_detail", pk=wo.pk)
         else:
             messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
-            print("Form errors:", form.errors)
-            print("Formset errors:", formset.errors)
     else:
         form = WorkOrderForm()
-        formset = WorkOrderMaterialFormSet(queryset=WorkOrderMaterial.objects.none())
+        formset = WorkOrderMaterialFormSet(
+            instance=WorkOrder()  # пустой parent
+        )
 
     return render(request, "maintenance/wo_form.html", {
         "form": form,
