@@ -12,25 +12,25 @@
 <form method="post" class="row g-3">
   {% csrf_token %}
 
-  <!-- Скрытые поля для interval_value и interval_unit -->
-  <input type="hidden" name="interval_value" value="{{ form.interval_value.value|default:'' }}">
-  <input type="hidden" name="interval_unit" value="{{ form.interval_unit.value|default:'' }}">
+  <!-- hidden interval fields -->
+  {{ form.interval_value }}
+  {{ form.interval_unit }}
 
   <div class="col-lg-8">
     <div class="card shadow-sm">
       <div class="card-body">
 
-        <!-- Основные данные -->
+        <!-- ===== Основные данные ===== -->
         <h5 class="mb-4 fw-semibold">Основные данные</h5>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.name.label }}{% if form.name.field.required %} *{% endif %}</label>
+            <label class="form-label fw-semibold">{{ form.name.label }} *</label>
             {{ form.name }}
             {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.category.label }}{% if form.category.field.required %} *{% endif %}</label>
+            <label class="form-label fw-semibold">{{ form.category.label }} *</label>
             {{ form.category }}
             {% for e in form.category.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
@@ -42,91 +42,139 @@
           {% for e in form.description.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
         </div>
 
-        <!-- Локация и оборудование -->
+        <!-- ===== Локация и оборудование ===== -->
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.location.label }}{% if form.location.field.required %} *{% endif %}</label>
+            <label class="form-label fw-semibold">{{ form.location.label }} *</label>
             {{ form.location }}
             {% for e in form.location.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.workstation.label }}{% if form.workstation.field.required %} *{% endif %}</label>
+            <label class="form-label fw-semibold">{{ form.workstation.label }} *</label>
             {{ form.workstation }}
             {% for e in form.workstation.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
         </div>
 
-        <!-- Ответственный и приоритет -->
+        <!-- ===== Ответственный / приоритет ===== -->
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label class="form-label fw-semibold">{{ form.responsible_default.label }}</label>
             {{ form.responsible_default }}
-            {% for e in form.responsible_default.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.priority.label }}{% if form.priority.field.required %} *{% endif %}</label>
+            <label class="form-label fw-semibold">{{ form.priority.label }} *</label>
             {{ form.priority }}
-            {% for e in form.priority.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
         </div>
 
-        <!-- Трудоёмкость -->
+        <!-- ===== Трудоёмкость ===== -->
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.labor_plan_hours.label }}{% if form.labor_plan_hours.field.required %} *{% endif %}</label>
+            <label class="form-label fw-semibold">{{ form.labor_plan_hours.label }} *</label>
             {{ form.labor_plan_hours }}
-            {% for e in form.labor_plan_hours.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
           </div>
         </div>
 
-        <!-- Периодичность работ -->
+        <!-- ===== Периодичность ===== -->
         <div class="mt-4 border-top pt-3">
           <h5 class="fw-semibold mb-3">Периодичность работ</h5>
 
           <div class="d-flex flex-wrap gap-4 mb-3">
             {% for choice in form.frequency_choice.field.choices %}
               <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="{{ form.frequency_choice.name }}" id="{{ form.frequency_choice.id_for_label }}_{{ choice.0 }}" value="{{ choice.0 }}" {% if form.frequency_choice.value == choice.0 %}checked{% endif %}>
-                <label class="form-check-label" for="{{ form.frequency_choice.id_for_label }}_{{ choice.0 }}">
-                  {{ choice.1 }}
-                </label>
+                <input class="form-check-input"
+                       type="radio"
+                       name="frequency_choice"
+                       value="{{ choice.0 }}"
+                       {% if form.frequency_choice.value == choice.0 %}checked{% endif %}>
+                <label class="form-check-label">{{ choice.1 }}</label>
               </div>
             {% endfor %}
           </div>
 
-          <div id="custom-interval-fields" style="display: none;">
-            <div class="row g-3 align-items-center mb-2">
+          <!-- DAILY -->
+          <div id="daily-fields" class="schedule-fields" style="display:none;">
+            <label class="fw-medium">Дата первого обслуживания</label>
+            {{ form.first_run_date }}
+            {% for e in form.first_run_date.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <!-- WEEKLY -->
+          <div id="weekly-fields" class="schedule-fields" style="display:none;">
+            <label class="fw-medium">Проводить работы каждый</label>
+            {{ form.weekday }}
+            {% for e in form.weekday.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <!-- MONTHLY -->
+          <div id="monthly-fields" class="schedule-fields" style="display:none;">
+            <label class="fw-medium">Проводить работы каждое (число месяца)</label>
+            {{ form.day_of_month }}
+            {% for e in form.day_of_month.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <!-- CUSTOM -->
+          <div id="custom-fields" class="schedule-fields" style="display:none;">
+            <div class="row g-2 align-items-center">
+              <div class="col-auto fw-medium">Проводить работы каждые</div>
               <div class="col-auto">
-                <span class="fw-medium">Проводить работы каждые</span>
+                <input type="number" min="1" class="form-control" id="custom_interval_value">
               </div>
               <div class="col-auto">
-                <div class="input-group" style="width: 120px; position: relative; z-index: 10;">
-                  <input type="number" min="1" value="1" class="form-control" id="custom_interval_value" placeholder="число">
-                </div>
-              </div>
-              <div class="col-auto">
-                <div class="input-group" style="position: relative; z-index: 10;">
-                  <select class="form-select" id="custom_interval_unit">
-                    <option value="">-- выберите --</option>
-                    {% for unit in form.interval_unit.field.choices %}
-                      <option value="{{ unit.0 }}">{{ unit.1 }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
+                <select class="form-select" id="custom_interval_unit">
+                  <option value="">-- выберите --</option>
+                  {% for unit in form.interval_unit.field.choices %}
+                    <option value="{{ unit.0 }}">{{ unit.1 }}</option>
+                  {% endfor %}
+                </select>
               </div>
             </div>
-
           </div>
+
         </div>
 
-        <!-- Активно -->
+        <!-- ===== Активно ===== -->
         <div class="mt-4">
           <div class="form-check">
             {{ form.is_active }}
-            <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
-              Активно
-            </label>
+            <label class="form-check-label fw-semibold">Активно</label>
           </div>
+        </div>
+
+        <!-- ===== PREVIEW ===== -->
+        <div class="mt-4 border-top pt-3">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <h5 class="fw-semibold mb-0">Превью на 6 месяцев</h5>
+              <div class="text-muted small mt-1">
+                Подсветка: <span class="badge rounded-pill text-bg-danger align-middle">Первый запуск</span>
+                <span class="badge rounded-pill text-bg-warning text-dark align-middle">Последующие</span>
+                <span class="badge rounded-pill text-bg-light text-dark border align-middle">Сегодня</span>
+              </div>
+            </div>
+
+            <div class="text-end">
+              <div class="small">
+                <span class="text-muted">First run:</span>
+                <span id="previewFirstRun" class="fw-semibold">—</span>
+              </div>
+              <div class="small text-muted">
+                Запусков: <span id="previewCount">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="previewError" class="text-danger small mt-2" style="display:none;"></div>
+
+          <div id="previewLoading" class="mt-3" style="display:none;">
+            <div class="placeholder-glow">
+              <span class="placeholder col-12"></span>
+            </div>
+            <div class="text-muted small mt-2">Считаю расписание…</div>
+          </div>
+
+          <div id="previewCalendar" class="mt-3 calendar-grid"></div>
         </div>
 
       </div>
@@ -140,135 +188,481 @@
 </form>
 
 <style>
-  .form-check-input[type="radio"] {
-    width: 1.5em;
-    height: 1.5em;
-    margin-right: 0.5em;
-  }
-  .select2-selection__rendered{
-    background-color: #2c3f53;
-  }
-  .dropdown-wrapper{
-    background-color: #2c3f53;
-  }
-  .form-check-label {
-    font-weight: 500;
-    cursor: pointer;
-  }
-  .form-check-inline {
-    margin-right: 1.5rem;
-  }
-  #custom-interval-fields {
-    border-radius: 0.5rem;
-    padding: 1rem;
-    animation: fadeIn 0.3s ease;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  /* =========================
+   FORM CONTROLS (общие)
+========================= */
+.form-control,
+.form-select {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+.form-control::placeholder {
+    color: var(--bs-secondary-color);
+}
+
+/* focus */
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+}
+
+/* =========================
+   MATERIAL ROW
+========================= */
+.material-row {
+    position: relative;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.material-row.is-deleted {
+    opacity: .55;
+    background-color: var(--bs-secondary-bg);
+}
+
+/* дизейблим поля аккуратно */
+.material-row.is-deleted input,
+.material-row.is-deleted textarea,
+.material-row.is-deleted select {
+    pointer-events: none;
+}
+
+/* =========================
+   SELECT2 — SINGLE
+========================= */
+.select2-container--default .select2-selection--single {
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+    height: calc(2.5rem + 2px);
+    display: flex;
+    align-items: center;
+}
+
+.select2-container--default .select2-selection__rendered {
+    color: var(--bs-body-color) !important;
+    padding-left: .75rem;
+    padding-right: 1.5rem;
+}
+
+.select2-container--default .select2-selection__arrow {
+    height: 100%;
+}
+
+.select2-container--default.select2-container--focus
+.select2-selection--single {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+}
+
+/* clear (×) */
+.select2-container--default .select2-selection__clear {
+    color: var(--bs-secondary-color);
+}
+.select2-container--default .select2-selection__clear:hover {
+    color: var(--bs-body-color);
+}
+
+/* =========================
+   SELECT2 — DROPDOWN
+========================= */
+.select2-container--default .select2-dropdown {
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+}
+
+.select2-container--default
+.select2-search--dropdown .select2-search__field::placeholder {
+    color: var(--bs-secondary-color);
+}
+
+/* options */
+.select2-container--default .select2-results__option {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+.select2-container--default
+.select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text);
+}
+
+.select2-container--default
+.select2-results__option--selected {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+  /* ==== календарь (адаптив под bootstrap light/dark) ==== */
+
+.calendar-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: .75rem;
+}
+
+.mini-month{
+  border: 1px solid var(--bs-border-color);
+  border-radius: .9rem;
+  padding: .75rem .75rem .65rem;
+  background: var(--bs-body-bg);
+  box-shadow: 0 1px 0 rgba(0,0,0,.04);
+}
+
+.mini-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.6rem;
+  margin-bottom: .5rem;
+}
+
+.mini-title{
+  font-weight: 700;
+  font-size: .95rem;
+  line-height: 1.1;
+  color: var(--bs-body-color);
+}
+
+.mini-sub{
+  font-size: .75rem;
+  color: var(--bs-secondary-color);
+  margin-top: .2rem;
+}
+
+.mini-dow{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: .35rem;
+  margin-bottom: .35rem;
+}
+
+.mini-dow div{
+  font-size: .7rem;
+  color: var(--bs-secondary-color);
+  text-align:center;
+  padding: .15rem 0;
+}
+
+.mini-days{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: .35rem;
+}
+
+.mini-day{
+  height: 34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius: .7rem;
+  border: 1px solid var(--bs-border-color);
+
+  font-size: .82rem;
+  user-select:none;
+
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+
+  transition: transform .05s ease, filter .1s ease;
+}
+
+.mini-day:hover{
+  filter: brightness(1.03);
+}
+
+.mini-day.empty{
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Первый запуск */
+.mini-day.first{
+  background: var(--bs-danger);
+  border-color: var(--bs-danger);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Последующие запуски */
+.mini-day.next{
+  background: var(--bs-warning);
+  border-color: var(--bs-warning);
+  color: var(--bs-warning-text-emphasis);
+  font-weight: 700;
+}
+
+/* Сегодня */
+.mini-day.today{
+  outline: 2px solid var(--bs-emphasis-color);
+  outline-offset: 1px;
+}
+
+/* на тёмной теме чуть смягчаем "жёлтый" (по желанию) */
+[data-bs-theme="dark"] .mini-day.next{
+  filter: saturate(.95);
+}
+
+/* skeleton/placeholder тоже пусть смотрится в темной */
+#previewLoading .placeholder{
+  background-color: var(--bs-secondary-bg);
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // === 1. Инициализация Select2 для локации и оборудования ===
-    $('#id_location').select2({
-        placeholder: "Выберите локацию",
-        allowClear: true,
-        width: '100%'
+
+  $('#id_location').select2({ width: '100%' });
+  $('#id_workstation').select2({ width: '100%' });
+
+  const radios = document.querySelectorAll('input[name="frequency_choice"]');
+  const blocks = {
+    daily: document.getElementById('daily-fields'),
+    weekly: document.getElementById('weekly-fields'),
+    monthly: document.getElementById('monthly-fields'),
+    custom: document.getElementById('custom-fields'),
+  };
+
+  const hiddenValue = document.querySelector('[name="interval_value"]');
+  const hiddenUnit  = document.querySelector('[name="interval_unit"]');
+  const customValue = document.getElementById('custom_interval_value');
+  const customUnit  = document.getElementById('custom_interval_unit');
+
+  function updateUI() {
+    Object.values(blocks).forEach(b => b.style.display = 'none');
+    const selected = Array.from(radios).find(r => r.checked)?.value;
+    if (blocks[selected]) blocks[selected].style.display = 'block';
+
+    if (selected !== 'custom') {
+      hiddenValue.value = '';
+      hiddenUnit.value = '';
+    }
+  }
+
+  radios.forEach(r => r.addEventListener('change', updateUI));
+
+  customValue.addEventListener('input', () => hiddenValue.value = customValue.value);
+  customUnit.addEventListener('change', () => hiddenUnit.value = customUnit.value);
+
+  if (hiddenValue.value) customValue.value = hiddenValue.value;
+  if (hiddenUnit.value) customUnit.value = hiddenUnit.value;
+
+  updateUI();
+
+  // ===========================
+  // PREVIEW календаря (AJAX)
+  // ===========================
+  const previewFirstRun = document.getElementById("previewFirstRun");
+  const previewCount = document.getElementById("previewCount");
+  const previewError = document.getElementById("previewError");
+  const previewCalendar = document.getElementById("previewCalendar");
+  const previewLoading = document.getElementById("previewLoading");
+
+  const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+  const MONTHS_RU = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
+  const MONTHS_AHEAD = 5;
+
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function daysInMonth(y, m0){ return new Date(y, m0+1, 0).getDate(); }
+
+  function monthsInRange(startDate, endDate){
+    const res = [];
+    let y = startDate.getFullYear(), m0 = startDate.getMonth();
+    const ey = endDate.getFullYear(), em0 = endDate.getMonth();
+    while(true){
+      res.push([y, m0]);
+      if (y === ey && m0 === em0) break;
+      if (m0 === 11) { y += 1; m0 = 0; } else { m0 += 1; }
+    }
+    return res;
+  }
+
+  function buildMonthNode(year, month0, todayISO, firstDayISO, nextDaysSet){
+    const wrap = document.createElement("div");
+    wrap.className = "mini-month";
+
+    const head = document.createElement("div");
+    head.className = "mini-head";
+
+    const left = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "mini-title";
+    title.textContent = `${MONTHS_RU[month0]} ${year}`;
+    const sub = document.createElement("div");
+    sub.className = "mini-sub";
+    sub.textContent = "Плановые даты выделены цветом";
+    left.appendChild(title);
+    left.appendChild(sub);
+
+    head.appendChild(left);
+    wrap.appendChild(head);
+
+    const dow = document.createElement("div");
+    dow.className = "mini-dow";
+    DOW.forEach(x => {
+      const cell = document.createElement("div");
+      cell.textContent = x;
+      dow.appendChild(cell);
     });
+    wrap.appendChild(dow);
 
-    $('#id_workstation').select2({
-        placeholder: "Выберите оборудование",
-        allowClear: true,
-        width: '100%'
-    });
+    const grid = document.createElement("div");
+    grid.className = "mini-days";
 
-    // === 2. Динамическая загрузка оборудования по локации ===
-    function updateWorkstations() {
-        const locationId = $('#id_location').val();
-        const currentWorkstation = $('#id_workstation').val();
+    const firstOfMonth = new Date(year, month0, 1, 0,0,0,0);
+    const jsDow = firstOfMonth.getDay();      // 0 Sun..6 Sat
+    const firstWeekday = (jsDow + 6) % 7;     // 0 Mon..6 Sun
+    const dim = daysInMonth(year, month0);
 
-        if (!locationId) {
-            $('#id_workstation').empty().append('<option value="">---------</option>');
-            $('#id_workstation').trigger('change');
-            return;
-        }
-
-        $('#id_workstation').empty().append('<option value="">Загрузка...</option>');
-        $('#id_workstation').trigger('change');
-
-        fetch(`{% url 'maintenance:workstations_by_location' %}?location_id=${locationId}`)
-            .then(response => response.json())
-            .then(data => {
-                const select = $('#id_workstation');
-                select.empty();
-                select.append('<option value="">---------</option>');
-                data.forEach(item => {
-                    const option = new Option(item.name, item.id, false, item.id == currentWorkstation);
-                    select.append(option);
-                });
-                select.trigger('change');
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки оборудования:', error);
-                $('#id_workstation').empty().append('<option value="">Ошибка загрузки</option>');
-                $('#id_workstation').trigger('change');
-            });
+    for(let i=0;i<firstWeekday;i++){
+      const cell = document.createElement("div");
+      cell.className = "mini-day empty";
+      grid.appendChild(cell);
     }
 
-    $('#id_location').on('change', updateWorkstations);
-    if ($('#id_location').val()) {
-        updateWorkstations();
+    for(let day=1; day<=dim; day++){
+      const cell = document.createElement("div");
+      cell.className = "mini-day";
+
+      const iso = `${year}-${pad2(month0+1)}-${pad2(day)}`;
+
+      if (iso === firstDayISO) cell.classList.add("first");
+      else if (nextDaysSet.has(iso)) cell.classList.add("next");
+
+      if (iso === todayISO) cell.classList.add("today");
+
+      cell.textContent = String(day);
+      grid.appendChild(cell);
     }
 
-    // === 3. Периодичность работ ===
-    const frequencyRadios = document.querySelectorAll('input[name="frequency_choice"]');
-    const customFields = document.getElementById('custom-interval-fields');
-    const customIntervalValue = document.getElementById('custom_interval_value');
-    const customIntervalUnit = document.getElementById('custom_interval_unit');
+    wrap.appendChild(grid);
+    return wrap;
+  }
 
-    function updateFrequencyUI() {
-        const selectedValue = Array.from(frequencyRadios).find(r => r.checked)?.value || '';
-        if (selectedValue === 'custom') {
-            customFields.style.display = 'block';
-            customIntervalValue.focus();
-        } else {
-            customFields.style.display = 'none';
-        }
+  function renderCalendars(todayISO, firstRunStr, runsStr){
+    previewCalendar.innerHTML = "";
+
+    const firstDayISO = firstRunStr.slice(0,10);
+    const runDaysISO = runsStr.map(x => x.slice(0,10));
+    const nextDaysSet = new Set(runDaysISO.filter(x => x !== firstDayISO));
+
+    const today = new Date(todayISO + "T00:00:00");
+    const end = new Date(today);
+    end.setMonth(end.getMonth() + MONTHS_AHEAD);
+
+    const months = monthsInRange(today, end);
+    months.forEach(([y,m0]) => {
+      previewCalendar.appendChild(buildMonthNode(y, m0, todayISO, firstDayISO, nextDaysSet));
+    });
+  }
+
+  function getSelectedFrequency() {
+    return Array.from(radios).find(r => r.checked)?.value || "weekly";
+  }
+
+  function setError(text) {
+    if (!text) {
+      previewError.style.display = "none";
+      previewError.textContent = "";
+      return;
+    }
+    previewError.style.display = "block";
+    previewError.textContent = text;
+  }
+
+  let _previewTimer = null;
+  function schedulePreviewRefresh() {
+    // лёгкий debounce, чтобы при вводе не долбить endpoint
+    if (_previewTimer) clearTimeout(_previewTimer);
+    _previewTimer = setTimeout(refreshPreview, 200);
+  }
+
+  async function refreshPreview() {
+    setError("");
+    previewLoading.style.display = "block";
+
+    const freq = getSelectedFrequency();
+
+    const params = new URLSearchParams();
+    params.set("frequency_choice", freq);
+    params.set("months_ahead", String(MONTHS_AHEAD));
+
+    // hidden interval fields
+    params.set("interval_value", hiddenValue.value || "");
+    params.set("interval_unit", hiddenUnit.value || "");
+
+    // schedule fields
+    const frd = document.getElementById("id_first_run_date")?.value || "";
+    const wd = document.getElementById("id_weekday")?.value || "";
+    const dom = document.getElementById("id_day_of_month")?.value || "";
+
+    params.set("first_run_date", frd);
+    params.set("weekday", wd);
+    params.set("day_of_month", dom);
+
+    if (freq === "custom") {
+      params.set("interval_value", customValue.value || "");
+      params.set("interval_unit", customUnit.value || "");
     }
 
-    frequencyRadios.forEach(radio => {
-        radio.addEventListener('change', updateFrequencyUI);
-    });
-    updateFrequencyUI();
+    // не дергаем сервер если не заполнено обязательное
+    if (freq === "daily" && !frd) { previewLoading.style.display = "none"; return; }
+    if (freq === "weekly" && (wd === "" || wd === null)) { previewLoading.style.display = "none"; return; }
+    if (freq === "monthly" && !dom) { previewLoading.style.display = "none"; return; }
+    if (freq === "custom" && (!params.get("interval_value") || !params.get("interval_unit"))) { previewLoading.style.display = "none"; return; }
 
-    // При изменении кастомных полей — обновляем hidden поля
-    customIntervalValue.addEventListener('input', function() {
-        document.querySelector('[name="interval_value"]').value = this.value;
-    });
-    customIntervalUnit.addEventListener('change', function() {
-        document.querySelector('[name="interval_unit"]').value = this.value;
-    });
+    const url = "{% url 'maintenance:plan_preview' %}?" + params.toString();
 
-    // При загрузке — подставляем значения из hidden полей
-    const hiddenValue = document.querySelector('[name="interval_value"]').value;
-    const hiddenUnit = document.querySelector('[name="interval_unit"]').value;
-    if (hiddenValue) customIntervalValue.value = hiddenValue;
-    if (hiddenUnit) customIntervalUnit.value = hiddenUnit;
-
-    // Если форма с ошибками — показываем кастомный блок
-    if (document.querySelector('.is-invalid')) {
-        const hasError = document.querySelector('#custom_interval_value.is-invalid') ||
-                         document.querySelector('#custom_interval_unit.is-invalid');
-        if (hasError) {
-            const customRadio = document.querySelector('input[value="custom"]');
-            if (customRadio) {
-                customRadio.checked = true;
-                updateFrequencyUI();
-            }
-        }
+    let data;
+    try {
+      const r = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }});
+      data = await r.json();
+    } catch (e) {
+      previewLoading.style.display = "none";
+      setError("Не удалось получить превью (network error).");
+      return;
     }
+
+    previewLoading.style.display = "none";
+
+    if (!data.ok) {
+      setError(data.error || "Ошибка превью");
+      return;
+    }
+
+    previewFirstRun.textContent = data.first_run;
+    previewCount.textContent = data.runs.length;
+
+    renderCalendars(data.today, data.first_run, data.runs);
+  }
+
+  // обновляем превью при изменении расписания
+  radios.forEach(r => r.addEventListener("change", () => { updateUI(); schedulePreviewRefresh(); }));
+  document.getElementById("id_first_run_date")?.addEventListener("change", schedulePreviewRefresh);
+  document.getElementById("id_weekday")?.addEventListener("change", schedulePreviewRefresh);
+  document.getElementById("id_day_of_month")?.addEventListener("input", schedulePreviewRefresh);
+
+  // custom
+  customValue.addEventListener("input", () => { hiddenValue.value = customValue.value; schedulePreviewRefresh(); });
+  customUnit.addEventListener("change", () => { hiddenUnit.value = customUnit.value; schedulePreviewRefresh(); });
+
+  // initial
+  schedulePreviewRefresh();
 });
 </script>
+
 {% endblock %}
