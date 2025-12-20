@@ -52,7 +52,23 @@ def _fmt_local(dt) -> str:
 # =========================
 # HOME
 # =========================
+from django.utils import timezone
+from django.db.models import Count
+
+from maintenance.models import (
+    WorkOrder, PlannedOrder,
+    WorkOrderStatus, WorkCategory
+)
+from assets.models import (
+    Workstation,
+    WorkstationStatus,
+    WorkstationGlobalState
+)
+
 def home(request):
+    today = timezone.localdate()
+
+    # ---------- KPI по заявкам ----------
     stats = {
         "total": WorkOrder.objects.count(),
         "new": WorkOrder.objects.filter(status=WorkOrderStatus.NEW).count(),
@@ -60,8 +76,69 @@ def home(request):
         "done": WorkOrder.objects.filter(status=WorkOrderStatus.DONE).count(),
         "failed": WorkOrder.objects.filter(status=WorkOrderStatus.FAILED).count(),
     }
-    upcoming = PlannedOrder.objects.filter(is_active=True, next_run__isnull=False).order_by("next_run")[:10]
-    return render(request, "maintenance/home.html", {"stats": stats, "upcoming": upcoming})
+
+    # ---------- Доступность оборудования ----------
+    ws_qs = Workstation.objects.filter(
+        global_state=WorkstationGlobalState.ACTIVE
+    )
+
+    total_ws = ws_qs.count()
+    in_prod = ws_qs.filter(status=WorkstationStatus.PROD).count()
+    emergency = ws_qs.filter(status=WorkstationStatus.PROBLEM).count()
+    not_working = ws_qs.filter(
+        status__in=[WorkstationStatus.MAINT, WorkstationStatus.SETUP]
+    ).count()
+
+    availability = {
+        "pct": round((in_prod / total_ws * 100), 1) if total_ws else 0,
+        "in_prod": in_prod,
+        "emergency": emergency,
+        "not_working": not_working,
+    }
+
+    # ---------- Выполнено сегодня ----------
+    done_today = WorkOrder.objects.filter(
+        status=WorkOrderStatus.DONE,
+        date_finish=today
+    )
+
+    done_stats = {
+        "pm": done_today.filter(category=WorkCategory.PM).count(),
+        "emergency": done_today.filter(category=WorkCategory.EMERGENCY).count(),
+    }
+
+    # ---------- Выполнено по людям ----------
+    done_by_people = (
+        done_today
+        .values("responsible__name")
+        .annotate(cnt=Count("id"))
+        .order_by("-cnt")
+    )
+
+    # ---------- Заявки по категориям ----------
+    orders_by_category = (
+        WorkOrder.objects
+        .filter(date_start=today)
+        .values("category")
+        .annotate(cnt=Count("id"))
+    )
+
+    # ---------- Ближайшие планы ----------
+    upcoming = (
+        PlannedOrder.objects
+        .filter(is_active=True, next_run__isnull=False)
+        .order_by("next_run")[:10]
+    )
+
+    return render(request, "maintenance/home.html", {
+        "stats": stats,
+        "availability": availability,
+        "done_stats": done_stats,
+        "done_by_people": done_by_people,
+        "orders_by_category": orders_by_category,
+        "upcoming": upcoming,
+    })
+
 
 
 # =========================

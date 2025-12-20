@@ -1,38 +1,429 @@
 {% extends "base.html" %}
 {% block title %}Дашборд{% endblock %}
+
 {% block content %}
-<h1 class="mb-4">Дашборд ТОиР</h1>
-
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-2"><div class="card text-bg-light"><div class="card-body"><div class="fw-semibold">Всего</div><div class="display-6">{{ stats.total }}</div></div></div></div>
-  <div class="col-6 col-md-2"><div class="card"><div class="card-body"><div class="fw-semibold">Новые</div><div class="display-6">{{ stats.new }}</div></div></div></div>
-  <div class="col-6 col-md-2"><div class="card"><div class="card-body"><div class="fw-semibold">В работе</div><div class="display-6">{{ stats.in_progress }}</div></div></div></div>
-  <div class="col-6 col-md-2"><div class="card"><div class="card-body"><div class="fw-semibold">Выполнено</div><div class="display-6">{{ stats.done }}</div></div></div></div>
-  <div class="col-6 col-md-2"><div class="card"><div class="card-body"><div class="fw-semibold">Не выполнено</div><div class="display-6">{{ stats.failed }}</div></div></div></div>
-</div>
-
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <h4 class="mb-0">Ближайшие плановые обслуживания</h4>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <div>
-    <a class="btn btn-sm btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">Все планы</a>
-    <a class="btn btn-sm btn-primary" href="{% url 'maintenance:wo_list' %}">К задачам</a>
+    <h1 class="mb-1">Дашборд ТОиР</h1>
+    <div class="text-muted small">
+      Оперативная картина по заявкам и оборудованию
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">
+      Планы обслуживания
+    </a>
+    <a class="btn btn-primary" href="{% url 'maintenance:wo_list' %}">
+      Заявки
+    </a>
   </div>
 </div>
 
-<table class="table table-hover align-middle">
-  <thead class="table-light"><tr><th>Название</th><th>Оборудование</th><th>Локация</th><th>Следующий запуск</th><th>Интервал</th></tr></thead>
-  <tbody>
-  {% for p in upcoming %}
-    <tr>
-      <td>{{ p.name }}</td>
-      <td>{{ p.workstation }}</td>
-      <td>{{ p.location }}</td>
-      <td>{% if p.next_run %}{{ p.next_run|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
-      <td><span class="badge text-bg-secondary badge-pill">{{ p.interval_value }} {{ p.get_interval_unit_display }}</span></td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="5"><div class="alert alert-secondary mb-0">Нет ближайших запусков</div></td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+{# ===================== KPI STRIP ===================== #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-2">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Всего заявок</div>
+        <div class="display-6 fw-semibold">{{ stats.total }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-2">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Новые</div>
+        <div class="display-6 fw-semibold">{{ stats.new }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-2">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">В работе</div>
+        <div class="display-6 fw-semibold">{{ stats.in_progress }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-2">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Выполнено</div>
+        <div class="display-6 fw-semibold">{{ stats.done }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-2">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Не выполнено</div>
+        <div class="display-6 fw-semibold">{{ stats.failed }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ===================== HERO ROW ===================== #}
+<div class="row g-3 mb-4">
+  {# --- Availability --- #}
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="text-muted small">Оборудование</div>
+            <div class="h5 mb-0">Доступность</div>
+          </div>
+
+          <span class="badge text-bg-light border">
+            ACTIVE
+          </span>
+        </div>
+
+        <div class="d-flex align-items-end gap-3">
+          <div class="display-5 fw-bold mb-0">{{ availability.pct }}%</div>
+          <div class="text-muted small mb-2">
+            в эксплуатации: <strong>{{ availability.in_prod }}</strong>
+          </div>
+        </div>
+
+        <div class="progress my-3" style="height: 10px;">
+          <div
+            class="progress-bar"
+            role="progressbar"
+            style="width: {{ availability.pct }}%;"
+            aria-valuenow="{{ availability.pct }}"
+            aria-valuemin="0"
+            aria-valuemax="100"></div>
+        </div>
+
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <div class="p-2 rounded-3 bg-body-tertiary">
+              <div class="text-muted small">В эксплуатации</div>
+              <div class="h5 mb-0">{{ availability.in_prod }}</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 rounded-3 bg-body-tertiary">
+              <div class="text-muted small">Не работает</div>
+              <div class="h5 mb-0">{{ availability.not_working }}</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 rounded-3 bg-body-tertiary">
+              <div class="text-muted small">Аварии</div>
+              <div class="h5 mb-0">{{ availability.emergency }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 text-muted small">
+          Источник: текущий статус оборудования (Workstation.status)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# --- Done today + mini insights --- #}
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="text-muted small">Заявки</div>
+            <div class="h5 mb-0">Выполнено сегодня</div>
+          </div>
+          <span class="badge text-bg-success-subtle border border-success-subtle">
+            DONE
+          </span>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-6">
+            <div class="p-3 rounded-3 bg-body-tertiary h-100">
+              <div class="text-muted small">Плановые</div>
+              <div class="display-6 fw-semibold mb-0">{{ done_stats.pm }}</div>
+              <div class="text-muted small mt-1">категория: ТО</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 rounded-3 bg-body-tertiary h-100">
+              <div class="text-muted small">Аварийные</div>
+              <div class="display-6 fw-semibold mb-0">{{ done_stats.emergency }}</div>
+              <div class="text-muted small mt-1">категория: авария</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 text-muted small">
+          Основание: статус <strong>DONE</strong> и дата завершения = сегодня (WorkOrder.date_finish)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ===================== CHARTS ROW ===================== #}
+<div class="row g-3 mb-4">
+  {# --- Category donut --- #}
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <div class="text-muted small">Сегодня</div>
+            <div class="h5 mb-0">Заявки по категориям</div>
+          </div>
+        </div>
+
+        <div style="height: 280px;">
+          <canvas id="chartCategoryDonut"></canvas>
+        </div>
+
+        <div class="mt-3">
+          <div class="text-muted small mb-1">Таблица (контроль)</div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Категория</th>
+                  <th class="text-end">Кол-во</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in orders_by_category %}
+                  <tr>
+                    <td class="cat-label" data-cat="{{ row.category }}">{{ row.category }}</td>
+                    <td class="text-end">{{ row.cnt }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-muted">Заявок нет</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-2 text-muted small">
+          Сейчас считаем по <code>date_start = today</code>. Позже лучше перейти на <code>created_at</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# --- Done by people bar --- #}
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <div class="text-muted small">Сегодня</div>
+            <div class="h5 mb-0">Выполнено по сотрудникам</div>
+          </div>
+        </div>
+
+        <div style="height: 280px;">
+          <canvas id="chartDoneByPeople"></canvas>
+        </div>
+
+        <div class="mt-3">
+          <div class="text-muted small mb-1">Топ (контроль)</div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Сотрудник</th>
+                  <th class="text-end">Выполнено</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in done_by_people %}
+                  <tr>
+                    <td>{{ row.responsible__name }}</td>
+                    <td class="text-end">{{ row.cnt }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-muted">Нет выполненных задач</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ===================== UPCOMING PLANS ===================== #}
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <div>
+    <div class="text-muted small">Планы</div>
+    <h4 class="mb-0">Ближайшие плановые обслуживания</h4>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Название</th>
+            <th>Оборудование</th>
+            <th>Локация</th>
+            <th>Следующий запуск</th>
+            <th>Интервал</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for p in upcoming %}
+          <tr>
+            <td class="fw-semibold">{{ p.name }}</td>
+            <td>{{ p.workstation }}</td>
+            <td>{{ p.location }}</td>
+            <td>
+              {% if p.next_run %}
+                {{ p.next_run|date:"d.m.Y H:i" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge text-bg-secondary">
+                {{ p.interval_value }} {{ p.get_interval_unit_display }}
+              </span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="p-3">
+              <div class="alert alert-secondary mb-0">Нет ближайших запусков</div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# ===================== CHART.JS ===================== #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+(function () {
+  // --------- mapping category code -> label (from WorkCategory) ----------
+  const categoryLabels = {
+    "inspection": "Осмотр",
+    "pm": "Техническое обслуживание",
+    "repair_minor": "Текущий ремонт",
+    "repair_major": "Капитальный ремонт",
+    "emergency": "Аварийный ремонт",
+  };
+
+  // Replace text in the table (nice-to-have)
+  document.querySelectorAll('.cat-label').forEach(el => {
+    const code = el.getAttribute('data-cat');
+    el.textContent = categoryLabels[code] || code;
+  });
+
+  // --------- Data from Django context (safe JSON via HTML) ----------
+  // orders_by_category: [{category: "...", cnt: N}, ...]
+  const rawCat = [
+    {% for row in orders_by_category %}
+      { code: "{{ row.category|escapejs }}", cnt: {{ row.cnt }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const catLabels = rawCat.map(x => categoryLabels[x.code] || x.code);
+  const catCounts = rawCat.map(x => x.cnt);
+
+  // done_by_people: [{responsible__name: "...", cnt: N}, ...]
+  const rawPeople = [
+    {% for row in done_by_people %}
+      { name: "{{ row.responsible__name|escapejs }}", cnt: {{ row.cnt }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const peopleLabels = rawPeople.map(x => x.name);
+  const peopleCounts = rawPeople.map(x => x.cnt);
+
+  // --------- Category donut ----------
+  const donutEl = document.getElementById('chartCategoryDonut');
+  if (donutEl) {
+    const empty = (catCounts.length === 0) || catCounts.every(v => v === 0);
+
+    new Chart(donutEl, {
+      type: 'doughnut',
+      data: {
+        labels: empty ? ["Нет данных"] : catLabels,
+        datasets: [{
+          data: empty ? [1] : catCounts,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                if (empty) return "Нет данных";
+                const label = ctx.label || "";
+                const value = ctx.parsed;
+                return `${label}: ${value}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // --------- Done by people bar ----------
+  const barEl = document.getElementById('chartDoneByPeople');
+  if (barEl) {
+    const empty = (peopleCounts.length === 0) || peopleCounts.every(v => v === 0);
+
+    new Chart(barEl, {
+      type: 'bar',
+      data: {
+        labels: empty ? ["Нет данных"] : peopleLabels,
+        datasets: [{
+          label: 'Выполнено',
+          data: empty ? [0] : peopleCounts,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { autoSkip: false } },
+          y: { beginAtZero: true, precision: 0 }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                return `Выполнено: ${ctx.parsed.y}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+})();
+</script>
 {% endblock %}
