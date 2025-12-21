@@ -1,12 +1,88 @@
 {% extends "base.html" %}
-{% block title %}{% if create %}Новый склад{% else %}Редактирование склада{% endif %}{% endblock %}
+{% load form_extras %}
+{% block title %}
+  {% if create %}Новый склад{% else %}Редактирование склада{% endif %}
+{% endblock %}
+
 {% block content %}
-<h1 class="mb-3">{% if create %}Новый склад{% else %}Редактирование{% endif %}</h1>
-<form method="post">{% csrf_token %}
-  {{ form.as_p }}
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-secondary" href="{% url 'inventory:warehouse_list' %}">Отмена</a>
-    <button class="btn btn-primary">Сохранить</button>
+<div class="row justify-content-center">
+  <div class="col-xl-8 col-lg-9">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="mb-3">
+          <h1 class="h4 mb-1">
+            {% if create %}Новый склад{% else %}Редактирование склада{% endif %}
+          </h1>
+          <div class="text-muted small">
+            Основные параметры склада
+          </div>
+        </div>
+
+        <!-- ===== Legend ===== -->
+        <div class="text-muted small mb-4">
+          <span class="text-danger fw-semibold">*</span> — обязательные поля
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+
+            {% for field in form %}
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  {{ field.label }}
+                  {% if field.field.required %}
+                    <span class="text-danger">*</span>
+                  {% endif %}
+                </label>
+
+                {% if field.field.widget.input_type == "select" %}
+                  {{ field|add_class:"form-select js-select2" }}
+                {% else %}
+                  {{ field|add_class:"form-control" }}
+                {% endif %}
+
+                {% if field.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ field.errors }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+          </div>
+
+          <!-- ===== Actions ===== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'inventory:warehouse_list' %}">
+              Отмена
+            </a>
+            <button class="btn btn-primary px-4" type="submit">
+              Сохранить
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
   </div>
-</form>
+</div>
+
+<!-- ===== Select2 init ===== -->
+<script>
+  $(document).ready(function () {
+    $('.js-select2').select2({
+      width: '100%',
+      placeholder: 'Выберите',
+      allowClear: true
+    });
+  });
+</script>
 {% endblock %}

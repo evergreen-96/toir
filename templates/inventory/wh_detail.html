@@ -1,10 +1,87 @@
 {% extends "base.html" %}
 {% block title %}{{ object.name }}{% endblock %}
-{% block content %}
-<div class="d-flex justify-content-between">
-  <h1>{{ object.name }}</h1>
-  <a class="btn btn-primary" href="{% url 'inventory:warehouse_edit' object.pk %}">Редактировать</a>
-  <a class="btn btn-danger" href="{% url 'inventory:warehouse_delete' object.pk %}">Удалить</a>
 
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-10 col-lg-11">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">{{ object.name }}</h1>
+            <div class="text-muted small">
+              Склад · карточка объекта
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'inventory:warehouse_list' %}">
+              Назад
+            </a>
+            <a class="btn btn-primary"
+               href="{% url 'inventory:warehouse_edit' object.pk %}">
+              Редактировать
+            </a>
+            <a class="btn btn-outline-danger"
+               href="{% url 'inventory:warehouse_delete' object.pk %}">
+              Удалить
+            </a>
+          </div>
+        </div>
+
+        <!-- ===== Main info ===== -->
+        <h6 class="fw-semibold mb-3">Основная информация</h6>
+
+        <div class="row g-4">
+
+          <!-- Название -->
+          <div class="col-md-4">
+            <div class="text-muted small mb-1">Название</div>
+            <div class="fw-semibold">{{ object.name }}</div>
+          </div>
+
+          <!-- Локация -->
+          <div class="col-md-4">
+            <div class="text-muted small mb-1">Локация</div>
+            {% if object.location %}
+              <div class="fw-semibold">{{ object.location }}</div>
+            {% else %}
+              <div class="text-muted fst-italic">Не указана</div>
+            {% endif %}
+          </div>
+
+          <!-- Ответственный -->
+          <div class="col-md-4">
+            <div class="text-muted small mb-1">Ответственный</div>
+            {% if object.responsible %}
+              <div class="fw-semibold">{{ object.responsible }}</div>
+            {% else %}
+              <div class="text-muted fst-italic">Не назначен</div>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <!-- ===== Divider ===== -->
+        <hr class="my-4">
+
+        <!-- ===== Placeholder for future blocks ===== -->
+        <div class="text-muted small">
+          В дальнейшем здесь могут отображаться:
+          <ul class="mb-0 ps-3">
+            <li>материалы и остатки на складе</li>
+            <li>связанные задачи ТОиР</li>
+            <li>история изменений</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

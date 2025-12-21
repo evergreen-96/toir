@@ -1,17 +1,98 @@
 {% extends "base.html" %}
 {% block title %}Склады{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-  <h1 class="mb-0">Склады</h1>
-  <a class="btn btn-success" href="{% url 'inventory:warehouse_new' %}">+ Склад</a>
+<div class="row justify-content-center">
+  <div class="col-xl-10 col-lg-11">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">Склады</h1>
+            <div class="text-muted small">
+              Справочник складских помещений
+            </div>
+          </div>
+          <a class="btn btn-primary" href="{% url 'inventory:warehouse_new' %}">
+            + Склад
+          </a>
+        </div>
+
+        <!-- ===== Search ===== -->
+        <form method="get" class="mb-3">
+          <div class="input-group">
+            <input
+              type="text"
+              name="q"
+              value="{{ request.GET.q }}"
+              class="form-control"
+              placeholder="Поиск по названию склада"
+            >
+            <button class="btn btn-outline-secondary" type="submit">
+              Найти
+            </button>
+          </div>
+        </form>
+
+        <!-- ===== List ===== -->
+        {% if object_list %}
+          <div class="list-group list-group-flush">
+
+            {% for x in object_list %}
+              <a
+                href="{% url 'inventory:warehouse_detail' x.pk %}"
+                class="list-group-item list-group-item-action"
+              >
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold">{{ x.name }}</div>
+                    <div class="text-muted small mt-1">
+                      {% if x.location %}
+                        {{ x.location }}
+                      {% else %}
+                        <span class="fst-italic">Локация не указана</span>
+                      {% endif %}
+                      ·
+                      {% if x.responsible %}
+                        {{ x.responsible }}
+                      {% else %}
+                        <span class="fst-italic">Ответственный не назначен</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="text-muted small">
+                    Подробнее →
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+
+          </div>
+        {% else %}
+          <div class="text-muted text-center py-5">
+            <div class="fw-semibold mb-1">
+              {% if request.GET.q %}
+                Ничего не найдено
+              {% else %}
+                Склады не созданы
+              {% endif %}
+            </div>
+            <div class="small">
+              {% if request.GET.q %}
+                Попробуйте изменить поисковый запрос
+              {% else %}
+                Добавьте первый склад, чтобы начать учёт материалов
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
 </div>
-<ul class="list-group">
-  {% for x in object_list %}
-    <li class="list-group-item d-flex justify-content-between">
-      <a href="{% url 'inventory:warehouse_detail' x.pk %}">{{ x.name }}</a>
-    </li>
-  {% empty %}
-    <li class="list-group-item">Пусто</li>
-  {% endfor %}
-</ul>
 {% endblock %}

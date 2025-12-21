@@ -12,6 +12,13 @@ class WarehouseListView(ListView):
     template_name = "inventory/wh_list.html"
     ordering = ["name"]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        q = self.request.GET.get("q")
+        if q:
+            qs = qs.filter(name__icontains=q)
+        return qs
+
 class WarehouseDetailView(DetailView):
     model = Warehouse
     template_name = "inventory/wh_detail.html"
