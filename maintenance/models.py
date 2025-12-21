@@ -340,6 +340,11 @@ class PlannedOrder(models.Model):
     # ---------- валидация/сохранение ----------
     def clean(self):
         from django.core.exceptions import ValidationError
+
+        # interval_value может быть None на этапе form.is_valid()
+        if self.interval_value is None:
+            return
+
         if self.interval_value < 1:
             raise ValidationError({"interval_value": "Интервал должен быть ≥ 1"})
 

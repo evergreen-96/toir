@@ -1,317 +1,234 @@
 {% extends "base.html" %}
+{% load form_extras %}
+
 {% block title %}
-    {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+  {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
 {% endblock %}
 
 {% block content %}
-<h1 class="mb-4">
-    {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
-</h1>
+<div class="row justify-content-center">
+  <div class="col-xl-8 col-lg-9">
 
-<style>
-/* =========================
-   FORM CONTROLS (общие)
-========================= */
-.form-control,
-.form-select {
-    background-color: var(--bs-tertiary-bg);
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
-}
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
 
-.form-control::placeholder {
-    color: var(--bs-secondary-color);
-}
-
-/* focus */
-.form-control:focus,
-.form-select:focus {
-    background-color: var(--bs-tertiary-bg);
-    color: var(--bs-body-color);
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
-}
-
-/* =========================
-   MATERIAL ROW
-========================= */
-.material-row {
-    position: relative;
-    background-color: var(--bs-tertiary-bg);
-}
-
-.material-row.is-deleted {
-    opacity: .55;
-    background-color: var(--bs-secondary-bg);
-}
-
-/* дизейблим поля аккуратно */
-.material-row.is-deleted input,
-.material-row.is-deleted textarea,
-.material-row.is-deleted select {
-    pointer-events: none;
-}
-
-/* =========================
-   SELECT2 — SINGLE
-========================= */
-.select2-container--default .select2-selection--single {
-    background-color: var(--bs-tertiary-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: .375rem;
-    height: calc(2.5rem + 2px);
-    display: flex;
-    align-items: center;
-}
-
-.select2-container--default .select2-selection__rendered {
-    color: var(--bs-body-color) !important;
-    padding-left: .75rem;
-    padding-right: 1.5rem;
-}
-
-
-.select2-container--default.select2-container--focus
-.select2-selection--single {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
-}
-
-/* clear (×) */
-.select2-container--default .select2-selection__clear {
-    color: var(--bs-secondary-color);
-}
-.select2-container--default .select2-selection__clear:hover {
-    color: var(--bs-body-color);
-}
-
-/* =========================
-   SELECT2 — DROPDOWN
-========================= */
-.select2-container--default .select2-dropdown {
-    background-color: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
-    color: var(--bs-body-color);
-}
-
-.select2-container--default .select2-search--dropdown .select2-search__field {
-    background-color: var(--bs-tertiary-bg);
-    color: var(--bs-body-color);
-    border: 1px solid var(--bs-border-color);
-    border-radius: .375rem;
-}
-
-.select2-container--default
-.select2-search--dropdown .select2-search__field::placeholder {
-    color: var(--bs-secondary-color);
-}
-
-/* options */
-.select2-container--default .select2-results__option {
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
-}
-
-.select2-container--default
-.select2-results__option--highlighted.select2-results__option--selectable {
-    background-color: var(--bs-primary-bg-subtle);
-    color: var(--bs-primary-text);
-}
-
-.select2-container--default
-.select2-results__option--selected {
-    background-color: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
-}
-</style>
-
-<form method="post" enctype="multipart/form-data" class="row g-3">
-    {% csrf_token %}
-
-    <!-- Левая колонка -->
-    <div class="col-12 col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                {{ form.non_field_errors }}
-
-                <div class="row g-3">
-                    {% for field in form %}
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                {{ field.label }}{% if field.field.required %} *{% endif %}
-                            </label>
-                            {{ field }}
-                            {% for e in field.errors %}
-                                <div class="text-danger small">{{ e }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
+        <!-- ===== Header ===== -->
+        <div class="mb-4">
+          <h1 class="h4 mb-1">
+            {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+          </h1>
+          <div class="text-muted small">
+            Работы · параметры и используемые материалы
+          </div>
         </div>
-    </div>
 
-    <!-- Правая колонка -->
-    <div class="col-12 col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="fw-semibold mb-3">Материалы</h5>
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
 
-                {{ formset.management_form }}
+          {{ form.non_field_errors }}
 
-                <div id="materials-container">
-                    {% for f in formset %}
-                        <div class="border rounded p-3 mb-3 material-row bg-dark-subtle">
+          <!-- ===== Section: Basic ===== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              1. Основная информация
+            </div>
 
-                            {% for hf in f.hidden_fields %}
-                                {{ hf }}
-                            {% endfor %}
+            {% for field in form %}
+              <div class="mb-3">
+                <label class="form-label fw-semibold {% if field.field.required %}required{% endif %}">
+                  {{ field.label }}
+                </label>
 
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn"
-                                title="Удалить материал">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                {{ field|add_class:"form-control" }}
 
-                            <div class="d-none">
-                                {{ f.DELETE }}
-                            </div>
+                {% for e in field.errors %}
+                  <div class="text-danger small mt-1">{{ e }}</div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
 
-                            <div class="mb-2">
-                                <label class="form-label">{{ f.material.label }}</label>
-                                {{ f.material }}
-                            </div>
+          <!-- ===== Section: Materials ===== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              2. Материалы
+            </div>
 
-                            <div class="row g-2">
-                                <div class="col">
-                                    <label class="form-label">{{ f.qty_planned.label }}</label>
-                                    {{ f.qty_planned }}
-                                </div>
-                                <div class="col">
-                                    <label class="form-label">{{ f.qty_used.label }}</label>
-                                    {{ f.qty_used }}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+            {{ formset.management_form }}
+
+            <div id="materials-container">
+
+              {% for f in formset %}
+                <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+
+                  {% for hf in f.hidden_fields %}
+                    {{ hf }}
+                  {% endfor %}
+
+                  <button type="button"
+                          class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn"
+                          title="Удалить материал">
+                    <i class="bi bi-trash"></i>
+                  </button>
+
+                  <div class="d-none">
+                    {{ f.DELETE }}
+                  </div>
+
+                  <div class="mb-2">
+                    <label class="form-label fw-semibold">
+                      {{ f.material.label }}
+                    </label>
+                    {{ f.material|add_class:"form-select js-select2" }}
+                  </div>
+
+                  <div class="row g-2">
+                    <div class="col">
+                      <label class="form-label fw-semibold">
+                        {{ f.qty_planned.label }}
+                      </label>
+                      {{ f.qty_planned|add_class:"form-control" }}
+                    </div>
+                    <div class="col">
+                      <label class="form-label fw-semibold">
+                        {{ f.qty_used.label }}
+                      </label>
+                      {{ f.qty_used|add_class:"form-control" }}
+                    </div>
+                  </div>
+
                 </div>
+              {% endfor %}
+            </div>
 
-                <button type="button" class="btn btn-outline-primary mt-3" id="add-material">
-                    <i class="bi bi-plus-lg"></i> Добавить материал
+            <button type="button"
+                    class="btn btn-outline-primary"
+                    id="add-material">
+              <i class="bi bi-plus-lg"></i>
+              Добавить материал
+            </button>
+
+            <!-- ===== Empty form template ===== -->
+            <template id="material-template">
+              <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+
+                {% for hf in formset.empty_form.hidden_fields %}
+                  {{ hf }}
+                {% endfor %}
+
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                  <i class="bi bi-trash"></i>
                 </button>
 
-                <!-- template -->
-                <template id="material-template">
-                    <div class="border rounded p-3 mb-3 material-row bg-dark">
+                <div class="d-none">
+                  {{ formset.empty_form.DELETE }}
+                </div>
 
-                        {% for hf in formset.empty_form.hidden_fields %}
-                            {{ hf }}
-                        {% endfor %}
+                <div class="mb-2">
+                  <label class="form-label fw-semibold">
+                    {{ formset.empty_form.material.label }}
+                  </label>
+                  {{ formset.empty_form.material|add_class:"form-select js-select2" }}
+                </div>
 
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                <div class="row g-2">
+                  <div class="col">
+                    <label class="form-label fw-semibold">
+                      {{ formset.empty_form.qty_planned.label }}
+                    </label>
+                    {{ formset.empty_form.qty_planned|add_class:"form-control" }}
+                  </div>
+                  <div class="col">
+                    <label class="form-label fw-semibold">
+                      {{ formset.empty_form.qty_used.label }}
+                    </label>
+                    {{ formset.empty_form.qty_used|add_class:"form-control" }}
+                  </div>
+                </div>
 
-                        <div class="d-none">
-                            {{ formset.empty_form.DELETE }}
-                        </div>
+              </div>
+            </template>
+          </div>
 
-                        <div class="mb-2">
-                            <label class="form-label">{{ formset.empty_form.material.label }}</label>
-                            {{ formset.empty_form.material }}
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col">
-                                <label class="form-label">{{ formset.empty_form.qty_planned.label }}</label>
-                                {{ formset.empty_form.qty_planned }}
-                            </div>
-                            <div class="col">
-                                <label class="form-label">{{ formset.empty_form.qty_used.label }}</label>
-                                {{ formset.empty_form.qty_used }}
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <div class="d-flex gap-2 mt-4">
-            <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
-                Отмена
+          <!-- ===== Actions ===== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'maintenance:wo_list' %}">
+              Отмена
             </a>
             <button class="btn btn-primary px-4" type="submit">
-                Сохранить
+              Сохранить
             </button>
-        </div>
+          </div>
+
+        </form>
+
+      </div>
     </div>
-</form>
+
+  </div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    if (typeof $ === "undefined" || typeof $.fn.select2 === "undefined") {
-        console.error("Select2 не загружен");
-        return;
-    }
+  function initSelect2(context) {
+    $(context).find(".js-select2").select2({
+      width: "100%",
+      allowClear: true,
+      placeholder: "Выберите материал"
+    });
+  }
 
-    function initMaterialSelect(context) {
-        $(context).find('select[name$="material"]').select2({
-            placeholder: "Выберите материал",
-            allowClear: true,
-            width: "100%"
-        });
-    }
+  initSelect2(document);
 
-    // init existing
-    initMaterialSelect(document);
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".material-remove-btn");
+    if (!btn) return;
 
-    // delete / restore
-    document.addEventListener("click", function (e) {
-        const btn = e.target.closest(".material-remove-btn");
-        if (!btn) return;
+    const row = btn.closest(".material-row");
+    const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
 
-        const row = btn.closest(".material-row");
-        const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+    del.checked = !del.checked;
+    row.classList.toggle("is-deleted", del.checked);
 
-        del.checked = !del.checked;
-        row.classList.toggle("is-deleted", del.checked);
+    $(row).find("select")
+      .prop("disabled", del.checked)
+      .trigger("change.select2");
+  });
 
-        $(row).find("select").prop("disabled", del.checked).trigger("change.select2");
+  const container = document.getElementById("materials-container");
+  const addBtn = document.getElementById("add-material");
+  const template = document.getElementById("material-template");
+
+  const prefix = "{{ formset.prefix }}";
+  const totalForms = document.querySelector(
+    `input[name="${prefix}-TOTAL_FORMS"]`
+  );
+
+  let index = parseInt(totalForms.value, 10);
+
+  addBtn.addEventListener("click", function () {
+    const clone = document.importNode(template.content, true);
+
+    clone.querySelectorAll("[name],[id],[for]").forEach(el => {
+      ["name", "id", "for"].forEach(attr => {
+        if (el.hasAttribute(attr)) {
+          el.setAttribute(
+            attr,
+            el.getAttribute(attr).replace(/__prefix__/g, index)
+          );
+        }
+      });
     });
 
-    // add new row
-    const container = document.getElementById("materials-container");
-    const addBtn = document.getElementById("add-material");
-    const template = document.getElementById("material-template");
+    container.appendChild(clone);
+    initSelect2(container.lastElementChild);
 
-    const prefix = "{{ formset.prefix }}";
-    const totalForms = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
-    let index = parseInt(totalForms.value, 10);
-
-    addBtn.addEventListener("click", function () {
-        const clone = document.importNode(template.content, true);
-
-        clone.querySelectorAll("[name],[id],[for]").forEach(el => {
-            ["name","id","for"].forEach(attr => {
-                if (el.hasAttribute(attr)) {
-                    el.setAttribute(
-                        attr,
-                        el.getAttribute(attr).replace(/__prefix__/g, index)
-                    );
-                }
-            });
-        });
-
-        container.appendChild(clone);
-        initMaterialSelect(container.lastElementChild);
-
-        totalForms.value = index + 1;
-        index += 1;
-    });
+    totalForms.value = index + 1;
+    index += 1;
+  });
 
 });
 </script>

@@ -32,6 +32,7 @@ class HRListView(ListView):
         qs = (
             super()
             .get_queryset()
+            .select_related("manager")
             .annotate(subordinates_count=Count("subordinates"))
         )
 
@@ -50,17 +51,26 @@ class HRListView(ListView):
 
         return qs
 
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["managers"] = HumanResource.objects.order_by("name")
 
-        ctx["current_manager"] = self.request.GET.get("manager", "")
-        ctx["current_job_title"] = self.request.GET.get("job_title", "")
-        ctx["only_managers"] = self.request.GET.get("only_managers")
+        manager_id = self.request.GET.get("manager")
+        job_title = self.request.GET.get("job_title")
+        only_managers = self.request.GET.get("only_managers")
+
+        ctx["only_managers"] = only_managers
+        ctx["current_job_title"] = job_title
+
+        ctx["current_manager_obj"] = None
+        if manager_id:
+            ctx["current_manager_obj"] = (
+                HumanResource.objects
+                .filter(pk=manager_id)
+                .only("id", "name", "job_title")
+                .first()
+            )
 
         return ctx
-
 
 
 class HRDetailView(DetailView):

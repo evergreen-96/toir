@@ -1,129 +1,187 @@
 {% extends "base.html" %}
-{% block title %}{% if create %}Новый план{% else %}Редактирование плана{% endif %}{% endblock %}
+{% load form_extras %}
+{% block title %}
+  {% if create %}Новый план{% else %}Редактирование плана{% endif %}
+{% endblock %}
+
 {% block content %}
 
-<!-- Подключаем Select2 и jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<div class="row justify-content-center">
+  <div class="col-xl-8 col-lg-9">
 
-<h1 class="mb-3">{% if create %}Новый план обслуживания{% else %}Редактирование плана{% endif %}</h1>
-
-<form method="post" class="row g-3">
-  {% csrf_token %}
-
-  <!-- hidden interval fields -->
-  {{ form.interval_value }}
-  {{ form.interval_unit }}
-
-  <div class="col-lg-8">
-    <div class="card shadow-sm">
+    <div class="card shadow-sm border-0">
       <div class="card-body">
 
-        <!-- ===== Основные данные ===== -->
-        <h5 class="mb-4 fw-semibold">Основные данные</h5>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.name.label }} *</label>
-            {{ form.name }}
-            {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.category.label }} *</label>
-            {{ form.category }}
-            {% for e in form.category.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        <!-- ===== Header ===== -->
+        <div class="mb-4">
+          <h1 class="h4 mb-1">
+            {% if create %}Новый план обслуживания{% else %}Редактирование плана{% endif %}
+          </h1>
+          <div class="text-muted small">
+            Плановые работы · периодичность и параметры
           </div>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-semibold">{{ form.description.label }}</label>
-          {{ form.description }}
-          {% for e in form.description.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-        </div>
+        <form method="post" novalidate>
+          {% csrf_token %}
 
-        <!-- ===== Локация и оборудование ===== -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.location.label }} *</label>
-            {{ form.location }}
-            {% for e in form.location.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.workstation.label }} *</label>
-            {{ form.workstation }}
-            {% for e in form.workstation.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-          </div>
-        </div>
+          <!-- hidden interval fields (ВАЖНО: не трогаем) -->
+          {{ form.interval_value }}
+          {{ form.interval_unit }}
 
-        <!-- ===== Ответственный / приоритет ===== -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.responsible_default.label }}</label>
-            {{ form.responsible_default }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.priority.label }} *</label>
-            {{ form.priority }}
-          </div>
-        </div>
+          <!-- =====================================================
+               1. Основная информация
+               ===================================================== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              1. Основная информация
+            </div>
 
-        <!-- ===== Трудоёмкость ===== -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">{{ form.labor_plan_hours.label }} *</label>
-            {{ form.labor_plan_hours }}
-          </div>
-        </div>
-
-        <!-- ===== Периодичность ===== -->
-        <div class="mt-4 border-top pt-3">
-          <h5 class="fw-semibold mb-3">Периодичность работ</h5>
-
-          <div class="d-flex flex-wrap gap-4 mb-3">
-            {% for choice in form.frequency_choice.field.choices %}
-              <div class="form-check form-check-inline">
-                <input class="form-check-input"
-                       type="radio"
-                       name="frequency_choice"
-                       value="{{ choice.0 }}"
-                       {% if form.frequency_choice.value == choice.0 %}checked{% endif %}>
-                <label class="form-check-label">{{ choice.1 }}</label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold required">
+                  {{ form.name.label }}
+                </label>
+                {{ form.name|add_class:"form-control" }}
+                {% for e in form.name.errors %}
+                  <div class="text-danger small mt-1">{{ e }}</div>
+                {% endfor %}
               </div>
-            {% endfor %}
-          </div>
 
-          <!-- DAILY -->
-          <div id="daily-fields" class="schedule-fields" style="display:none;">
-            <label class="fw-medium">Дата первого обслуживания</label>
-            {{ form.first_run_date }}
-            {% for e in form.first_run_date.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-          </div>
-
-          <!-- WEEKLY -->
-          <div id="weekly-fields" class="schedule-fields" style="display:none;">
-            <label class="fw-medium">Проводить работы каждый</label>
-            {{ form.weekday }}
-            {% for e in form.weekday.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-          </div>
-
-          <!-- MONTHLY -->
-          <div id="monthly-fields" class="schedule-fields" style="display:none;">
-            <label class="fw-medium">Проводить работы каждое (число месяца)</label>
-            {{ form.day_of_month }}
-            {% for e in form.day_of_month.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-          </div>
-
-          <!-- CUSTOM -->
-          <div id="custom-fields" class="schedule-fields" style="display:none;">
-            <div class="row g-2 align-items-center">
-              <div class="col-auto fw-medium">Проводить работы каждые</div>
-              <div class="col-auto">
-                <input type="number" min="1" class="form-control" id="custom_interval_value">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold required">
+                  {{ form.category.label }}
+                </label>
+                {{ form.category|add_class:"form-select" }}
+                {% for e in form.category.errors %}
+                  <div class="text-danger small mt-1">{{ e }}</div>
+                {% endfor %}
               </div>
-              <div class="col-auto">
-                <select class="form-select" id="custom_interval_unit">
-                  <option value="">-- выберите --</option>
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label fw-semibold">
+                {{ form.description.label }}
+              </label>
+              {{ form.description|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <!-- =====================================================
+               2. Локация и оборудование
+               ===================================================== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              2. Локация и оборудование
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold required">
+                  {{ form.location.label }}
+                </label>
+                {{ form.location|add_class:"form-select js-select2" }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold required">
+                  {{ form.workstation.label }}
+                </label>
+                {{ form.workstation|add_class:"form-select js-select2" }}
+              </div>
+            </div>
+          </div>
+
+          <!-- =====================================================
+               3. Ответственный и параметры
+               ===================================================== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              3. Ответственный и параметры
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  {{ form.responsible_default.label }}
+                </label>
+                {{ form.responsible_default|add_class:"form-select" }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold required">
+                  {{ form.priority.label }}
+                </label>
+                {{ form.priority|add_class:"form-select" }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold required">
+                  {{ form.labor_plan_hours.label }}
+                </label>
+                {{ form.labor_plan_hours|add_class:"form-control" }}
+              </div>
+            </div>
+          </div>
+
+          <!-- =====================================================
+               4. Периодичность (JS ЗАВИСИТ ОТ ID — НЕ ЛОМАЕМ)
+               ===================================================== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              4. Периодичность работ
+            </div>
+
+            <div class="d-flex flex-wrap gap-4 mb-3">
+              {% for choice in form.frequency_choice.field.choices %}
+                <div class="form-check">
+                  <input class="form-check-input"
+                         type="radio"
+                         name="frequency_choice"
+                         value="{{ choice.0 }}"
+                         {% if form.frequency_choice.value == choice.0 %}checked{% endif %}>
+                  <label class="form-check-label">
+                    {{ choice.1 }}
+                  </label>
+                </div>
+              {% endfor %}
+            </div>
+
+            <!-- DAILY -->
+            <div id="daily-fields" class="schedule-fields" style="display:none;">
+              <label class="form-label fw-semibold">
+                {{ form.first_run_date.label }}
+              </label>
+              {{ form.first_run_date|add_class:"form-control" }}
+            </div>
+
+            <!-- WEEKLY -->
+            <div id="weekly-fields" class="schedule-fields" style="display:none;">
+              <label class="form-label fw-semibold">
+                {{ form.weekday.label }}
+              </label>
+              {{ form.weekday|add_class:"form-select" }}
+            </div>
+
+            <!-- MONTHLY -->
+            <div id="monthly-fields" class="schedule-fields" style="display:none;">
+              <label class="form-label fw-semibold">
+                {{ form.day_of_month.label }}
+              </label>
+              {{ form.day_of_month|add_class:"form-control" }}
+            </div>
+
+            <!-- CUSTOM -->
+            <div id="custom-fields" class="schedule-fields" style="display:none;">
+              <div class="input-group">
+                <span class="input-group-text">Каждые</span>
+                <input type="number"
+                       min="1"
+                       class="form-control"
+                       id="custom_interval_value">
+                <select class="form-select"
+                        id="custom_interval_unit">
+                  <option value="">— выберите —</option>
                   {% for unit in form.interval_unit.field.choices %}
                     <option value="{{ unit.0 }}">{{ unit.1 }}</option>
                   {% endfor %}
@@ -132,60 +190,72 @@
             </div>
           </div>
 
-        </div>
-
-        <!-- ===== Активно ===== -->
-        <div class="mt-4">
-          <div class="form-check">
-            {{ form.is_active }}
-            <label class="form-check-label fw-semibold">Активно</label>
+          <!-- =====================================================
+               5. Активность
+               ===================================================== -->
+          <div class="form-section">
+            <div class="form-check">
+              {{ form.is_active }}
+              <label class="form-check-label fw-semibold">
+                Активно
+              </label>
+            </div>
           </div>
-        </div>
 
-        <!-- ===== PREVIEW ===== -->
-        <div class="mt-4 border-top pt-3">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div>
-              <h5 class="fw-semibold mb-0">Превью на 6 месяцев</h5>
-              <div class="text-muted small mt-1">
-                Подсветка: <span class="badge rounded-pill text-bg-danger align-middle">Первый запуск</span>
-                <span class="badge rounded-pill text-bg-warning text-dark align-middle">Последующие</span>
-                <span class="badge rounded-pill text-bg-light text-dark border align-middle">Сегодня</span>
-              </div>
+          <!-- =====================================================
+               6. Превью календаря (JS НЕ ТРОНУТ)
+               ===================================================== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              6. Превью на 6 месяцев
             </div>
 
-            <div class="text-end">
-              <div class="small">
-                <span class="text-muted">First run:</span>
-                <span id="previewFirstRun" class="fw-semibold">—</span>
+            <div class="d-flex justify-content-between mb-2">
+              <div class="small text-muted">
+                First run: <strong id="previewFirstRun">—</strong>
               </div>
               <div class="small text-muted">
-                Запусков: <span id="previewCount">0</span>
+                Запусков: <strong id="previewCount">0</strong>
               </div>
             </div>
-          </div>
 
-          <div id="previewError" class="text-danger small mt-2" style="display:none;"></div>
+            <div id="previewError"
+                 class="text-danger small mb-2"
+                 style="display:none;"></div>
 
-          <div id="previewLoading" class="mt-3" style="display:none;">
-            <div class="placeholder-glow">
-              <span class="placeholder col-12"></span>
+            <div id="previewLoading" style="display:none;">
+              <div class="placeholder-glow">
+                <span class="placeholder col-12"></span>
+              </div>
+              <div class="text-muted small mt-2">
+                Считаю расписание…
+              </div>
             </div>
-            <div class="text-muted small mt-2">Считаю расписание…</div>
+
+            <div id="previewCalendar"
+                 class="calendar-grid mt-3"></div>
           </div>
 
-          <div id="previewCalendar" class="mt-3 calendar-grid"></div>
-        </div>
+          <!-- =====================================================
+               Actions
+               ===================================================== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'maintenance:plan_list' %}">
+              Отмена
+            </a>
+            <button class="btn btn-primary px-4" type="submit">
+              Сохранить
+            </button>
+          </div>
+
+        </form>
 
       </div>
     </div>
 
-    <div class="mt-3 d-flex gap-2">
-      <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">Отмена</a>
-      <button class="btn btn-primary px-4" type="submit">Сохранить</button>
-    </div>
   </div>
-</form>
+</div>
 
 <style>
   /* =========================

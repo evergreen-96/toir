@@ -251,30 +251,41 @@ def workorder_create(request):
 
     if request.method == "POST":
         form = WorkOrderForm(request.POST, request.FILES)
-        if form.is_valid():
+        formset = WorkOrderMaterialFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
             wo = form.save(commit=False)
 
+            # автоподстановка location
             if wo.workstation and not wo.location:
                 wo.location = wo.workstation.location
 
             wo.save()
 
-            formset = WorkOrderMaterialFormSet(request.POST, instance=wo)
-            if formset.is_valid():
-                formset.save()
-                messages.success(request, "Задача создана.")
-                return redirect("maintenance:wo_detail", pk=wo.pk)
-            else:
-                messages.error(request, "Пожалуйста, исправьте ошибки в материалах.")
-                print("Formset errors:", formset.errors)
+            # привязываем formset к workorder
+            formset.instance = wo
+            formset.save()
+
+            messages.success(request, "Задача создана.")
+            return redirect("maintenance:wo_detail", pk=wo.pk)
         else:
             messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
             print("Form errors:", form.errors)
+            print("Formset errors:", formset.errors)
+
     else:
         form = WorkOrderForm()
-        formset = WorkOrderMaterialFormSet(instance=WorkOrder())
+        formset = WorkOrderMaterialFormSet()
 
-    return render(request, "maintenance/wo_form.html", {"form": form, "formset": formset, "create": True})
+    return render(
+        request,
+        "maintenance/wo_form.html",
+        {
+            "form": form,
+            "formset": formset,
+            "create": True,
+        },
+    )
 
 
 class WorkOrderDeleteView(DeleteView):
@@ -346,9 +357,21 @@ class PlannedOrderForm(forms.ModelForm):
             ("custom", "По заданному интервалу"),
         ],
         widget=forms.RadioSelect,
-        required=True,
+        required=False,  # важно
+    )
+    # Переопределяем model-fields, чтобы MinValueValidator модели
+    # НЕ падал на None при пустом POST
+    interval_value = forms.IntegerField(
+        required=False,
+        min_value=1,
+        widget=forms.HiddenInput(),
     )
 
+    interval_unit = forms.ChoiceField(
+        required=False,
+        choices=IntervalUnit.choices,
+        widget=forms.HiddenInput(),
+    )
     WEEKDAYS = [
         (0, "Понедельник"),
         (1, "Вторник"),
@@ -408,6 +431,9 @@ class PlannedOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # === делаем ответственного обязательным ===
+        self.fields["responsible_default"].required = True
+
         self.fields["interval_value"].required = False
         self.fields["interval_unit"].required = False
 
@@ -423,8 +449,25 @@ class PlannedOrderForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+
+        # =====================================================
+        # Защита от полностью пустой формы
+        # =====================================================
+        if not self.has_changed():
+            raise forms.ValidationError(
+                "Форма пуста. Заполните основные параметры плана."
+            )
+
         freq = cleaned.get("frequency_choice")
 
+        if not freq:
+            raise forms.ValidationError(
+                "Выберите периодичность работ."
+            )
+
+        # =====================================================
+        # Валидация по режимам
+        # =====================================================
         if freq == "daily":
             if not cleaned.get("first_run_date"):
                 self.add_error("first_run_date", "Укажите дату первого обслуживания")
@@ -432,11 +475,10 @@ class PlannedOrderForm(forms.ModelForm):
             cleaned["interval_value"] = 1
 
         elif freq == "weekly":
-            if not cleaned.get("weekday"):
+            if cleaned.get("weekday") in (None, ""):
                 self.add_error("weekday", "Выберите день недели")
             cleaned["interval_unit"] = IntervalUnit.WEEK
             cleaned["interval_value"] = 1
-            # weekday приходит как строка — норм, модельное поле int, Django приведёт
 
         elif freq == "monthly":
             if not cleaned.get("day_of_month"):
@@ -445,9 +487,15 @@ class PlannedOrderForm(forms.ModelForm):
             cleaned["interval_value"] = 1
 
         elif freq == "custom":
-            if not cleaned.get("interval_value"):
+            iv = cleaned.get("interval_value")
+            iu = cleaned.get("interval_unit")
+
+            if iv in (None, ""):
                 self.add_error("interval_value", "Обязательное поле")
-            if not cleaned.get("interval_unit"):
+            elif iv < 1:
+                self.add_error("interval_value", "Значение должно быть ≥ 1")
+
+            if not iu:
                 self.add_error("interval_unit", "Обязательное поле")
 
         return cleaned
@@ -492,30 +540,68 @@ class PlannedOrderListView(ListView):
 def planned_order_create(request):
     if request.method == "POST":
         form = PlannedOrderForm(request.POST)
-        if not form.is_valid():
-            print("FORM ERRORS:", form.errors)
-        else:
+
+        # ===== защита от пустой отправки =====
+        if not form.has_changed():
+            messages.warning(
+                request,
+                "Форма пуста. Заполните основные параметры плана."
+            )
+        elif form.is_valid():
             form.save()
             messages.success(request, "План создан.")
             return redirect("maintenance:plan_list")
+
     else:
         form = PlannedOrderForm()
 
-    return render(request, "maintenance/plan_form.html", {"form": form, "create": True})
+    return render(
+        request,
+        "maintenance/plan_form.html",
+        {
+            "form": form,
+            "create": True,
+        },
+    )
 
 
 def planned_order_update(request, pk: int):
     obj = get_object_or_404(PlannedOrder, pk=pk)
+
     if request.method == "POST":
         form = PlannedOrderForm(request.POST, instance=obj)
-        if form.is_valid():
+
+        # =====================================================
+        # Защита: нет изменений / пустая отправка
+        # =====================================================
+        if not form.has_changed():
+            messages.warning(
+                request,
+                "Нет изменений для сохранения."
+            )
+
+        elif form.is_valid():
             form.save()
             messages.success(request, "План сохранён.")
             return redirect("maintenance:plan_list")
+
+        else:
+            # полезно при отладке, можно убрать позже
+            print("FORM ERRORS:", form.errors)
+
     else:
         form = PlannedOrderForm(instance=obj)
 
-    return render(request, "maintenance/plan_form.html", {"form": form, "create": False, "obj": obj})
+    return render(
+        request,
+        "maintenance/plan_form.html",
+        {
+            "form": form,
+            "create": False,
+            "obj": obj,
+        },
+    )
+
 
 
 class PlannedOrderDeleteView(DeleteView):
