@@ -130,3 +130,26 @@ def hr_manager_autocomplete(request):
             for x in qs
         ]
     })
+
+def hr_job_title_autocomplete(request):
+    q = request.GET.get("q", "")
+
+    qs = (
+        HumanResource.objects
+        .exclude(job_title="")
+        .values_list("job_title", flat=True)
+        .distinct()
+        .order_by("job_title")
+    )
+
+    if q:
+        qs = qs.filter(job_title__icontains=q)
+
+    qs = qs[:20]
+
+    return JsonResponse({
+        "results": [
+            {"id": title, "text": title}
+            for title in qs
+        ]
+    })
