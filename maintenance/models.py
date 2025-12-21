@@ -92,6 +92,7 @@ class WorkOrder(models.Model):
         choices=Priority.choices,
         default=Priority.MED
     )
+    created_at = models.DateTimeField("Создано", default=timezone.now)
 
     class Meta:
         verbose_name = "Рабочая задача"
@@ -270,7 +271,12 @@ class PlannedOrder(models.Model):
 
         # --- fallback: текущая логика ---
         base = self._to_dt(self.start_from or timezone.now())
-        return self._add_interval(base, self.interval_value, self.interval_unit)
+        dt = self._add_interval(base, self.interval_value, self.interval_unit)
+
+        if self.interval_unit == IntervalUnit.MINUTE:
+            dt = dt.replace(second=0, microsecond=0)
+
+        return dt
 
     # ---------- preview (2 months forward) ----------
     def preview_runs(self, months_ahead: int = 2):

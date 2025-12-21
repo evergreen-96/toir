@@ -13,6 +13,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DEBUG=True
+      - TZ=UTC
 
   worker:
     build: .
@@ -24,6 +25,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DEBUG=True
+      - TZ=UTC
 
   beat:
     build: .
@@ -35,6 +37,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DEBUG=True
+      - TZ=UTC
 
   db:
     image: postgres:15
@@ -47,6 +50,8 @@ services:
 
   redis:
     image: redis:7
+    environment:
+    - TZ=UTC
 
   nginx:
     image: nginx:1.27-alpine
@@ -58,6 +63,8 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - static:/app/staticfiles
       - media:/app/media
+    environment:
+      - TZ=UTC
 
 volumes:
   pgdata:

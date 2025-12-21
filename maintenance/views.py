@@ -68,13 +68,28 @@ from assets.models import (
 def home(request):
     today = timezone.localdate()
 
-    # ---------- KPI по заявкам ----------
     stats = {
-        "total": WorkOrder.objects.count(),
-        "new": WorkOrder.objects.filter(status=WorkOrderStatus.NEW).count(),
-        "in_progress": WorkOrder.objects.filter(status=WorkOrderStatus.IN_PROGRESS).count(),
-        "done": WorkOrder.objects.filter(status=WorkOrderStatus.DONE).count(),
-        "failed": WorkOrder.objects.filter(status=WorkOrderStatus.FAILED).count(),
+        "total": WorkOrder.objects.exclude(
+            status__in=[WorkOrderStatus.DONE, WorkOrderStatus.CANCELED]
+        ).count(),
+
+        "new": WorkOrder.objects.filter(
+            status=WorkOrderStatus.NEW,
+            created_at__date=today
+        ).count(),
+
+        "in_progress": WorkOrder.objects.filter(
+            status=WorkOrderStatus.IN_PROGRESS
+        ).count(),
+
+        "done": WorkOrder.objects.filter(
+            status=WorkOrderStatus.DONE,
+            date_finish=today
+        ).count(),
+
+        "failed": WorkOrder.objects.filter(
+            status=WorkOrderStatus.FAILED
+        ).count(),
     }
 
     # ---------- Доступность оборудования ----------
@@ -110,7 +125,7 @@ def home(request):
     # ---------- Выполнено по людям ----------
     done_by_people = (
         done_today
-        .values("responsible__name")
+        .values("responsible_id", "responsible__name")
         .annotate(cnt=Count("id"))
         .order_by("-cnt")
     )
@@ -118,7 +133,7 @@ def home(request):
     # ---------- Заявки по категориям ----------
     orders_by_category = (
         WorkOrder.objects
-        .filter(date_start=today)
+        .filter(created_at__date=today)
         .values("category")
         .annotate(cnt=Count("id"))
     )
@@ -126,7 +141,11 @@ def home(request):
     # ---------- Ближайшие планы ----------
     upcoming = (
         PlannedOrder.objects
-        .filter(is_active=True, next_run__isnull=False)
+        .filter(
+            is_active=True,
+            next_run__isnull=False,
+            next_run__gte=timezone.now()
+        )
         .order_by("next_run")[:10]
     )
 
@@ -289,7 +308,10 @@ def wo_set_status(request, pk, status):
         return redirect("maintenance:wo_detail", pk=pk)
 
     wo.status = status
-    wo.save(update_fields=["status"])
+    if status == WorkOrderStatus.DONE and not wo.date_finish:
+        wo.date_finish = timezone.localdate()
+    wo.save(update_fields=["status", "date_finish"])
+
     human = {
         "new": "Новый",
         "in_progress": "В работе",

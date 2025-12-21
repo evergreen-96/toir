@@ -4,6 +4,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from maintenance.models import PlannedOrder, IntervalUnit, WorkOrder, Priority, WorkCategory
 from hr.models import HumanResource
+import logging
 
 CATCH_UP = True
 
@@ -19,6 +20,7 @@ def round_to_minute(dt): return dt.replace(second=0, microsecond=0)
 class Command(BaseCommand):
     help = "Создаёт рабочие задачи из планов по расписанию"
 
+    logger = logging.getLogger(__name__)
     def handle(self, *args, **opts):
         now = timezone.now()
         now_rounded = round_to_minute(now)
@@ -40,6 +42,9 @@ class Command(BaseCommand):
 
             while p.next_run <= now:
                 resp = p.responsible_default or HumanResource.objects.first()
+                if not resp:
+                    logger.warning("Plan %s skipped: no responsible", p.id)
+                    continue
                 if resp:
                     WorkOrder.objects.create(
                         name=p.name,

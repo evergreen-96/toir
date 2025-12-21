@@ -119,8 +119,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-rus'
 USE_I18N = True
-TIME_ZONE = 'Asia/Yekaterinburg'
 USE_TZ = True
+TIME_ZONE = "UTC"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

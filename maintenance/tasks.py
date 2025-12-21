@@ -3,10 +3,11 @@ from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-
-from .models import PlannedOrder, WorkOrder, WorkCategory, Priority, IntervalUnit
+from datetime import datetime
+from .models import PlannedOrder, WorkOrder, WorkCategory, Priority, IntervalUnit, RUN_TIME
 from hr.models import HumanResource
-
+import logging
+logger = logging.getLogger(__name__)
 
 def _add_interval(dt, val, unit):
     if unit == IntervalUnit.MINUTE:
@@ -29,16 +30,33 @@ def generate_planned_orders_task():
     - двигаем next_run ровно на один интервал ОТ предыдущего next_run
       (не «догоняем» пропуски, не привязываемся к now)
     """
+    logger.error("=== PLANNED TASK HIT | version=diag-2025-12-20 ===")
     now = timezone.now()
     qs = (PlannedOrder.objects
           .select_related("workstation", "location", "responsible_default")
           .filter(is_active=True, next_run__isnull=False, next_run__lte=now))
-
+    logger.error(
+        "PLANNED TASK QS | count=%s | now=%s",
+        qs.count(),
+        timezone.now()
+    )
     created = 0
     for p in qs:
+        logger.error(
+            "PLAN id=%s next_run=%s interval=%s value=%s resp=%s",
+            p.id,
+            p.next_run,
+            p.interval_unit,
+            p.interval_value,
+            p.responsible_default_id,
+        )
         with transaction.atomic():
-            resp = p.responsible_default or HumanResource.objects.first()
+            resp = p.responsible_default
+            if not resp:
+                logger.error("PLAN %s SKIPPED: no responsible_default", p.id)
+                continue  # или логировать и пропускать
             if resp:
+                today = timezone.localdate()
                 WorkOrder.objects.create(
                     name=p.name,
                     responsible=resp,
@@ -48,13 +66,26 @@ def generate_planned_orders_task():
                     category=p.category or WorkCategory.PM,
                     labor_plan_hours=p.labor_plan_hours,
                     priority=p.priority or Priority.MED,
+                    created_at=timezone.now(),
+                    date_start=today,  # ← логично для плановой
                 )
                 created += 1
 
             # сдвиг на ОДИН интервал от предыдущего времени срабатывания
             next_due = _add_interval(p.next_run, p.interval_value, p.interval_unit)
+
+            # нормализация времени запуска
             if p.interval_unit == IntervalUnit.MINUTE:
                 next_due = next_due.replace(second=0, microsecond=0)
+            else:
+                # day / week / month — всегда в RUN_TIME
+                next_due = timezone.make_aware(
+                    datetime.combine(
+                        timezone.localdate(next_due),
+                        RUN_TIME
+                    ),
+                    timezone.get_default_timezone()
+                )
             p.next_run = next_due
             p.save(update_fields=["next_run"])
 
