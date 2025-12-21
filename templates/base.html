@@ -18,6 +18,10 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <style>
 
+        /* =====================================================
+           Base layout helpers
+           ===================================================== */
+
         .input-group {
             display: flex;
             align-items: center;
@@ -25,22 +29,15 @@
             z-index: 10;
         }
 
-        .input-group select {
-            width: auto;
-            min-width: 80px;
-            padding: 0.375rem 0.75rem;
-        }
-
-        /* Для Bootstrap dropdown — если используется */
         .dropdown-menu {
             z-index: 1050 !important;
         }
 
-        /* Стили радиокнопок */
+        /* Радио / чекбоксы */
         .form-check-input[type="radio"] {
-            width: 1.5em;
-            height: 1.5em;
-            margin-right: 0.5em;
+            width: 1.25em;
+            height: 1.25em;
+            margin-right: .5em;
         }
 
         .form-check-label {
@@ -48,28 +45,9 @@
             cursor: pointer;
         }
 
-        .form-check-inline {
-            margin-right: 1.5rem;
-        }
-
-        #custom-interval-fields {
-            background: #2c3f53;
-            border: 1px solid #dee2e6;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-5px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        /* =====================================================
+           Layout
+           ===================================================== */
 
         :root {
             --sidebar-width: 270px;
@@ -97,7 +75,6 @@
 
         .sidebar .brand {
             font-weight: 700;
-            letter-spacing: .2px;
             display: inline-flex;
             align-items: center;
             gap: .5rem;
@@ -119,7 +96,7 @@
         }
 
         .sidebar .section-title {
-            font-size: .76rem;
+            font-size: .75rem;
             letter-spacing: .08em;
             text-transform: uppercase;
             color: var(--bs-secondary-color);
@@ -130,17 +107,8 @@
             min-width: 0;
         }
 
-        .badge-pill {
-            border-radius: 999px;
-            padding: .35rem .65rem;
-            font-weight: 500;
-        }
-
-        .card + .card {
-            margin-top: 1rem;
-        }
-
-        .table td, .table th {
+        .table td,
+        .table th {
             vertical-align: middle;
         }
 
@@ -150,45 +118,168 @@
             }
         }
 
-        /* =========================
-           SELECT2 — DROPDOWN
-        ========================= */
-        .select2-container--default .select2-dropdown {
+        /* =====================================================
+           Select2 — make it IDENTICAL to Bootstrap form fields
+           ===================================================== */
+
+        .select2-container {
+            width: 100% !important;
+            font-size: 1rem;
+        }
+
+        /* поле */
+        .select2-container--default .select2-selection--single {
+            height: calc(2.375rem + 2px);
+            min-height: calc(2.375rem + 2px);
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--bs-border-color);
             background-color: var(--bs-body-bg);
-            border: 1px solid var(--bs-border-color);
-            color: var(--bs-body-color);
+            display: flex;
+            align-items: center;
+            transition: border-color .15s ease, box-shadow .15s ease;
         }
 
-        .select2-container--default .select2-search--dropdown .select2-search__field {
-            background-color: var(--bs-tertiary-bg);
+        /* текст */
+        .select2-container--default .select2-selection__rendered {
+            padding-left: 0;
+            padding-right: 1.5rem;
             color: var(--bs-body-color);
-            border: 1px solid var(--bs-border-color);
-            border-radius: .375rem;
+            line-height: 1.5;
         }
 
-        .select2-container--default
-        .select2-search--dropdown .select2-search__field::placeholder {
+        /* placeholder */
+        .select2-container--default .select2-selection__placeholder {
             color: var(--bs-secondary-color);
         }
 
-        /* options */
-        .select2-container--default .select2-results__option {
+        /* стрелка */
+        /* =====================================================
+   Select2 — arrow PERFECT center (FINAL, SINGLE SOURCE)
+   ===================================================== */
+
+        .select2-container--default .select2-selection--single {
+            position: relative;
+            padding-right: 2.25rem;
+        }
+
+        .select2-container--default .select2-selection__arrow {
+            position: absolute;
+            inset: 0 .75rem 0 auto; /* 👈 магия */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .select2-container--default .select2-selection__arrow b {
+            border-width: 5px 5px 0 5px;
+            border-style: solid;
+            border-color: currentColor transparent transparent transparent;
+            margin: 0;
+        }
+
+        /* hover */
+        .select2-container--default .select2-selection--single:hover {
+            border-color: var(--bs-border-color-translucent);
+        }
+
+        /* focus */
+        .select2-container--default.select2-container--focus
+        .select2-selection--single {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);
+            outline: 0;
+        }
+
+        /* disabled */
+        .select2-container--default.select2-container--disabled
+        .select2-selection--single {
+            background-color: var(--bs-secondary-bg);
+            color: var(--bs-secondary-color);
+            cursor: not-allowed;
+        }
+
+        /* =====================================================
+           Dropdown
+           ===================================================== */
+
+        .select2-dropdown {
+            border-radius: .375rem;
+            border: 1px solid var(--bs-border-color);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .15);
+        }
+
+        /* поиск */
+        .select2-container--default .select2-search--dropdown
+        .select2-search__field {
+            padding: .375rem .5rem;
+            border-radius: .375rem;
+            border: 1px solid var(--bs-border-color);
             background-color: var(--bs-body-bg);
             color: var(--bs-body-color);
         }
 
+        /* опции */
+        .select2-container--default .select2-results__option {
+            padding: .375rem .75rem;
+            line-height: 1.5;
+        }
+
+        /* hover option */
         .select2-container--default
-        .select2-results__option--highlighted.select2-results__option--selectable {
+        .select2-results__option--highlighted {
             background-color: var(--bs-primary-bg-subtle);
             color: var(--bs-primary-text);
         }
 
+        /* selected */
         .select2-container--default
         .select2-results__option--selected {
             background-color: var(--bs-secondary-bg);
-            color: var(--bs-body-color);
+            font-weight: 500;
         }
+
+        /* =====================================================
+           Validation
+           ===================================================== */
+
+        .select2.is-invalid .select2-selection {
+            border-color: var(--bs-danger) !important;
+        }
+
+        .select2.is-invalid.select2-container--focus
+        .select2-selection {
+            box-shadow: 0 0 0 .25rem rgba(220, 53, 69, .25);
+        }
+
+        /* =====================================================
+           DARK THEME (auto via data-bs-theme)
+           ===================================================== */
+
+        [data-bs-theme="dark"] .select2-dropdown {
+            background-color: var(--bs-body-bg);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+        }
+
+        [data-bs-theme="dark"] .select2-search__field {
+            background-color: var(--bs-tertiary-bg);
+        }
+
+        /* =====================================================
+           Select2 — fix arrow alignment (FINAL)
+           ===================================================== */
+
+        /* поле */
+        .select2-container--default .select2-selection--single {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding-right: 2.25rem; /* место под стрелку */
+        }
+
     </style>
+
 
     {% block extra_head %}{% endblock %}
 </head>

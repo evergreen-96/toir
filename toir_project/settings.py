@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "inventory",
     "maintenance",
     'django_select2',
+
 ]
 
 MIDDLEWARE = [

@@ -2,45 +2,146 @@
 {% block title %}Оборудование{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="mb-0">Оборудование</h1>
+
+<!-- ===== Header ===== -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h1 class="mb-0">Оборудование</h1>
+    <div class="text-muted small">Список и состояние оборудования</div>
+  </div>
+
   <div class="d-flex align-items-center gap-2">
     <div class="btn-group" role="group" aria-label="View switch">
-      <button id="view-cards" type="button" class="btn btn-outline-secondary active">Карточки</button>
-      <button id="view-table" type="button" class="btn btn-outline-secondary">Таблица</button>
+      <button id="view-cards" type="button" class="btn btn-outline-secondary active">
+        Карточки
+      </button>
+      <button id="view-table" type="button" class="btn btn-outline-secondary">
+        Таблица
+      </button>
     </div>
-    <a class="btn btn-success" href="{% url 'assets:asset_new' %}">+ Оборудование</a>
+    <a class="btn btn-success" href="{% url 'assets:asset_new' %}">
+      + Оборудование
+    </a>
   </div>
 </div>
 
-{# ВИД 1: Карточки #}
+<!-- ================= ФИЛЬТРЫ ================= -->
+<form method="get" class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+
+      <!-- Поиск -->
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Поиск</label>
+        <input
+          type="text"
+          name="q"
+          class="form-control"
+          placeholder="Название, тип, модель"
+          value="{{ request.GET.q }}"
+        >
+      </div>
+
+      <!-- Категория -->
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Категория</label>
+        <select name="category" class="form-select">
+          <option value="">Все</option>
+          {% for value,label in categories %}
+            <option value="{{ value }}"
+              {% if request.GET.category == value|stringformat:"s" %}selected{% endif %}
+            >
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Статус -->
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Статус</label>
+        <select name="status" class="form-select">
+          <option value="">Все</option>
+          {% for value,label in statuses %}
+            <option value="{{ value }}"
+              {% if request.GET.status == value|stringformat:"s" %}selected{% endif %}
+            >
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Локация -->
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Локация</label>
+        <select name="location" class="form-select">
+          <option value="">Все</option>
+          {% for loc in locations %}
+            <option value="{{ loc.pk }}"
+              {% if request.GET.location == loc.pk|stringformat:"s" %}selected{% endif %}
+            >
+              {{ loc.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="col-md-2 d-flex gap-2">
+        <button class="btn btn-primary w-100" type="submit">
+          Применить
+        </button>
+        <a class="btn btn-outline-secondary w-100" href="{% url 'assets:asset_list' %}">
+          Сброс
+        </a>
+      </div>
+
+    </div>
+  </div>
+</form>
+
+{# ================= ВИД 1: Карточки ================= #}
 <div id="cards-view" class="row g-3">
   {% for x in object_list %}
     <div class="col-md-6 col-lg-4">
-      <a class="card text-decoration-none h-100" href="{% url 'assets:asset_detail' x.pk %}">
+      <a
+        class="card h-100 text-decoration-none shadow-sm border-0"
+        href="{% url 'assets:asset_detail' x.pk %}"
+      >
         {% if x.photo %}
-          <img src="{{ x.photo.url }}" class="card-img-top" style="object-fit:cover;height:180px" alt="{{ x.name }}">
+          <img
+            src="{{ x.photo.url }}"
+            class="card-img-top"
+            style="object-fit:cover;height:180px"
+            alt="{{ x.name }}"
+          >
         {% endif %}
         <div class="card-body">
           <h5 class="card-title mb-1">{{ x.name }}</h5>
           <p class="card-text mb-1">
             <small class="text-muted">
-              {{ x.get_category_display }}{% if x.type_name %} • {{ x.type_name }}{% endif %}
+              {{ x.get_category_display }}
+              {% if x.type_name %} • {{ x.type_name }}{% endif %}
             </small>
           </p>
-          <small class="text-muted">{{ x.get_status_display }} • {{ x.location }}</small>
+          <small class="text-muted">
+            {{ x.get_status_display }} • {{ x.location }}
+          </small>
         </div>
       </a>
     </div>
   {% empty %}
-    <div class="col-12"><div class="alert alert-secondary mb-0">Пусто</div></div>
+    <div class="col-12">
+      <div class="alert alert-secondary mb-0">Ничего не найдено</div>
+    </div>
   {% endfor %}
 </div>
 
-{# ВИД 2: Таблица #}
+{# ================= ВИД 2: Таблица ================= #}
 <div id="table-view" class="table-responsive d-none">
-  <table class="table align-middle">
-    <thead>
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
       <tr>
         <th style="width:56px;">Фото</th>
         <th>Название</th>
@@ -48,59 +149,83 @@
         <th>Тип</th>
         <th>Статус</th>
         <th>Локация</th>
-        <th style="width:1%;white-space:nowrap;"></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
       {% for x in object_list %}
-        <tr>
+        <tr
+          class="table-row-link"
+          data-href="{% url 'assets:asset_detail' x.pk %}"
+        >
           <td>
             {% if x.photo %}
-              <img src="{{ x.photo.url }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;">
+              <img
+                src="{{ x.photo.url }}"
+                style="width:48px;height:48px;object-fit:cover;border-radius:6px;"
+                alt=""
+              >
             {% else %}
               <span class="text-muted">—</span>
             {% endif %}
           </td>
-          <td class="fw-medium"><a href="{% url 'assets:asset_detail' x.pk %}">{{ x.name }}</a></td>
+          <td class="fw-semibold">{{ x.name }}</td>
           <td>{{ x.get_category_display }}</td>
-          <td>{% if x.type_name %}{{ x.type_name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>{{ x.type_name|default:"—" }}</td>
           <td>{{ x.get_status_display }}</td>
           <td>{{ x.location }}</td>
-          <td><a class="btn btn-sm btn-outline-primary" href="{% url 'assets:asset_detail' x.pk %}">Открыть</a></td>
+          <td>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'assets:asset_detail' x.pk %}">
+              Открыть
+            </a>
+          </td>
         </tr>
       {% empty %}
-        <tr><td colspan="7"><div class="alert alert-secondary mb-0">Пусто</div></td></tr>
+        <tr>
+          <td colspan="7">
+            <div class="alert alert-secondary mb-0">Ничего не найдено</div>
+          </td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-{# --- Рабочий JS прямо в шаблоне --- #}
+<!-- ================= JS: View switch + row click ================= -->
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const KEY = 'assets_view_mode'; // 'cards' | 'table'
-    const cardsBtn = document.getElementById('view-cards');
-    const tableBtn = document.getElementById('view-table');
-    const cardsView = document.getElementById('cards-view');
-    const tableView = document.getElementById('table-view');
+document.addEventListener('DOMContentLoaded', function () {
+  const KEY = 'assets_view_mode';
+  const cardsBtn = document.getElementById('view-cards');
+  const tableBtn = document.getElementById('view-table');
+  const cardsView = document.getElementById('cards-view');
+  const tableView = document.getElementById('table-view');
 
-    if (!cardsBtn || !tableBtn || !cardsView || !tableView) return; // на всякий
+  function apply(mode) {
+    const isTable = mode === 'table';
+    cardsView.classList.toggle('d-none', isTable);
+    tableView.classList.toggle('d-none', !isTable);
+    tableBtn.classList.toggle('active', isTable);
+    cardsBtn.classList.toggle('active', !isTable);
+    try { localStorage.setItem(KEY, mode); } catch(e) {}
+  }
 
-    function apply(mode) {
-      const isTable = mode === 'table';
-      cardsView.classList.toggle('d-none', isTable);
-      tableView.classList.toggle('d-none', !isTable);
-      tableBtn.classList.toggle('active', isTable);
-      cardsBtn.classList.toggle('active', !isTable);
-      cardsBtn.setAttribute('aria-pressed', String(!isTable));
-      tableBtn.setAttribute('aria-pressed', String(isTable));
-      try { localStorage.setItem(KEY, mode); } catch(e) {}
-    }
+  cardsBtn?.addEventListener('click', () => apply('cards'));
+  tableBtn?.addEventListener('click', () => apply('table'));
+  apply(localStorage.getItem(KEY) || 'cards');
 
-    cardsBtn.addEventListener('click', () => apply('cards'));
-    tableBtn.addEventListener('click', () => apply('table'));
-
-    apply(localStorage.getItem(KEY) || 'cards');
+  // Клик по строке таблицы
+  document.querySelectorAll('.table-row-link').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('a,button')) return;
+      window.location = row.dataset.href;
+    });
   });
+});
 </script>
+
+<style>
+.table-row-link { cursor: pointer; }
+.table-row-link:hover { background-color: rgba(0,0,0,.03); }
+</style>
+
 {% endblock %}
