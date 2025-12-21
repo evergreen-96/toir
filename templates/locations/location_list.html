@@ -1,18 +1,130 @@
 {% extends "base.html" %}
 {% block title %}Локации{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-  <h1 class="mb-0">Локации</h1>
-  <a class="btn btn-success" href="{% url 'locations:location_new' %}">+ Локация</a>
+<div class="row justify-content-center">
+    <div class="col-xl-10 col-lg-11">
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <!-- ===== Header (как у складов) ===== -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1 class="h4 mb-1">Локации</h1>
+                        <div class="text-muted small">
+                            Иерархия помещений и зон
+                        </div>
+                    </div>
+                    <a class="btn btn-primary"
+                       href="{% url 'locations:location_new' %}">
+                        + Локация
+                    </a>
+                </div>
+
+                <!-- ===== Tree toolbar ===== -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-muted small">
+                        Всего локаций: <span id="locations-count">—</span>
+                    </div>
+                    <button id="toggle-all"
+                            class="btn btn-outline-secondary btn-sm">
+                        Раскрыть все
+                    </button>
+                </div>
+
+                <!-- ===== Tree ===== -->
+                <div id="locations-tree"
+                     class="border rounded p-2">
+                </div>
+
+            </div>
+        </div>
+
+    </div>
 </div>
-<ul class="list-group">
-  {% for x in object_list %}
-    <li class="list-group-item d-flex justify-content-between">
-      <a href="{% url 'locations:location_detail' x.pk %}">{{ x.name }}</a>
-      <small class="text-muted">уровень {{ x.level }}{% if x.parent %}, родитель: {{ x.parent.name }}{% endif %}</small>
-    </li>
-  {% empty %}
-    <li class="list-group-item">Пусто</li>
-  {% endfor %}
-</ul>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const tree = $('#locations-tree');
+        const toggleAllBtn = $('#toggle-all');
+
+        // если кнопки нет (например, шаблон не тот) — не падаем
+        let allExpanded = false;
+
+        tree.jstree({
+            core: {
+                data: {
+                    url: "{% url 'locations:location_tree_json' %}",
+                    dataType: "json"
+                },
+                multiple: false,
+                themes: {icons: false, dots: false}
+            },
+            plugins: ["wholerow"]
+        });
+
+        // Клик по строке → раскрыть/свернуть
+        tree.on("select_node.jstree", function (e, data) {
+            tree.jstree(true).toggle_node(data.node);
+        });
+
+        // Раскрыть/скрыть все
+        toggleAllBtn.on("click", function () {
+            const inst = tree.jstree(true);
+
+            if (allExpanded) {
+                inst.close_all();
+                toggleAllBtn.text("Раскрыть все");
+            } else {
+                inst.open_all();
+                toggleAllBtn.text("Скрыть все");
+            }
+
+            allExpanded = !allExpanded;
+        });
+        tree.on("loaded.jstree", function () {
+            const inst = tree.jstree(true);
+            $('#locations-count').text(inst.get_json('#', {flat: true}).length);
+        });
+
+        // Рендерим "Перейти" + meta после загрузки/раскрытия
+        function decorateAnchors() {
+            const inst = tree.jstree(true);
+
+            tree.find(".jstree-anchor").each(function () {
+                const node = inst.get_node(this);
+                if (!node) return;
+
+                // уже дорисовано
+                if ($(this).find(".tree-actions").length) return;
+
+                const meta = (node.data && node.data.meta) ? node.data.meta : "";
+                const url = (node.data && node.data.detail_url) ? node.data.detail_url : "#";
+
+                $(this).append(`
+        <span class="tree-extra">
+          ${meta ? `<span class="tree-meta">${meta}</span>` : ""}
+          <span class="tree-actions">
+            <a href="${url}" class="tree-link">Перейти</a>
+          </span>
+        </span>
+      `);
+            });
+        }
+
+        tree.on("loaded.jstree open_node.jstree", decorateAnchors);
+
+        // Клик по "Перейти" НЕ должен раскрывать дерево
+        tree.on("click", ".tree-link", function (e) {
+            e.stopPropagation();
+            // переход выполнит браузер по href
+        });
+    });
+</script>
 {% endblock %}

@@ -1,25 +1,110 @@
 {% extends "base.html" %}
 {% block title %}Номенклатура{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-  <h1 class="mb-0">Номенклатура</h1>
-  <a class="btn btn-success" href="{% url 'inventory:material_new' %}">+ Материал</a>
+<div class="row justify-content-center">
+  <div class="col-xl-11 col-lg-12">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">Номенклатура</h1>
+            <div class="text-muted small">
+              Материалы и комплектующие
+            </div>
+          </div>
+          <a class="btn btn-primary" href="{% url 'inventory:material_new' %}">
+            + Материал
+          </a>
+        </div>
+
+        <!-- ===== Search ===== -->
+        <form method="get" class="mb-3">
+          <div class="input-group">
+            <input
+              type="text"
+              name="q"
+              value="{{ request.GET.q }}"
+              class="form-control"
+              placeholder="Поиск по наименованию, группе, артикулу"
+            >
+            <button class="btn btn-outline-secondary" type="submit">
+              Найти
+            </button>
+          </div>
+        </form>
+
+        <!-- ===== Table ===== -->
+        {% if object_list %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Наименование</th>
+                  <th>Группа</th>
+                  <th class="text-center">Ед.</th>
+                  <th class="text-end">Свободно</th>
+                  <th class="text-end">Резерв</th>
+                  <th>Склад</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for x in object_list %}
+                  <tr
+                    onclick="window.location.href='{% url 'inventory:material_detail' x.pk %}'"
+                    style="cursor:pointer"
+                  >
+                    <td class="fw-semibold">
+                      {{ x.name }}
+                      {% if x.article %}
+                        <div class="text-muted small">{{ x.article }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {{ x.group|default:"—" }}
+                    </td>
+                    <td class="text-center">
+                      {{ x.get_uom_display }}
+                    </td>
+                    <td class="text-end">
+                      {{ x.qty_available }}
+                    </td>
+                    <td class="text-end">
+                      {{ x.qty_reserved }}
+                    </td>
+                    <td>
+                      {{ x.warehouse|default:"—" }}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-muted text-center py-5">
+            <div class="fw-semibold mb-1">
+              {% if request.GET.q %}
+                Ничего не найдено
+              {% else %}
+                Номенклатура пуста
+              {% endif %}
+            </div>
+            <div class="small">
+              {% if request.GET.q %}
+                Попробуйте изменить поисковый запрос
+              {% else %}
+                Добавьте первый материал для начала учёта
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
 </div>
-<table class="table table-hover align-middle">
-  <thead class="table-light"><tr><th>Наименование</th><th>Группа</th><th>Ед.</th><th>Свободно</th><th>Резерв</th><th>Склад</th></tr></thead>
-  <tbody>
-  {% for x in object_list %}
-    <tr onclick="window.location.href='{% url 'inventory:material_detail' x.pk %}'" style="cursor:pointer">
-      <td class="fw-semibold">{{ x.name }}</td>
-      <td>{{ x.group }}</td>
-      <td>{{ x.uom }}</td>
-      <td>{{ x.qty_available }}</td>
-      <td>{{ x.qty_reserved }}</td>
-      <td>{{ x.warehouse|default:"—" }}</td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="6"><div class="alert alert-secondary mb-0">Пусто</div></td></tr>
-  {% endfor %}
-  </tbody>
-</table>
 {% endblock %}

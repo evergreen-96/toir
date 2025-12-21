@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.views.generic import ListView, DetailView, DeleteView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -71,6 +72,18 @@ class MaterialListView(ListView):
     template_name = "inventory/material_list.html"
     paginate_by = 20
     ordering = ["name"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        q = self.request.GET.get("q")
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) |
+                Q(group__icontains=q) |
+                Q(article__icontains=q) |
+                Q(part_number__icontains=q)
+            )
+        return qs
 
 class MaterialDetailView(DetailView):
     model = Material

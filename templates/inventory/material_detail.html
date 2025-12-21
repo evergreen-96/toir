@@ -1,22 +1,120 @@
 {% extends "base.html" %}
 {% block title %}{{ object.name }}{% endblock %}
-{% block content %}
-<div class="d-flex justify-content-between">
-  <h1>{{ object.name }}</h1>
-  <a class="btn btn-primary" href="{% url 'inventory:material_edit' object.pk %}">Редактировать</a>
-  <a class="btn btn-danger" href="{% url 'inventory:material_delete' object.pk %}">Удалить</a>
 
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-10 col-lg-11">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">{{ object.name }}</h1>
+            <div class="text-muted small">
+              Номенклатура · карточка материала
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'inventory:material_list' %}">
+              Назад
+            </a>
+            <a class="btn btn-primary"
+               href="{% url 'inventory:material_edit' object.pk %}">
+              Редактировать
+            </a>
+            <a class="btn btn-outline-danger"
+               href="{% url 'inventory:material_delete' object.pk %}">
+              Удалить
+            </a>
+          </div>
+        </div>
+
+        <!-- ===== Main info ===== -->
+        <div class="mb-4">
+          <div class="section-header">Основная информация</div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Группа</div>
+              <div class="detail-value">
+                {{ object.group|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Артикул</div>
+              <div class="detail-value">
+                {{ object.article|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Номер детали</div>
+              <div class="detail-value">
+                {{ object.part_number|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Stock ===== -->
+        <div class="mb-4">
+          <div class="section-header">Остатки</div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Ед. измерения</div>
+              <div class="detail-value">{{ object.get_uom_display }}</div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Свободно</div>
+              <div class="detail-value">{{ object.qty_available }}</div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">В резерве</div>
+              <div class="detail-value">{{ object.qty_reserved }}</div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Склад</div>
+              <div class="detail-value">
+                {{ object.warehouse|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Suitable for ===== -->
+        <div>
+          <div class="section-header">Подходит для оборудования</div>
+
+          {% with items=object.suitable_for.all %}
+            {% if items %}
+              <div class="d-flex flex-wrap gap-2">
+                {% for ws in items %}
+                  <a href="{% url 'assets:asset_detail' ws.pk %}"
+                     class="chip">
+                    {{ ws.name }}
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-muted fst-italic">
+                Оборудование не указано
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
 </div>
-<p><b>Группа:</b> {{ object.group|default:"—" }}</p>
-<p><b>Артикул:</b> {{ object.article|default:"—" }}</p>
-<p><b>Номер детали:</b> {{ object.part_number|default:"—" }}</p>
-<p><b>Ед. изм.:</b> {{ object.uom }}</p>
-<p><b>Свободно / Резерв:</b> {{ object.qty_available }} / {{ object.qty_reserved }}</p>
-<p><b>Склад:</b> {{ object.warehouse|default:"—" }}</p>
-<p><b>Подходит для оборудования:</b>
-  {% with items=object.suitable_for.all %}
-    {% if items %}
-      {% for ws in items %}{{ ws.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-    {% else %}—{% endif %}
-  {% endwith %}
 {% endblock %}

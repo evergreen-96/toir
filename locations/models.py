@@ -22,3 +22,12 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def level(self):
+        lvl = 0
+        parent = self.parent
+        while parent:
+            lvl += 1
+            parent = parent.parent
+        return lvl

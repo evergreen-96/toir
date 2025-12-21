@@ -1,12 +1,135 @@
 {% extends "base.html" %}
-{% block title %}{% if create %}Новая локация{% else %}Редактирование локации{% endif %}{% endblock %}
+{% load form_extras %}
+
+{% block title %}
+{% if create %}Новая локация{% else %}Редактирование локации{% endif %}
+{% endblock %}
+
 {% block content %}
-<h1 class="mb-3">{% if create %}Новая локация{% else %}Редактирование{% endif %}</h1>
-<form method="post">{% csrf_token %}
-  {{ form.as_p }}
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-secondary" href="{% url 'locations:location_list' %}">Отмена</a>
-    <button class="btn btn-primary">Сохранить</button>
-  </div>
-</form>
+<div class="row justify-content-center">
+    <div class="col-xl-10 col-lg-11">
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <!-- ===== Header ===== -->
+                <div class="mb-4">
+                    <h1 class="h4 mb-1">
+                        {% if create %}Новая локация{% else %}Редактирование локации{% endif %}
+                    </h1>
+                    <div class="text-muted small">
+                        Основные параметры и иерархия
+                    </div>
+                </div>
+
+                <!-- ===== Legend ===== -->
+                <div class="text-muted small mb-4">
+                    <span class="text-danger fw-semibold">*</span> — обязательные поля
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <!-- ===== Main info ===== -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            Основная информация
+                        </div>
+
+                        <div class="row g-3">
+
+                            <!-- Название -->
+                            <div class="col-md-6">
+                                <label class="form-label required">
+                                    {{ form.name.label }}
+                                </label>
+                                {{ form.name|add_class:"form-control" }}
+                                {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if not create %}
+                            <div class="col-md-3">
+                                <label class="form-label">Уровень</label>
+                                <div class="form-control-plaintext">
+                                    {{ obj.level }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+
+                        </div>
+                    </div>
+
+                    <!-- ===== Hierarchy ===== -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            Иерархия
+                        </div>
+
+                        <div class="row g-3">
+
+                            <!-- Родитель -->
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.parent.label }}
+                                </label>
+                                {{ form.parent|add_class:"form-select" }}
+                                {% if form.parent.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.parent.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ===== Responsibility ===== -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            Ответственный
+                        </div>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.responsible.label }}
+                                </label>
+                                {{ form.responsible|add_class:"form-select" }}
+                                {% if form.responsible.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.responsible.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ===== Actions ===== -->
+                    <div class="d-flex justify-content-between mt-4">
+
+                        <a href="{% if create %}{% url 'locations:location_list' %}{% else %}{% url 'locations:location_detail' obj.pk %}{% endif %}"
+                           class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            {% if create %}Создать{% else %}Сохранить изменения{% endif %}
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,66 @@
+{% with lvl=level|default:0 %}
+<div class="tree-row-wrap">
+
+  {% if node.children %}
+    <details class="tree-row-group">
+      <summary class="tree-row" style="--level: {{ lvl }};" tabindex="0">
+
+        <div class="tree-name">
+          <span class="tree-caret" aria-hidden="true"></span>
+
+          <div class="tree-text">
+            <div class="tree-title-line">
+              <div class="tree-title">{{ node.name }}</div>
+              <span class="tree-badge">{{ node.children|length }}</span>
+            </div>
+
+            {% if node.responsible %}
+              <div class="tree-meta">{{ node.responsible }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tree-actions">
+          <a href="{% url 'locations:location_detail' node.id %}"
+             class="btn btn-sm btn-outline-primary">
+            Перейти
+          </a>
+        </div>
+
+      </summary>
+
+      <div class="tree-children">
+        {% with lvl_next=lvl|add:"1" %}
+          {% for child in node.children %}
+            {% include "locations/location_tree_node.html" with node=child level=lvl_next %}
+          {% endfor %}
+        {% endwith %}
+      </div>
+    </details>
+
+  {% else %}
+    <div class="tree-row" style="--level: {{ lvl }};">
+
+      <div class="tree-name">
+        <span class="tree-leaf" aria-hidden="true"></span>
+
+        <div class="tree-text">
+          <div class="tree-title">{{ node.name }}</div>
+          {% if node.responsible %}
+            <div class="tree-meta">{{ node.responsible }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="tree-actions">
+        <a href="{% url 'locations:location_detail' node.id %}"
+           class="btn btn-sm btn-outline-primary">
+          Перейти
+        </a>
+      </div>
+
+    </div>
+  {% endif %}
+
+</div>
+{% endwith %}

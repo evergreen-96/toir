@@ -7,8 +7,13 @@ from locations.models import Location
 
 class Warehouse(models.Model):
     name = models.CharField("Название склада", max_length=255)
-    responsible = models.ForeignKey(HumanResource, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name='Ответственный')
-    location = models.ForeignKey(Location, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name='Локация')
+    responsible = models.ForeignKey(HumanResource, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Ответственный')
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.SET_NULL,  # ⬅️ ИЗМЕНИТЬ
+        null=True, blank=True,
+        verbose_name="Локация"
+    )
 
     class Meta:
         verbose_name = "Склад"
