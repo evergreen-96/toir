@@ -2,141 +2,152 @@
 {% block title %}{{ object.name }}{% endblock %}
 
 {% block content %}
-
 <div class="row justify-content-center">
   <div class="col-xl-10 col-lg-11">
 
-    <!-- ===== Header ===== -->
-    <div class="d-flex justify-content-between align-items-start mb-4">
-      <div>
-        <h1 class="h4 mb-1">{{ object.name }}</h1>
-        <div class="text-muted small">
-          Карточка оборудования
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">{{ object.name }}</h1>
+            <div class="text-muted small">
+              Оборудование · карточка
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'assets:asset_list' %}">
+              Назад
+            </a>
+            <a class="btn btn-primary"
+               href="{% url 'assets:asset_edit' object.pk %}">
+              Редактировать
+            </a>
+            <a class="btn btn-outline-danger"
+               href="{% url 'assets:asset_delete' object.pk %}">
+              Удалить
+            </a>
+          </div>
         </div>
-      </div>
 
-      <div class="d-flex gap-2">
-        <a
-          class="btn btn-sm btn-outline-primary"
-          href="{% url 'assets:asset_edit' object.pk %}"
-        >
-          Редактировать
-        </a>
-        <a
-          class="btn btn-sm btn-outline-danger"
-          href="{% url 'assets:asset_delete' object.pk %}"
-        >
-          Удалить
-        </a>
-      </div>
-    </div>
+        <!-- ===== Main info ===== -->
+        <div class="mb-4">
+          <div class="section-header">Основная информация</div>
 
-    <div class="row g-4">
-
-      <!-- ===== Основная информация ===== -->
-      <div class="col-md-7">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-body">
-
-            <h6 class="fw-semibold mb-3">Основные данные</h6>
-
-            <dl class="row mb-0">
-
-              <dt class="col-sm-4 text-muted">Категория</dt>
-              <dd class="col-sm-8">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Категория</div>
+              <div class="detail-value">
                 {{ object.get_category_display }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Статус</dt>
-              <dd class="col-sm-8">
-                {{ object.get_status_display }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Тип</dt>
-              <dd class="col-sm-8">
-                {{ object.type_name|default:"—" }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Производитель / Модель</dt>
-              <dd class="col-sm-8">
-                {{ object.manufacturer|default:"—" }}
-                {% if object.model %} {{ object.model }}{% endif %}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Серийный №</dt>
-              <dd class="col-sm-8">
-                {{ object.serial_number|default:"—" }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Инвентарный №</dt>
-              <dd class="col-sm-8">
-                {{ object.inventory_number|default:"—" }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Локация</dt>
-              <dd class="col-sm-8">
-                {{ object.location|default:"—" }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Ответственный</dt>
-              <dd class="col-sm-8">
-                {{ object.responsible|default:"—" }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Ввод в эксплуатацию</dt>
-              <dd class="col-sm-8">
-                {{ object.commissioning_date|default:"—" }}
-              </dd>
-
-              <dt class="col-sm-4 text-muted">Гарантия до</dt>
-              <dd class="col-sm-8">
-                {{ object.warranty_until|default:"—" }}
-              </dd>
-
-            </dl>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== Фото ===== -->
-      <div class="col-md-5">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-body text-center">
-
-            <h6 class="fw-semibold mb-3">Фото</h6>
-
-            {% if object.photo %}
-              <img
-                src="{{ object.photo.url }}"
-                class="img-fluid rounded"
-                alt="{{ object.name }}"
-              >
-            {% else %}
-              <div class="text-muted small">
-                Фото не загружено
               </div>
-            {% endif %}
+            </div>
 
+            <div class="detail-item">
+              <div class="detail-label">Статус</div>
+              <div class="detail-value">
+                {{ object.get_status_display }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Тип</div>
+              <div class="detail-value">
+                {{ object.type_name|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Производитель / модель</div>
+              <div class="detail-value">
+                {{ object.manufacturer|default:"—" }}
+                {% if object.model %} / {{ object.model }}{% endif %}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Серийный №</div>
+              <div class="detail-value">
+                {{ object.serial_number|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Инвентарный №</div>
+              <div class="detail-value">
+                {{ object.inventory_number|default:"—" }}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
+        <!-- ===== Location & responsibility ===== -->
+        <div class="mb-4">
+          <div class="section-header">Расположение и ответственность</div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Локация</div>
+              <div class="detail-value">
+                {{ object.location|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Ответственный</div>
+              <div class="detail-value">
+                {{ object.responsible|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Ввод в эксплуатацию</div>
+              <div class="detail-value">
+                {{ object.commissioning_date|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Гарантия до</div>
+              <div class="detail-value">
+                {{ object.warranty_until|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Photo ===== -->
+        <div class="mb-4">
+          <div class="section-header">Фото</div>
+
+          {% if object.photo %}
+            <img
+              src="{{ object.photo.url }}"
+              class="img-fluid rounded"
+              alt="{{ object.name }}"
+            >
+          {% else %}
+            <div class="text-muted fst-italic">
+              Фото не загружено
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- ===== Description ===== -->
+        {% if object.description %}
+          <div>
+            <div class="section-header">Описание</div>
+            <div class="text-muted">
+              {{ object.description|linebreaks }}
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
     </div>
-
-    <!-- ===== Описание ===== -->
-    {% if object.description %}
-      <div class="card shadow-sm border-0 mt-4">
-        <div class="card-body">
-          <h6 class="fw-semibold mb-3">Описание</h6>
-          <div class="text-muted">
-            {{ object.description|linebreaks }}
-          </div>
-        </div>
-      </div>
-    {% endif %}
 
   </div>
 </div>
-
 {% endblock %}

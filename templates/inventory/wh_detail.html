@@ -34,49 +34,33 @@
         </div>
 
         <!-- ===== Main info ===== -->
-        <h6 class="fw-semibold mb-3">Основная информация</h6>
+        <div class="mb-4">
+          <div class="section-header">Основная информация</div>
 
-        <div class="row g-4">
+          <div class="detail-grid">
 
-          <!-- Название -->
-          <div class="col-md-4">
-            <div class="text-muted small mb-1">Название</div>
-            <div class="fw-semibold">{{ object.name }}</div>
+            <div class="detail-item">
+              <div class="detail-label">Название</div>
+              <div class="detail-value">
+                {{ object.name }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Локация</div>
+              <div class="detail-value">
+                {{ object.location|default:"—" }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Ответственный</div>
+              <div class="detail-value">
+                {{ object.responsible|default:"—" }}
+              </div>
+            </div>
+
           </div>
-
-          <!-- Локация -->
-          <div class="col-md-4">
-            <div class="text-muted small mb-1">Локация</div>
-            {% if object.location %}
-              <div class="fw-semibold">{{ object.location }}</div>
-            {% else %}
-              <div class="text-muted fst-italic">Не указана</div>
-            {% endif %}
-          </div>
-
-          <!-- Ответственный -->
-          <div class="col-md-4">
-            <div class="text-muted small mb-1">Ответственный</div>
-            {% if object.responsible %}
-              <div class="fw-semibold">{{ object.responsible }}</div>
-            {% else %}
-              <div class="text-muted fst-italic">Не назначен</div>
-            {% endif %}
-          </div>
-
-        </div>
-
-        <!-- ===== Divider ===== -->
-        <hr class="my-4">
-
-        <!-- ===== Placeholder for future blocks ===== -->
-        <div class="text-muted small">
-          В дальнейшем здесь могут отображаться:
-          <ul class="mb-0 ps-3">
-            <li>материалы и остатки на складе</li>
-            <li>связанные задачи ТОиР</li>
-            <li>история изменений</li>
-          </ul>
         </div>
 
       </div>

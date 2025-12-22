@@ -21,6 +21,7 @@ class LocationForm(forms.ModelForm):
                 "data-placeholder": "Не назначен"
             }),
         }
+
     def clean_parent(self):
         parent = self.cleaned_data.get("parent")
         obj = self.instance
