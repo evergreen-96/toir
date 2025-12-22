@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}{{ object.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-8 col-lg-9">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">{{ object.name }}</h1>
+            <div class="text-muted small">
+              Плановое обслуживание
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'maintenance:plan_list' %}">
+              ← К списку
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'maintenance:plan_edit' object.pk %}">
+              Редактировать
+            </a>
+
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              data-confirm-delete
+              data-delete-url="{% url 'maintenance:plan_delete' object.pk %}"
+              data-delete-name="«{{ object.name }}»"
+              data-redirect-url="{% url 'maintenance:plan_list' %}"
+            >
+              Удалить
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== Основная информация ===== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Основные параметры
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-muted small">Ответственный по умолчанию</div>
+              <div class="fw-semibold">
+                {{ object.responsible_default|default:"—" }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="text-muted small">Категория</div>
+              <div class="fw-semibold">
+                {{ object.get_category_display }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="text-muted small">Приоритет</div>
+              <div class="fw-semibold">
+                {{ object.get_priority_display }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="text-muted small">Активен</div>
+              <div class="fw-semibold">
+                {% if object.is_active %}
+                  <span class="badge bg-success">Да</span>
+                {% else %}
+                  <span class="badge bg-secondary">Нет</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Локация и оборудование ===== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Привязка
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-muted small">Локация</div>
+              <div class="fw-semibold">
+                {{ object.location }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="text-muted small">Оборудование</div>
+              <div class="fw-semibold">
+                {{ object.workstation }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Расписание ===== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Расписание
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="text-muted small">Интервал</div>
+              <div class="fw-semibold">
+                каждые {{ object.interval_value }}
+                {{ object.get_interval_unit_display }}
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="text-muted small">Следующий запуск</div>
+              <div class="fw-semibold">
+                {{ object.next_run|default:"—" }}
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="text-muted small">Дата первого запуска</div>
+              <div class="fw-semibold">
+                {{ object.first_run_date|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if object.description %}
+        <!-- ===== Описание ===== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Описание
+          </div>
+          <div>
+            {{ object.description|linebreaks }}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

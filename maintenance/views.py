@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.decorators.http import require_POST, require_GET
 from django.views.generic import ListView, DetailView, DeleteView
 
@@ -288,25 +289,20 @@ def workorder_create(request):
     )
 
 
-class WorkOrderDeleteView(DeleteView):
-    model = WorkOrder
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("maintenance:wo_list")
+class WorkOrderDeleteView(View):
+    def post(self, request, pk):
+        obj = get_object_or_404(WorkOrder, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse("maintenance:wo_detail", args=[self.object.pk])
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "Задача удалена.")
-            return response
-        except ProtectedError:
-            messages.error(request, "Нельзя удалить: есть связанные объекты.")
-            return redirect("maintenance:wo_detail", pk=self.object.pk)
+            obj.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": [str(o) for o in e.protected_objects],
+            }, status=400)
 
 
 @require_POST
@@ -604,25 +600,20 @@ def planned_order_update(request, pk: int):
 
 
 
-class PlannedOrderDeleteView(DeleteView):
-    model = PlannedOrder
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("maintenance:plan_list")
+class PlannedOrderDeleteView(View):
+    def post(self, request, pk):
+        obj = get_object_or_404(PlannedOrder, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse("maintenance:plan_list")
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "План удалён.")
-            return response
-        except ProtectedError:
-            messages.error(request, "Нельзя удалить: есть связанные объекты.")
-            return redirect("maintenance:plan_list")
+            obj.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": [str(o) for o in e.protected_objects],
+            }, status=400)
 
 
 def planned_order_run_now(request, pk: int):

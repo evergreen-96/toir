@@ -1,12 +1,13 @@
 from django.db.models import Q
-from django.views.generic import ListView, DetailView, DeleteView
+from django.http import JsonResponse
+from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
 from .models import Warehouse, Material
 from .forms import WarehouseForm, MaterialForm
-
+from django.views.generic import ListView, DetailView
 
 class WarehouseListView(ListView):
     model = Warehouse
@@ -47,25 +48,21 @@ def warehouse_update(request, pk):
         form = WarehouseForm(instance=obj)
     return render(request, "inventory/wh_form.html", {"form": form, "create": False, "obj": obj})
 
-class WarehouseDeleteView(DeleteView):
-    model = Warehouse
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("inventory:warehouse_list")
+class WarehouseDeleteView(View):
+    def post(self, request, pk):
+        warehouse = get_object_or_404(Warehouse, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse("inventory:warehouse_detail", args=[self.object.pk])
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "Склад удалён.")
-            return response
-        except ProtectedError:
-            messages.error(request, "Нельзя удалить: есть связанные объекты.")
-            return redirect("inventory:warehouse_detail", pk=self.object.pk)
+            warehouse.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            related = [str(obj) for obj in e.protected_objects]
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": related,
+            }, status=400)
 
 class MaterialListView(ListView):
     model = Material
@@ -112,22 +109,18 @@ def material_update(request, pk):
         form = MaterialForm(instance=obj)
     return render(request, "inventory/material_form.html", {"form": form, "create": False, "obj": obj})
 
-class MaterialDeleteView(DeleteView):
-    model = Material
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("inventory:material_list")
+class MaterialDeleteView(View):
+    def post(self, request, pk):
+        material = get_object_or_404(Material, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse("inventory:material_detail", args=[self.object.pk])
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "Материал удалён.")
-            return response
-        except ProtectedError:
-            messages.error(request, "Нельзя удалить: есть связанные объекты.")
-            return redirect("inventory:material_detail", pk=self.object.pk)
+            material.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            related = [str(obj) for obj in e.protected_objects]
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": related,
+            }, status=400)

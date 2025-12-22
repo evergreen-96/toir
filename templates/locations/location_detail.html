@@ -3,74 +3,80 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-xl-10 col-lg-11">
+    <div class="col-xl-10 col-lg-11">
 
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
 
-        <!-- ===== Header ===== -->
-        <div class="d-flex justify-content-between align-items-start mb-4">
-          <div>
-            <h1 class="h4 mb-1">{{ object.name }}</h1>
-            <div class="text-muted small">
-              Детали локации
+                <!-- ===== Header ===== -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1 class="h4 mb-1">{{ object.name }}</h1>
+                        <div class="text-muted small">
+                            Детали локации
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-secondary"
+                           href="{% url 'locations:location_edit' object.pk %}">
+                            Редактировать
+                        </a>
+                        <a
+                                class="btn btn-outline-danger"
+                                href="#"
+                                data-confirm-delete
+                                data-delete-url="{% url 'locations:location_delete' object.pk %}"
+                                data-delete-name="«{{ object.name }}»"
+                                data-redirect-url="{% url 'locations:location_list' %}"
+                        >
+                            Удалить
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ===== Details ===== -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        Основная информация
+                    </div>
+
+                    <div class="detail-grid">
+
+                        <div class="detail-item">
+                            <div class="detail-label">Название</div>
+                            <div class="detail-value">
+                                {{ object.name }}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Уровень</div>
+                            <div class="detail-value">
+                                {{ object.level }}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Родительская локация</div>
+                            <div class="detail-value">
+                                {{ object.parent|default:"—" }}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Ответственный</div>
+                            <div class="detail-value">
+                                {{ object.responsible|default:"—" }}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
-          </div>
-
-          <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary"
-               href="{% url 'locations:location_edit' object.pk %}">
-              Редактировать
-            </a>
-            <a class="btn btn-outline-danger"
-               href="{% url 'locations:location_delete' object.pk %}">
-              Удалить
-            </a>
-          </div>
         </div>
 
-        <!-- ===== Details ===== -->
-        <div class="form-section">
-          <div class="form-section-header">
-            Основная информация
-          </div>
-
-          <div class="detail-grid">
-
-            <div class="detail-item">
-              <div class="detail-label">Название</div>
-              <div class="detail-value">
-                {{ object.name }}
-              </div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">Уровень</div>
-              <div class="detail-value">
-                {{ object.level }}
-              </div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">Родительская локация</div>
-              <div class="detail-value">
-                {{ object.parent|default:"—" }}
-              </div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">Ответственный</div>
-              <div class="detail-value">
-                {{ object.responsible|default:"—" }}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
     </div>
-
-  </div>
 </div>
 {% endblock %}

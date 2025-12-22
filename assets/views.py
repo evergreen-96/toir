@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.http import JsonResponse
+from django.views import View
 from django.views.generic import ListView, DetailView, DeleteView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -147,22 +149,17 @@ def ws_update(request, pk):
 # Delete
 # =======================
 
-class WorkstationDeleteView(DeleteView):
-    model = Workstation
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("assets:asset_list")
+class WorkstationDeleteView(View):
+    def post(self, request, pk):
+        obj = get_object_or_404(Workstation, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse("assets:asset_detail", args=[self.object.pk])
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "Оборудование удалено.")
-            return response
-        except ProtectedError:
-            messages.error(request, "Нельзя удалить: есть связанные объекты.")
-            return redirect("assets:asset_detail", pk=self.object.pk)
+            obj.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": [str(o) for o in e.protected_objects],
+            }, status=400)

@@ -743,6 +743,93 @@
 <!-- jsTree -->
 <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
 
+{% include "includes/_confirm_delete_modal.html" %}
+<script>
+(function () {
+
+  const modalEl = document.getElementById("confirmDeleteModal");
+  if (!modalEl) return;
+
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+  const form = document.getElementById("confirmDeleteForm");
+  const nameEl = document.getElementById("confirmDeleteObjectName");
+
+  const errorBlock = document.getElementById("deleteErrorBlock");
+  const errorText = document.getElementById("deleteErrorText");
+  const errorList = document.getElementById("deleteErrorRelated");
+
+  let currentDeleteUrl = null;
+  let currentRedirectUrl = null;
+
+  // === Открытие модалки ===
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-confirm-delete]");
+    if (!btn) return;
+
+    e.preventDefault();
+
+    currentDeleteUrl = btn.dataset.deleteUrl;
+    currentRedirectUrl = btn.dataset.redirectUrl || "/";
+
+    nameEl.textContent = btn.dataset.deleteName || "этот объект";
+
+    // reset ошибок
+    errorBlock.classList.add("d-none");
+    errorText.textContent = "";
+    errorList.innerHTML = "";
+
+    modal.show();
+  });
+
+  // === Подтверждение удаления ===
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    if (!currentDeleteUrl) return;
+
+    fetch(currentDeleteUrl, {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+      },
+    })
+    .then(async response => {
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        throw { error: "Некорректный ответ сервера" };
+      }
+
+      if (response.ok && data.ok) {
+        modal.hide();
+        window.location.href = currentRedirectUrl;
+        return;
+      }
+
+      throw data;
+    })
+    .catch(data => {
+      errorText.textContent = data.error || "Ошибка удаления";
+      errorList.innerHTML = "";
+
+      if (Array.isArray(data.related)) {
+        data.related.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          errorList.appendChild(li);
+        });
+      }
+
+      errorBlock.classList.remove("d-none");
+    });
+  });
+
+})();
+</script>
+
 {% block extra_js %}{% endblock %}
 </body>
 </html>

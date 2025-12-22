@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.views import View
 from django.views.generic import ListView, DetailView, DeleteView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -100,25 +101,20 @@ def hr_update(request, pk):
         form = HumanResourceForm(instance=obj)
     return render(request, "hr/hr_form.html", {"form": form, "create": False, "obj": obj})
 
-class HumanResourceDeleteView(DeleteView):
-    model = HumanResource
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("hr:hr_list")
+class HumanResourceDeleteView(View):
+    def post(self, request, pk):
+        obj = get_object_or_404(HumanResource, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse("hr:hr_detail", args=[self.object.pk])
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "Сотрудник удалён.")
-            return response
-        except ProtectedError:
-            messages.error(request, "Нельзя удалить: есть связанные объекты.")
-            return redirect("hr:hr_detail", pk=self.object.pk)
+            obj.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": [str(o) for o in e.protected_objects],
+            }, status=400)
 
 
 def hr_manager_autocomplete(request):

@@ -1,0 +1,76 @@
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Подтвердите удаление</h5>
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Закрыть"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- базовое предупреждение -->
+        <div class="alert alert-warning">
+          <div class="fw-semibold mb-1">Это действие необратимо.</div>
+          <div>
+            Удалить <span class="fw-semibold" id="confirmDeleteObjectName">этот объект</span>?
+          </div>
+        </div>
+
+        <!-- ===== БЛОК ОШИБКИ (СКРЫТ ПО УМОЛЧАНИЮ) ===== -->
+<div id="deleteErrorBlock" class="alert alert-danger d-none">
+
+  <div class="fw-semibold mb-2">
+    Нельзя удалить объект
+  </div>
+
+  <div class="small mb-2" id="deleteErrorText">
+    Есть связанные элементы, которые зависят от этого объекта.
+  </div>
+
+  <!-- Кнопка раскрытия -->
+  <button class="btn btn-sm btn-outline-danger"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#deleteRelatedCollapse"
+          aria-expanded="false">
+    Показать связанные объекты
+  </button>
+
+  <!-- Раскрывающийся список -->
+  <div class="collapse mt-2" id="deleteRelatedCollapse">
+    <div class="card card-body p-2">
+
+      <ul id="deleteErrorRelated"
+          class="list-group list-group-flush small">
+        <!-- элементы будут вставляться через JS -->
+      </ul>
+
+    </div>
+  </div>
+
+</div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button"
+                class="btn btn-outline-secondary"
+                data-bs-dismiss="modal">
+          Отмена
+        </button>
+
+        <form id="confirmDeleteForm">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            Удалить
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>

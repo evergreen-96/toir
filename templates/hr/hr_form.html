@@ -1,76 +1,82 @@
 {% extends "base.html" %}
+{% load form_extras %}
+
 {% block title %}
   {% if create %}Новый сотрудник{% else %}Редактирование сотрудника{% endif %}
 {% endblock %}
 
 {% block content %}
-
 <div class="row justify-content-center">
-  <div class="col-lg-6 col-md-8">
+  <div class="col-xl-7 col-lg-8">
 
     <div class="card shadow-sm border-0">
       <div class="card-body">
 
+        <!-- ===== Header ===== -->
         <div class="mb-4">
           <h1 class="h4 mb-1">
             {% if create %}Новый сотрудник{% else %}Редактирование сотрудника{% endif %}
           </h1>
           <div class="text-muted small">
-            Основная информация о сотруднике
+            Персонал · должность и подчинённость
           </div>
         </div>
 
         <form method="post" novalidate>
           {% csrf_token %}
 
-          <!-- ФИО -->
-          <div class="mb-3">
-            <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
-              {{ form.name.label }}
-            </label>
-            {{ form.name }}
-            {% if form.name.errors %}
-              <div class="invalid-feedback d-block">
-                {{ form.name.errors|join:", " }}
-              </div>
-            {% endif %}
-          </div>
+          <!-- ===== Section: Basic info ===== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              1. Основная информация
+            </div>
 
-          <!-- Должность -->
-          <div class="mb-3">
-            <label for="{{ form.job_title.id_for_label }}" class="form-label fw-semibold">
-              {{ form.job_title.label }}
-            </label>
-            {{ form.job_title }}
-            {% if form.job_title.errors %}
-              <div class="invalid-feedback d-block">
-                {{ form.job_title.errors|join:", " }}
+            <div class="mb-3">
+              <label class="form-label fw-semibold {% if form.name.field.required %}required{% endif %}">
+                ФИО
+              </label>
+              {{ form.name|add_class:"form-control" }}
+              <div class="form-text">
+                Полное имя сотрудника
               </div>
-            {% endif %}
-          </div>
+            </div>
 
-          <!-- Руководитель -->
-          <div class="mb-4">
-            <label for="{{ form.manager.id_for_label }}" class="form-label fw-semibold">
-              {{ form.manager.label }}
-            </label>
-            {{ form.manager }}
-            {% if form.manager.errors %}
-              <div class="invalid-feedback d-block">
-                {{ form.manager.errors|join:", " }}
+            <div class="mb-3">
+              <label class="form-label fw-semibold {% if form.job_title.field.required %}required{% endif %}">
+                Должность
+              </label>
+              {{ form.job_title|add_class:"form-control js-job-title" }}
+              <div class="form-text">
+                Используется для фильтрации и аналитики
               </div>
-            {% endif %}
-            <div class="form-text">
-              Можно оставить пустым
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="d-flex justify-content-between align-items-center">
-            <a class="btn btn-outline-secondary" href="{% url 'hr:hr_list' %}">
+          <!-- ===== Section: Hierarchy ===== -->
+          <div class="form-section">
+            <div class="form-section-header">
+              2. Подчинённость
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold {% if form.manager.field.required %}required{% endif %}">
+                Руководитель
+              </label>
+              {{ form.manager|add_class:"form-select js-manager-select" }}
+              <div class="form-text">
+                Необязательно. Используется для построения иерархии
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Actions ===== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% if obj %}{% url 'hr:hr_detail' obj.pk %}{% else %}{% url 'hr:hr_list' %}{% endif %}">
               Отмена
             </a>
-            <button class="btn btn-primary" type="submit">
+
+            <button class="btn btn-primary px-4" type="submit">
               Сохранить
             </button>
           </div>
@@ -83,15 +89,50 @@
   </div>
 </div>
 
-<!-- ================= SELECT2 ================= -->
 <script>
-$(document).ready(function () {
-  $('#id_manager').select2({
-    width: '100%',
-    placeholder: 'Выберите руководителя',
-    allowClear: true
-  });
-});
-</script>
+  $(document).ready(function () {
 
+    // Руководитель — autocomplete
+    $('.js-manager-select').select2({
+      width: '100%',
+      allowClear: true,
+      placeholder: 'Выберите руководителя',
+      ajax: {
+        url: "{% url 'hr:hr_manager_autocomplete' %}",
+        dataType: 'json',
+        delay: 250,
+        data: function (params) {
+          return {
+            q: params.term
+          };
+        },
+        processResults: function (data) {
+          return data;
+        }
+      }
+    });
+
+    // Должность — autocomplete по существующим
+    $('.js-job-title').select2({
+      width: '100%',
+      tags: true,
+      allowClear: true,
+      placeholder: 'Введите или выберите должность',
+      ajax: {
+        url: "{% url 'hr:hr_job_title_autocomplete' %}",
+        dataType: 'json',
+        delay: 250,
+        data: function (params) {
+          return {
+            q: params.term
+          };
+        },
+        processResults: function (data) {
+          return data;
+        }
+      }
+    });
+
+  });
+</script>
 {% endblock %}

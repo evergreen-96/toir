@@ -4,6 +4,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models.deletion import ProtectedError
+from django.views.generic import ListView, DetailView, View
 
 from .models import Location
 from .forms import LocationForm
@@ -119,31 +120,17 @@ def location_update(request, pk):
 # Delete
 # =====================================================
 
-class LocationDeleteView(DeleteView):
-    model = Location
-    template_name = "confirm_delete.html"
-    success_url = reverse_lazy("locations:location_list")
+class LocationDeleteView(View):
+    def post(self, request, pk):
+        obj = get_object_or_404(Location, pk=pk)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["cancel_url"] = reverse(
-            "locations:location_detail",
-            args=[self.object.pk]
-        )
-        return ctx
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         try:
-            response = super().post(request, *args, **kwargs)
-            messages.success(request, "Локация удалена.")
-            return response
-        except ProtectedError:
-            messages.error(
-                request,
-                "Нельзя удалить: есть связанные объекты."
-            )
-            return redirect(
-                "locations:location_detail",
-                pk=self.object.pk
-            )
+            obj.delete()
+            return JsonResponse({"ok": True})
+
+        except ProtectedError as e:
+            return JsonResponse({
+                "ok": False,
+                "error": "Нельзя удалить: есть связанные объекты",
+                "related": [str(o) for o in e.protected_objects],
+            }, status=400)

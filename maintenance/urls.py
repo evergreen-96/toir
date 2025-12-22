@@ -1,4 +1,7 @@
 from django.urls import path
+from django.views.generic import DetailView
+
+from .models import PlannedOrder
 from .views import (
     # Work Orders
     WorkOrderListView, WorkOrderDetailView, workorder_create, workorder_update, WorkOrderDeleteView,
@@ -22,6 +25,10 @@ urlpatterns = [
 
     # Плановые обслуживания
     path("plans/", PlannedOrderListView.as_view(), name="plan_list"),
+    path("plans/<int:pk>/", DetailView.as_view(
+        model=PlannedOrder,
+        template_name="maintenance/plan_detail.html"
+    ), name="plan_detail"),
     path("plans/new/", planned_order_create, name="plan_new"),
     path("plans/<int:pk>/edit/", planned_order_update, name="plan_edit"),
     path("plans/<int:pk>/delete/", PlannedOrderDeleteView.as_view(), name="plan_delete"),
