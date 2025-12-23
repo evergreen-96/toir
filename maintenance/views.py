@@ -167,7 +167,7 @@ def home(request):
 class WorkOrderListView(ListView):
     model = WorkOrder
     template_name = "maintenance/wo_list.html"
-    paginate_by = 50
+    paginate_by = 20
     ordering = ["-id"]
 
     def get_queryset(self):
