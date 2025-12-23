@@ -4,238 +4,256 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-xl-8 col-lg-9">
+  <div class="col-xl-8 col-lg-9">
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
 
-                <!-- =====================================================
-                     Header + actions
-                     ===================================================== -->
-                <div class="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h1 class="h4 mb-1">{{ object.name }}</h1>
-                        <div class="text-muted small">
-                            Задача обслуживания · детали и материалы
-                        </div>
-                    </div>
+        <!-- =====================================================
+             Header + actions + STATUS BADGE
+             ===================================================== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+              {{ object.name }}
 
-                    <div class="btn-group">
-                        <a class="btn btn-outline-secondary"
-                           href="{% url 'maintenance:wo_list' %}">
-                            ← К списку
-                        </a>
+              {# ===== Status badge ===== #}
+              <span class="badge
+                {% if object.status == 'new' %}bg-secondary{% endif %}
+                {% if object.status == 'in_progress' %}bg-primary{% endif %}
+                {% if object.status == 'done' %}bg-success{% endif %}
+                {% if object.status == 'failed' %}bg-warning text-dark{% endif %}
+                {% if object.status == 'canceled' %}bg-danger{% endif %}
+              ">
+                {{ object.get_status_display }}
+              </span>
+            </h1>
 
-                        <a class="btn btn-outline-primary"
-                           href="{% url 'maintenance:wo_edit' object.pk %}">
-                            Редактировать
-                        </a>
-
-                        <button
-                            type="button"
-                            class="btn btn-outline-danger"
-                            data-confirm-delete
-                            data-delete-url="{% url 'maintenance:wo_delete' object.pk %}"
-                            data-delete-name="«{{ object.name }}»"
-                            data-redirect-url="{% url 'maintenance:wo_list' %}"
-                        >
-                            Удалить
-                        </button>
-                    </div>
-                </div>
-
-                <!-- =====================================================
-                     A. Статус и управление
-                     ===================================================== -->
-                {% if allowed_transitions %}
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Статус и управление
-                    </div>
-
-                    <div class="mb-3">
-                        <span class="text-muted small">Текущий статус:</span>
-                        <span class="fw-semibold ms-1">
-                            {{ object.get_status_display }}
-                        </span>
-                    </div>
-
-                    <div class="d-flex gap-2 flex-wrap">
-                        {% for next_status, label in allowed_transitions.items %}
-                        <form method="post"
-                              action="{% url 'maintenance:wo_set_status' object.pk next_status %}">
-                            {% csrf_token %}
-                            <button type="submit"
-                                    class="btn btn-sm
-                                        {% if next_status == 'in_progress' %}btn-outline-primary{% endif %}
-                                        {% if next_status == 'done' %}btn-outline-success{% endif %}
-                                        {% if next_status == 'failed' %}btn-outline-warning{% endif %}
-                                        {% if next_status == 'canceled' %}btn-outline-danger{% endif %}
-                                    ">
-                                {{ label }}
-                            </button>
-                        </form>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- =====================================================
-                     B. Контекст выполнения
-                     ===================================================== -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Контекст выполнения
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="text-muted small">Локация</div>
-                            <div class="fw-semibold">
-                                {% if object.location %}
-                                    <a href="{% url 'locations:location_detail' object.location.pk %}">
-                                        {{ object.location }}
-                                    </a>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="text-muted small">Оборудование</div>
-                            <div class="fw-semibold">
-                                {% if object.workstation %}
-                                    <a href="{% url 'assets:asset_detail' object.workstation.pk %}">
-                                        {{ object.workstation }}
-                                    </a>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="text-muted small">Ответственный</div>
-                            <div class="fw-semibold">
-                                {% if object.responsible %}
-                                    <a href="{% url 'hr:hr_detail' object.responsible.pk %}">
-                                        {{ object.responsible }}
-                                    </a>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- =====================================================
-                     C. Параметры задачи
-                     ===================================================== -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Параметры задачи
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="text-muted small">Приоритет</div>
-                            <div class="fw-semibold">
-                                {{ object.get_priority_display }}
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="text-muted small">Категория</div>
-                            <div class="fw-semibold">
-                                {{ object.get_category_display }}
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="text-muted small">
-                                Трудоёмкость (план / факт), ч
-                            </div>
-                            <div class="fw-semibold">
-                                {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="text-muted small">Дата начала</div>
-                            <div class="fw-semibold">
-                                {{ object.date_start|default:"—" }}
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="text-muted small">Дата окончания</div>
-                            <div class="fw-semibold">
-                                {{ object.date_finish|default:"—" }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- =====================================================
-                     D. Описание и вложения
-                     ===================================================== -->
-                {% if object.description or object.files %}
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Описание и вложения
-                    </div>
-
-                    {% if object.description %}
-                        <div class="mb-3">
-                            {{ object.description|linebreaks }}
-                        </div>
-                    {% endif %}
-
-                    {% if object.files %}
-                        <div>
-                            <a href="{{ object.files.url }}"
-                               target="_blank"
-                               rel="noopener">
-                                📎 Скачать файл
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- =====================================================
-                     E. Материалы
-                     ===================================================== -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Материалы
-                    </div>
-
-                    {% if object.materials.all %}
-                        <ul class="list-group list-group-flush">
-                            {% for m in object.materials.all %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div class="fw-semibold">
-                                    {{ m.material.name }}
-                                </div>
-                                <div class="text-muted small">
-                                    план: {{ m.qty_planned }} · факт: {{ m.qty_used }}
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <div class="text-muted">
-                            Материалы не добавлены
-                        </div>
-                    {% endif %}
-                </div>
-
+            <div class="text-muted small">
+              Задача обслуживания · детали и материалы
             </div>
+          </div>
+
+          <div class="btn-group">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'maintenance:wo_list' %}">
+              ← К списку
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'maintenance:wo_edit' object.pk %}">
+              Редактировать
+            </a>
+
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              data-confirm-delete
+              data-delete-url="{% url 'maintenance:wo_delete' object.pk %}"
+              data-delete-name="«{{ object.name }}»"
+              data-redirect-url="{% url 'maintenance:wo_list' %}"
+            >
+              Удалить
+            </button>
+          </div>
         </div>
 
+        <!-- =====================================================
+             A. Статус и управление
+             ===================================================== -->
+        {% if allowed_transitions %}
+        <div class="form-section">
+          <div class="form-section-header">
+            Управление статусом
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            {% for next_status, label in allowed_transitions.items %}
+            <form method="post"
+                  action="{% url 'maintenance:wo_set_status' object.pk next_status %}">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn btn-sm
+                        {% if next_status == 'in_progress' %}btn-outline-primary{% endif %}
+                        {% if next_status == 'done' %}btn-outline-success{% endif %}
+                        {% if next_status == 'failed' %}btn-outline-warning{% endif %}
+                        {% if next_status == 'canceled' %}btn-outline-danger{% endif %}
+                      ">
+                {{ label }}
+              </button>
+            </form>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- =====================================================
+             B. Контекст выполнения
+             ===================================================== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Контекст выполнения
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="text-muted small">Локация</div>
+              <div class="fw-semibold">
+                {% if object.location %}
+                  <a href="{% url 'locations:location_detail' object.location.pk %}">
+                    {{ object.location }}
+                  </a>
+                {% else %}—{% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="text-muted small">Оборудование</div>
+              <div class="fw-semibold">
+                {% if object.workstation %}
+                  <a href="{% url 'assets:asset_detail' object.workstation.pk %}">
+                    {{ object.workstation }}
+                  </a>
+                {% else %}—{% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="text-muted small">Ответственный</div>
+              <div class="fw-semibold">
+                {% if object.responsible %}
+                  <a href="{% url 'hr:hr_detail' object.responsible.pk %}">
+                    {{ object.responsible }}
+                  </a>
+                {% else %}—{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             C. Параметры задачи (with styling)
+             ===================================================== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Параметры задачи
+          </div>
+
+          <div class="row g-3">
+
+            <!-- Priority -->
+            <div class="col-md-4">
+              <div class="text-muted small">Приоритет</div>
+              <span class="badge
+                {% if object.priority == 'low' %}bg-success{% endif %}
+                {% if object.priority == 'medium' %}bg-warning text-dark{% endif %}
+                {% if object.priority == 'high' %}bg-danger{% endif %}
+              ">
+                {{ object.get_priority_display }}
+              </span>
+            </div>
+
+            <!-- Category -->
+            <div class="col-md-4">
+              <div class="text-muted small">Категория</div>
+              <span class="badge bg-light text-dark border">
+                {{ object.get_category_display }}
+              </span>
+            </div>
+
+            <!-- Labor -->
+            <div class="col-md-4">
+              <div class="text-muted small">
+                Трудоёмкость (план / факт), ч
+              </div>
+
+              {% if object.labor_fact_hours > object.labor_plan_hours %}
+                <div class="fw-semibold text-danger">
+                  {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}
+                  <small>(превышение)</small>
+                </div>
+              {% else %}
+                <div class="fw-semibold">
+                  {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <div class="text-muted small">Дата начала</div>
+              <div class="fw-semibold">
+                {{ object.date_start|default:"—" }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="text-muted small">Дата окончания</div>
+              <div class="fw-semibold">
+                {{ object.date_finish|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             D. Описание и вложения
+             ===================================================== -->
+        {% if object.description or object.files %}
+        <div class="form-section">
+          <div class="form-section-header">
+            Описание и вложения
+          </div>
+
+          {% if object.description %}
+            <div class="mb-3">
+              {{ object.description|linebreaks }}
+            </div>
+          {% endif %}
+
+          {% if object.files %}
+            <div class="border rounded p-2 d-flex align-items-center gap-2">
+              <i class="bi bi-paperclip"></i>
+              <a href="{{ object.files.url }}"
+                 target="_blank"
+                 rel="noopener">
+                {{ object.files.name|cut:"uploads/" }}
+              </a>
+            </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- =====================================================
+             E. Материалы
+             ===================================================== -->
+        <div class="form-section">
+          <div class="form-section-header">
+            Материалы
+          </div>
+
+          {% if object.materials.all %}
+            <ul class="list-group list-group-flush">
+              {% for m in object.materials.all %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="fw-semibold">
+                  {{ m.material.name }}
+                </div>
+                <div class="text-muted small">
+                  план: {{ m.qty_planned }} · факт: {{ m.qty_used }}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="text-muted">
+              Материалы не добавлены
+            </div>
+          {% endif %}
+        </div>
+
+      </div>
     </div>
+
+  </div>
 </div>
 {% endblock %}
