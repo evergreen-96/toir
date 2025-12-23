@@ -160,16 +160,51 @@
                             {% endfor %}
                         </div>
 
-                        <!-- Файлы -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.files.label }}
-                            </label>
-                            {{ form.files|add_class:"form-control" }}
-                            {% for e in form.files.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
-                            {% endfor %}
+                        <!-- ===============================
+                           Файлы
+                           =============================== -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                Файлы
+                            </div>
+
+                            <!-- input -->
+                            <input
+                                    type="file"
+                                    id="id_files"
+                                    name="files"
+                                    multiple
+                                    class="form-control"
+                            />
+
+                            <!-- preview новых файлов -->
+                            <ul class="list-group list-group-flush mt-2" id="new-files-list"></ul>
+
+                            <!-- существующие файлы -->
+                            {% if wo and wo.attachments.exists %}
+                            <div class="mt-3">
+                                <div class="text-muted small mb-1">Загруженные файлы</div>
+                                <ul class="list-group list-group-flush">
+                                    {% for f in wo.attachments.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a href="{{ f.file.url }}" target="_blank">
+                                            {{ f.file.name|cut:"workorders/" }}
+                                        </a>
+                                        <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                data-file-id="{{ f.pk }}"
+                                                title="Удалить файл"
+                                        >
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
                         </div>
+
 
                     </div>
 
@@ -289,38 +324,128 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-        // =====================================================
-        // Select2 для материалов
-        // =====================================================
-        function initSelect2(ctx) {
-            $(ctx).find(".js-select2").select2({
-                width: "100%",
-                allowClear: true,
-                placeholder: "Выберите материал"
+    // =====================================================
+    // FILES: add / preview / remove before submit
+    // =====================================================
+    const input = document.getElementById("id_files");
+    const list = document.getElementById("new-files-list");
+
+    // 🔑 единый источник истины
+    let selectedFiles = [];
+
+    if (input && list) {
+
+        input.addEventListener("change", () => {
+            const newlySelected = Array.from(input.files);
+
+            newlySelected.forEach(file => {
+                // защита от дублей (одно имя + размер)
+                const exists = selectedFiles.some(
+                    f => f.name === file.name && f.size === file.size
+                );
+                if (!exists) {
+                    selectedFiles.push(file);
+                }
+            });
+
+            syncInputFiles();
+            renderFiles();
+        });
+
+        function renderFiles() {
+            list.innerHTML = "";
+
+            selectedFiles.forEach((file, index) => {
+                const li = document.createElement("li");
+                li.className = "list-group-item d-flex justify-content-between align-items-center";
+
+                li.innerHTML = `
+                    <span class="text-truncate">${file.name}</span>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            title="Убрать файл">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
+
+                li.querySelector("button").addEventListener("click", () => {
+                    selectedFiles.splice(index, 1);
+                    syncInputFiles();
+                    renderFiles();
+                });
+
+                list.appendChild(li);
             });
         }
 
-        initSelect2(document);
+        function syncInputFiles() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+        }
+    }
 
-        // =====================================================
-        // Добавление / удаление материалов
-        // =====================================================
-        document.addEventListener("click", function (e) {
-            const btn = e.target.closest(".material-remove-btn");
-            if (!btn) return;
+    // =====================================================
+    // FILES: delete already uploaded (AJAX)
+    // =====================================================
+    document.querySelectorAll("[data-file-id]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (!confirm("Удалить файл?")) return;
 
-            const row = btn.closest(".material-row");
-            const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-            del.checked = !del.checked;
+            const fileId = btn.dataset.fileId;
 
-            $(row).find("select, input").prop("disabled", del.checked);
+            fetch(
+                `{% url 'maintenance:wo_file_delete' 0 %}`.replace("/0/", `/${fileId}/`),
+                {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    }
+                }
+            )
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    btn.closest("li").remove();
+                }
+            });
         });
+    });
 
-        const container = document.getElementById("materials-container");
-        const addBtn = document.getElementById("add-material");
-        const template = document.getElementById("material-template");
+    // =====================================================
+    // Select2 для материалов
+    // =====================================================
+    function initSelect2(ctx) {
+        $(ctx).find(".js-select2").select2({
+            width: "100%",
+            allowClear: true,
+            placeholder: "Выберите материал"
+        });
+    }
+
+    initSelect2(document);
+
+    // =====================================================
+    // Добавление / удаление материалов (formset)
+    // =====================================================
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".material-remove-btn");
+        if (!btn) return;
+
+        const row = btn.closest(".material-row");
+        const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        del.checked = !del.checked;
+
+        $(row).find("select, input").prop("disabled", del.checked);
+    });
+
+    const container = document.getElementById("materials-container");
+    const addBtn = document.getElementById("add-material");
+    const template = document.getElementById("material-template");
+
+    if (container && addBtn && template) {
 
         const prefix = "{{ formset.prefix }}";
         const totalForms = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
@@ -346,14 +471,15 @@
             totalForms.value = index + 1;
             index += 1;
         });
+    }
 
-        // =====================================================
-        // LOCATION → WORKSTATION (основная логика)
-        // =====================================================
-        const $location = $("#id_location");
-        const $workstation = $("#id_workstation");
+    // =====================================================
+    // LOCATION → WORKSTATION
+    // =====================================================
+    const $location = $("#id_location");
+    const $workstation = $("#id_workstation");
 
-        if (!$location.length || !$workstation.length) return;
+    if ($location.length && $workstation.length) {
 
         $location.select2({width: "100%"});
         $workstation.select2({
@@ -363,8 +489,6 @@
         });
 
         const WS_URL = "{% url 'maintenance:ajax_workstations_by_location' %}";
-
-        // 🔑 сохраняем выбранное оборудование (нужно для edit)
         const initialWorkstation = $workstation.val();
 
         function lockWorkstations(clear = true) {
@@ -380,52 +504,45 @@
 
         function loadWorkstations(locationId, restoreValue = null) {
             lockWorkstations(true);
-
             if (!locationId) return;
 
             fetch(`${WS_URL}?location_id=${locationId}`, {
                 headers: {"X-Requested-With": "XMLHttpRequest"}
             })
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.ok || !data.items.length) {
-                        lockWorkstations(true);
-                        return;
-                    }
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok || !data.items.length) {
+                    lockWorkstations(true);
+                    return;
+                }
 
-                    $workstation.empty().append(new Option("", "", false, false));
+                $workstation.empty().append(new Option("", "", false, false));
 
-                    data.items.forEach(item => {
-                        const selected = restoreValue && item.id == restoreValue;
-                        $workstation.append(
-                            new Option(item.text, item.id, selected, selected)
-                        );
-                    });
+                data.items.forEach(item => {
+                    const selected = restoreValue && item.id == restoreValue;
+                    $workstation.append(
+                        new Option(item.text, item.id, selected, selected)
+                    );
+                });
 
-                    unlockWorkstations();
-                    $workstation.trigger("change");
-                })
-                .catch(() => lockWorkstations(true));
+                unlockWorkstations();
+                $workstation.trigger("change");
+            })
+            .catch(() => lockWorkstations(true));
         }
 
-        // =====================================================
-        // Реакция на смену локации
-        // =====================================================
         $location.on("change", function () {
             loadWorkstations(this.value, null);
         });
 
-        // =====================================================
-        // Инициализация
-        // =====================================================
         if ($location.val()) {
-            // редактирование существующей задачи
             loadWorkstations($location.val(), initialWorkstation);
         } else {
-            // создание новой задачи
             lockWorkstations(true);
         }
+    }
 
-    });
+});
 </script>
+
 {% endblock %}

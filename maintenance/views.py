@@ -19,6 +19,7 @@ from django.views.generic import ListView, DetailView, DeleteView
 
 from assets.models import Workstation
 from hr.models import HumanResource
+from .forms import WorkOrderMaterialFormSet, WorkOrderForm
 
 from .models import (
     WorkOrder,
@@ -28,6 +29,7 @@ from .models import (
     PlannedOrder,
     IntervalUnit,
     WorkOrderMaterial,
+    WorkOrderFile
 )
 
 # Плановые работы всегда в 00:00:01
@@ -65,6 +67,7 @@ from assets.models import (
     WorkstationStatus,
     WorkstationGlobalState
 )
+
 
 def home(request):
     today = timezone.localdate()
@@ -160,7 +163,6 @@ def home(request):
     })
 
 
-
 # =========================
 # WORK ORDERS
 # =========================
@@ -195,6 +197,7 @@ class WorkOrderListView(ListView):
             qs = qs.filter(category=cat)
 
         return qs
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["q"] = self.request.GET.get("q", "")
@@ -216,7 +219,9 @@ class WorkOrderDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["allowed_transitions"] = self.object.get_allowed_transitions()
+        ctx["files"] = self.object.attachments.all()
         return ctx
+
 
 def workorder_update(request, pk: int):
     from .forms import WorkOrderForm, WorkOrderMaterialFormSet
@@ -233,11 +238,12 @@ def workorder_update(request, pk: int):
             if wo.workstation and not wo.location:
                 wo.location = wo.workstation.location
                 wo.save(update_fields=["location"])
-
+            for f in form.cleaned_data.get("files", []):
+                WorkOrderFile.objects.create(work_order=wo, file=f)
             # Сохраняем formset
             instances = formset.save(commit=False)
             for instance in instances:
-                instance.workorder = wo  # если у тебя FK называется work_order — поправь в форме/модели одинаково
+                instance.work_order = wo
                 instance.save()
 
             for obj in formset.deleted_objects:
@@ -270,13 +276,15 @@ def workorder_create(request):
         if form.is_valid() and formset.is_valid():
             wo = form.save(commit=False)
 
-            # автоподстановка location
             if wo.workstation and not wo.location:
                 wo.location = wo.workstation.location
 
             wo.save()
 
-            # привязываем formset к workorder
+            # 🔑 СОХРАНЕНИЕ ФАЙЛОВ
+            for f in form.cleaned_data.get("files", []):
+                WorkOrderFile.objects.create(work_order=wo, file=f)
+
             formset.instance = wo
             formset.save()
 
@@ -307,6 +315,10 @@ class WorkOrderDeleteView(View):
         obj = get_object_or_404(WorkOrder, pk=pk)
 
         try:
+            # удалить файлы физически
+            for att in obj.attachments.all():
+                att.file.delete(save=False)
+
             obj.delete()
             return JsonResponse({"ok": True})
 
@@ -607,7 +619,6 @@ def planned_order_update(request, pk: int):
     )
 
 
-
 class PlannedOrderDeleteView(View):
     def post(self, request, pk):
         obj = get_object_or_404(PlannedOrder, pk=pk)
@@ -764,7 +775,8 @@ def planned_order_preview(request):
     elif freq == "custom":
         # custom: обязательно и interval_value и interval_unit
         if not interval_value_raw or not interval_unit_raw:
-            return JsonResponse({"ok": False, "error": "interval_value and interval_unit required for custom"}, status=400)
+            return JsonResponse({"ok": False, "error": "interval_value and interval_unit required for custom"},
+                                status=400)
         if obj.interval_value < 1:
             return JsonResponse({"ok": False, "error": "interval_value must be >= 1"}, status=400)
 
@@ -785,6 +797,7 @@ def planned_order_preview(request):
         "runs": [_fmt_local(x) for x in runs],
     })
 
+
 class PlannedOrderDetailView(DetailView):
     model = PlannedOrder
     template_name = "maintenance/plan_detail.html"
@@ -799,3 +812,13 @@ class PlannedOrderDetailView(DetailView):
         )
 
         return ctx
+
+@require_POST
+def workorder_file_delete(request, pk):
+    file_obj = get_object_or_404(WorkOrderFile, pk=pk)
+
+    # физически удаляем файл
+    file_obj.file.delete(save=False)
+    file_obj.delete()
+
+    return JsonResponse({"ok": True})

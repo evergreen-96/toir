@@ -4,15 +4,34 @@ from django.forms import inlineformset_factory
 from assets.models import Workstation
 from .models import WorkOrder, WorkOrderMaterial
 
+from django import forms
+
+class MultiFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+class MultiFileField(forms.FileField):
+    widget = MultiFileInput
+
+    def clean(self, data, initial=None):
+        # data может быть списком UploadedFile
+        if data is None:
+            return []
+        if isinstance(data, (list, tuple)):
+            return [super().clean(d, initial) for d in data]
+        return [super().clean(data, initial)]
+
 class WorkOrderForm(forms.ModelForm):
+    files = MultiFileField(label="Файлы", required=False)
+
     class Meta:
         model = WorkOrder
         fields = [
-            "name", "priority", "category",
-            "responsible", "workstation", "location",
+            "name", "priority", "category", "responsible",
+            "workstation", "location",
             "date_start", "date_finish",
             "labor_plan_hours", "labor_fact_hours",
-            "files", "description",
+            "description",
+            # ⚠️ НЕ включай "files" в Meta.fields, это не поле модели
         ]
         widgets = {
             "date_start": forms.DateInput(attrs={"type": "date"}),
