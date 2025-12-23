@@ -346,6 +346,40 @@ class WorkOrder(models.Model):
         verbose_name="Плановое обслуживание",
     )
 
+    ALLOWED_TRANSITIONS = {
+        WorkOrderStatus.NEW: {
+            WorkOrderStatus.IN_PROGRESS: "В работе",
+        },
+        WorkOrderStatus.IN_PROGRESS: {
+            WorkOrderStatus.DONE: "Выполнено",
+            WorkOrderStatus.FAILED: "Не выполнено",
+            WorkOrderStatus.CANCELED: "Отмена",
+        },
+    }
+
+    def set_status(self, new_status: str):
+        allowed = self.get_allowed_transitions()
+
+        if new_status not in allowed:
+            raise ValueError("Недопустимый переход статуса")
+
+        self.status = new_status
+
+        if new_status == WorkOrderStatus.IN_PROGRESS and not self.date_start:
+            self.date_start = timezone.localdate()
+
+        if new_status == WorkOrderStatus.DONE and not self.date_finish:
+            self.date_finish = timezone.localdate()
+
+        self.save(update_fields=["status", "date_start", "date_finish"])
+
+    def get_allowed_transitions(self) -> dict:
+        """
+        Возвращает {status: label} для доступных переходов.
+        Финальные статусы вернут {}.
+        """
+        return self.ALLOWED_TRANSITIONS.get(self.status, {})
+
     class Meta:
         verbose_name = "Рабочая задача"
         verbose_name_plural = "Рабочие задачи"

@@ -204,6 +204,10 @@ class WorkOrderDetailView(DetailView):
     model = WorkOrder
     template_name = "maintenance/wo_detail.html"
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["allowed_transitions"] = self.object.get_allowed_transitions()
+        return ctx
 
 def workorder_update(request, pk: int):
     from .forms import WorkOrderForm, WorkOrderMaterialFormSet
@@ -309,24 +313,16 @@ class WorkOrderDeleteView(View):
 def wo_set_status(request, pk, status):
     wo = get_object_or_404(WorkOrder, pk=pk)
 
-    allowed = {"new", "in_progress", "done", "canceled", "failed"}
-    if status not in allowed:
-        messages.error(request, "Недопустимый статус.")
+    try:
+        wo.set_status(status)
+    except ValueError:
+        messages.error(request, "Недопустимый переход статуса.")
         return redirect("maintenance:wo_detail", pk=pk)
 
-    wo.status = status
-    if status == WorkOrderStatus.DONE and not wo.date_finish:
-        wo.date_finish = timezone.localdate()
-    wo.save(update_fields=["status", "date_finish"])
-
-    human = {
-        "new": "Новый",
-        "in_progress": "В работе",
-        "done": "Завершено",
-        "failed": "Не выполнено",
-        "canceled": "Отмена",
-    }.get(status, status)
-    messages.success(request, f"Статус изменён на «{human}».")
+    messages.success(
+        request,
+        f"Статус изменён на «{wo.get_status_display()}»."
+    )
     return redirect("maintenance:wo_detail", pk=pk)
 
 
