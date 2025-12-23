@@ -167,25 +167,34 @@ def home(request):
 class WorkOrderListView(ListView):
     model = WorkOrder
     template_name = "maintenance/wo_list.html"
-    paginate_by = 20
+    paginate_by = 50
     ordering = ["-id"]
 
     def get_queryset(self):
-        qs = WorkOrder.objects.select_related("responsible", "workstation", "location").order_by("-id")
-        q = self.request.GET.get("q") or ""
-        status = self.request.GET.get("status") or ""
-        prio = self.request.GET.get("priority") or ""
-        cat = self.request.GET.get("category") or ""
+        qs = (
+            super()
+            .get_queryset()
+            .select_related("responsible", "workstation", "location")
+        ).order_by('-id')
+
+        q = self.request.GET.get("q", "")
+        status = self.request.GET.get("status", "")
+        prio = self.request.GET.get("priority", "")
+        cat = self.request.GET.get("category", "")
+
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
+            qs = qs.filter(
+                Q(name__icontains=q) |
+                Q(description__icontains=q)
+            )
         if status:
             qs = qs.filter(status=status)
         if prio:
             qs = qs.filter(priority=prio)
         if cat:
             qs = qs.filter(category=cat)
-        return qs
 
+        return qs
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["q"] = self.request.GET.get("q", "")
