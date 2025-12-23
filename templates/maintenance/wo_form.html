@@ -2,234 +2,430 @@
 {% load form_extras %}
 
 {% block title %}
-  {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+{% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-xl-8 col-lg-9">
+    <div class="col-xl-8 col-lg-9">
 
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
 
-        <!-- ===== Header ===== -->
-        <div class="mb-4">
-          <h1 class="h4 mb-1">
-            {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
-          </h1>
-          <div class="text-muted small">
-            Работы · параметры и используемые материалы
-          </div>
+                <!-- ===== Header ===== -->
+                <div class="mb-4">
+                    <h1 class="h4 mb-1">
+                        {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+                    </h1>
+                    <div class="text-muted small">
+                        Работы · параметры и используемые материалы
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {% if form.errors %}
+                    <pre class="bg-light p-3 small text-danger">
+{{ form.errors }}
+</pre>
+                    {% endif %}
+                    <!-- ===============================
+                         1. Основная информация
+                         =============================== -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            1. Основная информация
+                        </div>
+
+                        <!-- Название -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold required">
+                                {{ form.name.label }}
+                            </label>
+                            {{ form.name|add_class:"form-control" }}
+                            {% for e in form.name.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Категория -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold required">
+                                {{ form.category.label }}
+                            </label>
+                            {{ form.category|add_class:"form-select" }}
+                            {% for e in form.category.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Локация -->
+                        {% if form.location %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold {% if form.location.field.required %}required{% endif %}">
+                                {{ form.location.label }}
+                            </label>
+                            {{ form.location|add_class:"form-select" }}
+                            {% for e in form.location.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Оборудование -->
+                        {% if form.workstation %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold {% if form.workstation.field.required %}required{% endif %}">
+                                {{ form.workstation.label }}
+                            </label>
+                            {{ form.workstation|add_class:"form-select" }}
+                            {% for e in form.workstation.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Описание -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description|add_class:"form-control" }}
+                        </div>
+
+                        <!-- Приоритет -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold required">
+                                {{ form.priority.label }}
+                            </label>
+                            {{ form.priority|add_class:"form-select" }}
+                            {% for e in form.priority.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Ответственный -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold required">
+                                {{ form.responsible.label }}
+                            </label>
+                            {{ form.responsible|add_class:"form-select" }}
+                            {% for e in form.responsible.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Дата начала -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ form.date_start.label }}
+                            </label>
+                            {{ form.date_start|add_class:"form-control" }}
+                            {% for e in form.date_start.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Дата окончания -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ form.date_finish.label }}
+                            </label>
+                            {{ form.date_finish|add_class:"form-control" }}
+                            {% for e in form.date_finish.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Трудоёмкость (план) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ form.labor_plan_hours.label }}
+                            </label>
+                            {{ form.labor_plan_hours|add_class:"form-control" }}
+                            {% for e in form.labor_plan_hours.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Трудоёмкость (факт) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ form.labor_fact_hours.label }}
+                            </label>
+                            {{ form.labor_fact_hours|add_class:"form-control" }}
+                            {% for e in form.labor_fact_hours.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Файлы -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ form.files.label }}
+                            </label>
+                            {{ form.files|add_class:"form-control" }}
+                            {% for e in form.files.errors %}
+                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+
+                    <!-- ===============================
+                         2. Материалы
+                         =============================== -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            2. Материалы
+                        </div>
+
+                        {{ formset.management_form }}
+
+                        <div id="materials-container">
+                            {% for f in formset %}
+                            <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+
+                                {% for hf in f.hidden_fields %}{{ hf }}{% endfor %}
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+
+                                <div class="d-none">{{ f.DELETE }}</div>
+
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold">{{ f.material.label }}</label>
+                                    {{ f.material|add_class:"form-select js-select2" }}
+                                    {% for e in f.material.errors %}
+                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">{{ f.qty_planned.label }}</label>
+                                        {{ f.qty_planned|add_class:"form-control" }}
+                                        {% for e in f.qty_planned.errors %}
+                                        <div class="text-danger small mt-1">{{ e }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">{{ f.qty_used.label }}</label>
+                                        {{ f.qty_used|add_class:"form-control" }}
+                                        {% for e in f.qty_used.errors %}
+                                        <div class="text-danger small mt-1">{{ e }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary" id="add-material">
+                            <i class="bi bi-plus-lg"></i> Добавить материал
+                        </button>
+
+                        <!-- empty form template -->
+                        <template id="material-template">
+                            <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+
+                                {% for hf in formset.empty_form.hidden_fields %}{{ hf }}{% endfor %}
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+
+                                <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold">
+                                        {{ formset.empty_form.material.label }}
+                                    </label>
+                                    {{ formset.empty_form.material|add_class:"form-select js-select2" }}
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">
+                                            {{ formset.empty_form.qty_planned.label }}
+                                        </label>
+                                        {{ formset.empty_form.qty_planned|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">
+                                            {{ formset.empty_form.qty_used.label }}
+                                        </label>
+                                        {{ formset.empty_form.qty_used|add_class:"form-control" }}
+                                    </div>
+                                </div>
+
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- ===============================
+                         Actions
+                         =============================== -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
+                            Отмена
+                        </a>
+                        <button class="btn btn-primary px-4" type="submit">
+                            Сохранить
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
         </div>
 
-        <form method="post" enctype="multipart/form-data" novalidate>
-          {% csrf_token %}
-
-          {{ form.non_field_errors }}
-
-          <!-- ===== Section: Basic ===== -->
-          <div class="form-section">
-            <div class="form-section-header">
-              1. Основная информация
-            </div>
-
-            {% for field in form %}
-              <div class="mb-3">
-                <label class="form-label fw-semibold {% if field.field.required %}required{% endif %}">
-                  {{ field.label }}
-                </label>
-
-                {{ field|add_class:"form-control" }}
-
-                {% for e in field.errors %}
-                  <div class="text-danger small mt-1">{{ e }}</div>
-                {% endfor %}
-              </div>
-            {% endfor %}
-          </div>
-
-          <!-- ===== Section: Materials ===== -->
-          <div class="form-section">
-            <div class="form-section-header">
-              2. Материалы
-            </div>
-
-            {{ formset.management_form }}
-
-            <div id="materials-container">
-
-              {% for f in formset %}
-                <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-
-                  {% for hf in f.hidden_fields %}
-                    {{ hf }}
-                  {% endfor %}
-
-                  <button type="button"
-                          class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn"
-                          title="Удалить материал">
-                    <i class="bi bi-trash"></i>
-                  </button>
-
-                  <div class="d-none">
-                    {{ f.DELETE }}
-                  </div>
-
-                  <div class="mb-2">
-                    <label class="form-label fw-semibold">
-                      {{ f.material.label }}
-                    </label>
-                    {{ f.material|add_class:"form-select js-select2" }}
-                  </div>
-
-                  <div class="row g-2">
-                    <div class="col">
-                      <label class="form-label fw-semibold">
-                        {{ f.qty_planned.label }}
-                      </label>
-                      {{ f.qty_planned|add_class:"form-control" }}
-                    </div>
-                    <div class="col">
-                      <label class="form-label fw-semibold">
-                        {{ f.qty_used.label }}
-                      </label>
-                      {{ f.qty_used|add_class:"form-control" }}
-                    </div>
-                  </div>
-
-                </div>
-              {% endfor %}
-            </div>
-
-            <button type="button"
-                    class="btn btn-outline-primary"
-                    id="add-material">
-              <i class="bi bi-plus-lg"></i>
-              Добавить материал
-            </button>
-
-            <!-- ===== Empty form template ===== -->
-            <template id="material-template">
-              <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-
-                {% for hf in formset.empty_form.hidden_fields %}
-                  {{ hf }}
-                {% endfor %}
-
-                <button type="button"
-                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                  <i class="bi bi-trash"></i>
-                </button>
-
-                <div class="d-none">
-                  {{ formset.empty_form.DELETE }}
-                </div>
-
-                <div class="mb-2">
-                  <label class="form-label fw-semibold">
-                    {{ formset.empty_form.material.label }}
-                  </label>
-                  {{ formset.empty_form.material|add_class:"form-select js-select2" }}
-                </div>
-
-                <div class="row g-2">
-                  <div class="col">
-                    <label class="form-label fw-semibold">
-                      {{ formset.empty_form.qty_planned.label }}
-                    </label>
-                    {{ formset.empty_form.qty_planned|add_class:"form-control" }}
-                  </div>
-                  <div class="col">
-                    <label class="form-label fw-semibold">
-                      {{ formset.empty_form.qty_used.label }}
-                    </label>
-                    {{ formset.empty_form.qty_used|add_class:"form-control" }}
-                  </div>
-                </div>
-
-              </div>
-            </template>
-          </div>
-
-          <!-- ===== Actions ===== -->
-          <div class="d-flex justify-content-between align-items-center mt-4">
-            <a class="btn btn-outline-secondary"
-               href="{% url 'maintenance:wo_list' %}">
-              Отмена
-            </a>
-            <button class="btn btn-primary px-4" type="submit">
-              Сохранить
-            </button>
-          </div>
-
-        </form>
-
-      </div>
     </div>
-
-  </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-  function initSelect2(context) {
-    $(context).find(".js-select2").select2({
-      width: "100%",
-      allowClear: true,
-      placeholder: "Выберите материал"
-    });
-  }
-
-  initSelect2(document);
-
-  document.addEventListener("click", function (e) {
-    const btn = e.target.closest(".material-remove-btn");
-    if (!btn) return;
-
-    const row = btn.closest(".material-row");
-    const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-
-    del.checked = !del.checked;
-    row.classList.toggle("is-deleted", del.checked);
-
-    $(row).find("select")
-      .prop("disabled", del.checked)
-      .trigger("change.select2");
-  });
-
-  const container = document.getElementById("materials-container");
-  const addBtn = document.getElementById("add-material");
-  const template = document.getElementById("material-template");
-
-  const prefix = "{{ formset.prefix }}";
-  const totalForms = document.querySelector(
-    `input[name="${prefix}-TOTAL_FORMS"]`
-  );
-
-  let index = parseInt(totalForms.value, 10);
-
-  addBtn.addEventListener("click", function () {
-    const clone = document.importNode(template.content, true);
-
-    clone.querySelectorAll("[name],[id],[for]").forEach(el => {
-      ["name", "id", "for"].forEach(attr => {
-        if (el.hasAttribute(attr)) {
-          el.setAttribute(
-            attr,
-            el.getAttribute(attr).replace(/__prefix__/g, index)
-          );
+        // =====================================================
+        // Select2 для материалов
+        // =====================================================
+        function initSelect2(ctx) {
+            $(ctx).find(".js-select2").select2({
+                width: "100%",
+                allowClear: true,
+                placeholder: "Выберите материал"
+            });
         }
-      });
+
+        initSelect2(document);
+
+        // =====================================================
+        // Добавление / удаление материалов
+        // =====================================================
+        document.addEventListener("click", function (e) {
+            const btn = e.target.closest(".material-remove-btn");
+            if (!btn) return;
+
+            const row = btn.closest(".material-row");
+            const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            del.checked = !del.checked;
+
+            $(row).find("select, input").prop("disabled", del.checked);
+        });
+
+        const container = document.getElementById("materials-container");
+        const addBtn = document.getElementById("add-material");
+        const template = document.getElementById("material-template");
+
+        const prefix = "{{ formset.prefix }}";
+        const totalForms = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+        let index = parseInt(totalForms.value, 10);
+
+        addBtn.addEventListener("click", function () {
+            const clone = document.importNode(template.content, true);
+
+            clone.querySelectorAll("[name],[id],[for]").forEach(el => {
+                ["name", "id", "for"].forEach(attr => {
+                    if (el.hasAttribute(attr)) {
+                        el.setAttribute(
+                            attr,
+                            el.getAttribute(attr).replace(/__prefix__/g, index)
+                        );
+                    }
+                });
+            });
+
+            container.appendChild(clone);
+            initSelect2(container.lastElementChild);
+
+            totalForms.value = index + 1;
+            index += 1;
+        });
+
+        // =====================================================
+        // LOCATION → WORKSTATION (основная логика)
+        // =====================================================
+        const $location = $("#id_location");
+        const $workstation = $("#id_workstation");
+
+        if (!$location.length || !$workstation.length) return;
+
+        $location.select2({width: "100%"});
+        $workstation.select2({
+            width: "100%",
+            allowClear: true,
+            placeholder: "Выберите оборудование"
+        });
+
+        const WS_URL = "{% url 'maintenance:ajax_workstations_by_location' %}";
+
+        // 🔑 сохраняем выбранное оборудование (нужно для edit)
+        const initialWorkstation = $workstation.val();
+
+        function lockWorkstations(clear = true) {
+            if (clear) {
+                $workstation.val(null).trigger("change");
+            }
+            $workstation.prop("disabled", true);
+        }
+
+        function unlockWorkstations() {
+            $workstation.prop("disabled", false);
+        }
+
+        function loadWorkstations(locationId, restoreValue = null) {
+            lockWorkstations(true);
+
+            if (!locationId) return;
+
+            fetch(`${WS_URL}?location_id=${locationId}`, {
+                headers: {"X-Requested-With": "XMLHttpRequest"}
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok || !data.items.length) {
+                        lockWorkstations(true);
+                        return;
+                    }
+
+                    $workstation.empty().append(new Option("", "", false, false));
+
+                    data.items.forEach(item => {
+                        const selected = restoreValue && item.id == restoreValue;
+                        $workstation.append(
+                            new Option(item.text, item.id, selected, selected)
+                        );
+                    });
+
+                    unlockWorkstations();
+                    $workstation.trigger("change");
+                })
+                .catch(() => lockWorkstations(true));
+        }
+
+        // =====================================================
+        // Реакция на смену локации
+        // =====================================================
+        $location.on("change", function () {
+            loadWorkstations(this.value, null);
+        });
+
+        // =====================================================
+        // Инициализация
+        // =====================================================
+        if ($location.val()) {
+            // редактирование существующей задачи
+            loadWorkstations($location.val(), initialWorkstation);
+        } else {
+            // создание новой задачи
+            lockWorkstations(true);
+        }
+
     });
-
-    container.appendChild(clone);
-    initSelect2(container.lastElementChild);
-
-    totalForms.value = index + 1;
-    index += 1;
-  });
-
-});
 </script>
 {% endblock %}

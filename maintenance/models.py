@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 from hr.models import HumanResource
 from locations.models import Location
-from assets.models import Workstation
+from assets.models import Workstation, WorkstationStatus
 from inventory.models import Material
 
 # Плановые работы всегда стартуют в 00:00:01 выбранной даты
@@ -380,6 +380,20 @@ class WorkOrder(models.Model):
         """
         return self.ALLOWED_TRANSITIONS.get(self.status, {})
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        super().save(*args, **kwargs)
+
+        # ===== БИЗНЕС-ПРАВИЛО =====
+        # Если создана аварийная заявка → оборудование в аварийный статус
+        if (
+                self.category == WorkCategory.EMERGENCY
+                and self.workstation
+                and self.workstation.status != WorkstationStatus.PROBLEM
+        ):
+            self.workstation.status = WorkstationStatus.PROBLEM
+            self.workstation.save(update_fields=["status"])
     class Meta:
         verbose_name = "Рабочая задача"
         verbose_name_plural = "Рабочие задачи"
@@ -389,8 +403,6 @@ class WorkOrder(models.Model):
 
 
 class WorkOrderMaterial(models.Model):
-    # NOTE: поле называется work_order (как в твоём коде выше).
-    # Если в view/formset где-то используется instance.workorder — приведи к одному имени.
     work_order = models.ForeignKey(
         WorkOrder,
         on_delete=models.CASCADE,

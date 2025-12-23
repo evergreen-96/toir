@@ -8,7 +8,7 @@ class WorkOrderForm(forms.ModelForm):
     class Meta:
         model = WorkOrder
         fields = [
-            "name", "status", "priority", "category",
+            "name", "priority", "category",
             "responsible", "workstation", "location",
             "date_start", "date_finish",
             "labor_plan_hours", "labor_fact_hours",
