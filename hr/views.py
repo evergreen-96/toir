@@ -7,11 +7,16 @@ from django.contrib import messages
 from django.db.models.deletion import ProtectedError
 from django import forms
 from .models import HumanResource
+from django.db.models import Count
+
 
 class HumanResourceForm(forms.ModelForm):
     class Meta:
         model = HumanResource
         fields = ["name", "job_title", "manager"]
+        widgets = {
+            "job_title": forms.Select(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -21,7 +26,13 @@ class HumanResourceForm(forms.ModelForm):
                 pk=self.instance.pk
             )
 
-from django.db.models import Count
+        # 🔑 ОБЯЗАТЕЛЬНО: option + selected
+        if self.instance.pk and self.instance.job_title:
+            self.fields["job_title"].choices = [
+                (self.instance.job_title, self.instance.job_title)
+            ]
+            self.initial["job_title"] = self.instance.job_title
+
 
 class HRListView(ListView):
     model = HumanResource
@@ -78,6 +89,7 @@ class HRDetailView(DetailView):
     model = HumanResource
     template_name = "hr/hr_detail.html"
 
+
 def hr_create(request):
     if request.method == "POST":
         form = HumanResourceForm(request.POST)
@@ -88,6 +100,7 @@ def hr_create(request):
     else:
         form = HumanResourceForm()
     return render(request, "hr/hr_form.html", {"form": form, "create": True})
+
 
 def hr_update(request, pk):
     obj = get_object_or_404(HumanResource, pk=pk)
@@ -100,6 +113,7 @@ def hr_update(request, pk):
     else:
         form = HumanResourceForm(instance=obj)
     return render(request, "hr/hr_form.html", {"form": form, "create": False, "obj": obj})
+
 
 class HumanResourceDeleteView(View):
     def post(self, request, pk):
@@ -136,6 +150,7 @@ def hr_manager_autocomplete(request):
             for x in qs
         ]
     })
+
 
 def hr_job_title_autocomplete(request):
     q = request.GET.get("q", "")

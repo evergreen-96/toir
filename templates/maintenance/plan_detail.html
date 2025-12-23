@@ -35,14 +35,13 @@
               data-confirm-delete
               data-delete-url="{% url 'maintenance:plan_delete' object.pk %}"
               data-delete-name="«{{ object.name }}»"
-              data-redirect-url="{% url 'maintenance:plan_list' %}"
-            >
+              data-redirect-url="{% url 'maintenance:plan_list' %}">
               Удалить
             </button>
           </div>
         </div>
 
-        <!-- ===== Основная информация ===== -->
+        <!-- ===== Основные параметры ===== -->
         <div class="form-section">
           <div class="form-section-header">
             Основные параметры
@@ -71,19 +70,19 @@
             </div>
 
             <div class="col-md-6">
-              <div class="text-muted small">Активен</div>
+              <div class="text-muted small">Статус</div>
               <div class="fw-semibold">
                 {% if object.is_active %}
-                  <span class="badge bg-success">Да</span>
+                  <span class="badge bg-success">Активен</span>
                 {% else %}
-                  <span class="badge bg-secondary">Нет</span>
+                  <span class="badge bg-secondary">Выключен</span>
                 {% endif %}
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ===== Локация и оборудование ===== -->
+        <!-- ===== Привязка ===== -->
         <div class="form-section">
           <div class="form-section-header">
             Привязка
@@ -93,14 +92,14 @@
             <div class="col-md-6">
               <div class="text-muted small">Локация</div>
               <div class="fw-semibold">
-                {{ object.location }}
+                {{ object.location|default:"—" }}
               </div>
             </div>
 
             <div class="col-md-6">
               <div class="text-muted small">Оборудование</div>
               <div class="fw-semibold">
-                {{ object.workstation }}
+                {{ object.workstation|default:"—" }}
               </div>
             </div>
           </div>
@@ -129,7 +128,7 @@
             </div>
 
             <div class="col-md-4">
-              <div class="text-muted small">Дата первого запуска</div>
+              <div class="text-muted small">Первый запуск</div>
               <div class="fw-semibold">
                 {{ object.first_run_date|default:"—" }}
               </div>
@@ -143,11 +142,79 @@
           <div class="form-section-header">
             Описание
           </div>
-          <div>
+          <div class="text-muted">
             {{ object.description|linebreaks }}
           </div>
         </div>
         {% endif %}
+
+        <!-- ===== Задачи по плану ===== -->
+        <div class="form-section mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="form-section-header mb-0">
+              Задачи по этому плану
+            </div>
+            <span class="badge bg-light text-dark">
+              {{ work_orders|length }}
+            </span>
+          </div>
+
+          {% if work_orders %}
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th class="text-muted small">ID</th>
+                    <th>Название</th>
+                    <th class="text-muted small">Статус</th>
+                    <th class="text-muted small">Ответственный</th>
+                    <th class="text-muted small text-end">Создана</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for wo in work_orders %}
+                  <tr style="cursor:pointer"
+                      onclick="window.location='{% url 'maintenance:wo_detail' wo.pk %}'">
+                    <td class="text-muted">#{{ wo.id }}</td>
+
+                    <td class="fw-semibold">
+                      {{ wo.name }}
+                    </td>
+
+                    <td>
+                      {% if wo.status == 'done' %}
+                        <span class="badge bg-success">Завершено</span>
+                      {% elif wo.status == 'in_progress' %}
+                        <span class="badge bg-primary">В работе</span>
+                      {% elif wo.status == 'failed' %}
+                        <span class="badge bg-danger">Не выполнено</span>
+                      {% else %}
+                        <span class="badge bg-secondary">
+                          {{ wo.get_status_display }}
+                        </span>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {{ wo.responsible|default:"—" }}
+                    </td>
+
+                    <td class="text-end text-muted small">
+                      {{ wo.created_at|date:"d.m.Y H:i" }}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="border rounded bg-dark text-light p-3 text-muted small">
+              По этому плану задачи ещё не создавались.<br>
+              Они появятся автоматически по расписанию
+              или после нажатия «Создать сейчас».
+            </div>
+          {% endif %}
+        </div>
 
       </div>
     </div>

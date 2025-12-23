@@ -8,7 +8,7 @@ from .views import (
     # Planned Orders
     PlannedOrderListView, planned_order_create, planned_order_update, planned_order_run_now, PlannedOrderDeleteView,
     planned_order_preview,  # ✅ добавили
-    wo_set_status, get_workstations_by_location,
+    wo_set_status, get_workstations_by_location, PlannedOrderDetailView,
 )
 
 app_name = "maintenance"
@@ -21,14 +21,11 @@ urlpatterns = [
     path("workorders/<int:pk>/edit/", workorder_update, name="wo_edit"),
     path("workorders/<int:pk>/delete/", WorkOrderDeleteView.as_view(), name="wo_delete"),
     path("workorders/<int:pk>/set-status/<str:status>/", wo_set_status, name="wo_set_status"),
-    path("api/workstations-by-location/", get_workstations_by_location, name="workstations_by_location"),
+    path("ajax/workstations-by-location/", get_workstations_by_location, name="ajax_workstations_by_location"),
 
     # Плановые обслуживания
     path("plans/", PlannedOrderListView.as_view(), name="plan_list"),
-    path("plans/<int:pk>/", DetailView.as_view(
-        model=PlannedOrder,
-        template_name="maintenance/plan_detail.html"
-    ), name="plan_detail"),
+    path("plans/<int:pk>/", PlannedOrderDetailView.as_view(), name="plan_detail"),
     path("plans/new/", planned_order_create, name="plan_new"),
     path("plans/<int:pk>/edit/", planned_order_update, name="plan_edit"),
     path("plans/<int:pk>/delete/", PlannedOrderDeleteView.as_view(), name="plan_delete"),

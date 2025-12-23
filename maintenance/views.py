@@ -332,11 +332,14 @@ def wo_set_status(request, pk, status):
 
 def get_workstations_by_location(request):
     location_id = request.GET.get("location_id")
-    if location_id:
-        workstations = Workstation.objects.filter(location_id=location_id).values("id", "name")
-    else:
-        workstations = Workstation.objects.none()
-    return JsonResponse(list(workstations), safe=False)
+
+    if not location_id:
+        return JsonResponse({"ok": True, "items": []})
+
+    qs = Workstation.objects.filter(location_id=location_id).values("id", "name")
+    items = [{"id": w["id"], "text": w["name"]} for w in qs]
+
+    return JsonResponse({"ok": True, "items": items})
 
 
 # =========================
@@ -635,6 +638,7 @@ def planned_order_run_now(request, pk: int):
                 category=obj.category or WorkCategory.PM,
                 labor_plan_hours=obj.labor_plan_hours,
                 priority=obj.priority or Priority.MED,
+                createrd_from_plan=obj
             )
 
             base = obj.next_run or obj.compute_initial_next_run()
@@ -775,3 +779,18 @@ def planned_order_preview(request):
         "first_run": _fmt_local(first_run),
         "runs": [_fmt_local(x) for x in runs],
     })
+
+class PlannedOrderDetailView(DetailView):
+    model = PlannedOrder
+    template_name = "maintenance/plan_detail.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        ctx["work_orders"] = (
+            self.object.work_orders
+            .select_related("responsible", "workstation")
+            .order_by("-created_at")
+        )
+
+        return ctx
