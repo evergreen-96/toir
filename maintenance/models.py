@@ -370,10 +370,10 @@ class WorkOrder(models.Model):
 
     def set_status(self, new_status: str):
         allowed = self.get_allowed_transitions()
-
         if new_status not in allowed:
             raise ValueError("Недопустимый переход статуса")
 
+        prev_status = self.status
         self.status = new_status
 
         if new_status == WorkOrderStatus.IN_PROGRESS and not self.date_start:
@@ -381,6 +381,17 @@ class WorkOrder(models.Model):
 
         if new_status == WorkOrderStatus.DONE and not self.date_finish:
             self.date_finish = timezone.localdate()
+
+        # ===== УПРАВЛЕНИЕ ОБОРУДОВАНИЕМ =====
+        if (
+                self.workstation
+                and self.category == WorkCategory.EMERGENCY
+                and prev_status == WorkOrderStatus.NEW
+                and new_status == WorkOrderStatus.IN_PROGRESS
+        ):
+            # аварийные работы стартовали → оборудование аварийное
+            self.workstation.status = WorkstationStatus.PROBLEM
+            self.workstation.save(update_fields=["status"])
 
         self.save(update_fields=["status", "date_start", "date_finish"])
 
@@ -396,10 +407,12 @@ class WorkOrder(models.Model):
 
         super().save(*args, **kwargs)
 
-        # ===== БИЗНЕС-ПРАВИЛО =====
-        # Если создана аварийная заявка → оборудование в аварийный статус
+        # ==========================================
+        # БИЗНЕС-ПРАВИЛО: ТОЛЬКО ПРИ СОЗДАНИИ
+        # ==========================================
         if (
-                self.category == WorkCategory.EMERGENCY
+                is_new
+                and self.category == WorkCategory.EMERGENCY
                 and self.workstation
                 and self.workstation.status != WorkstationStatus.PROBLEM
         ):
