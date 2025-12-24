@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import WorkOrder, WorkOrderMaterial, PlannedOrder
+from .models import WorkOrder, WorkOrderMaterial, PlannedOrder, File
+
 
 class WorkOrderMaterialInline(admin.TabularInline):
     model = WorkOrderMaterial
@@ -27,3 +28,7 @@ class PlannedOrderAdmin(admin.ModelAdmin):
         "interval_value", "interval_unit",
         "is_active",
     )
+
+@admin.register(File)
+class FileAdmin(admin.ModelAdmin):
+    list_display = ("id", "file", "uploaded_at")

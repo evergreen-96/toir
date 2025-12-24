@@ -28,8 +28,7 @@ from .models import (
     WorkCategory,
     PlannedOrder,
     IntervalUnit,
-    WorkOrderMaterial,
-    WorkOrderFile
+    WorkOrderMaterial, WorkOrderAttachment,
 )
 
 # Плановые работы всегда в 00:00:01
@@ -225,55 +224,100 @@ class WorkOrderDetailView(DetailView):
 
 def workorder_update(request, pk: int):
     from .forms import WorkOrderForm, WorkOrderMaterialFormSet
+    from .models import File, WorkOrderAttachment
 
     wo = get_object_or_404(WorkOrder, pk=pk)
 
     if request.method == "POST":
         form = WorkOrderForm(request.POST, request.FILES, instance=wo)
         formset = WorkOrderMaterialFormSet(request.POST, instance=wo)
+
         if form.is_valid() and formset.is_valid():
             wo = form.save()
 
-            # Автоматически устанавливаем location из workstation если не задан
-            if wo.workstation and not wo.location:
-                wo.location = wo.workstation.location
-                wo.save(update_fields=["location"])
-            for f in form.cleaned_data.get("files", []):
-                WorkOrderFile.objects.create(work_order=wo, file=f)
-            # Сохраняем formset
+            # -----------------------------
+            # EXISTING FILES (reuse)
+            # -----------------------------
+            existing_file_ids = list(map(int, request.POST.getlist("existing_files")))
+            qs = WorkOrderAttachment.objects.filter(work_order=wo)
+
+            if existing_file_ids:
+                qs.exclude(file_id__in=existing_file_ids).delete()
+            else:
+                qs.delete()
+
+            for fid in existing_file_ids:
+                WorkOrderAttachment.objects.get_or_create(
+                    work_order=wo,
+                    file_id=fid,
+                )
+
+            # -----------------------------
+            # NEW UPLOADS
+            # -----------------------------
+            for f in request.FILES.getlist("files"):
+                file_obj = File(file=f)
+                file_obj.save()
+
+                WorkOrderAttachment.objects.create(
+                    work_order=wo,
+                    file=file_obj,
+                )
+
+            # -----------------------------
+            # Materials
+            # -----------------------------
             instances = formset.save(commit=False)
-            for instance in instances:
-                instance.work_order = wo
-                instance.save()
+            for inst in instances:
+                inst.work_order = wo
+                inst.save()
 
             for obj in formset.deleted_objects:
                 obj.delete()
 
             messages.success(request, "Изменения сохранены.")
             return redirect("maintenance:wo_detail", pk=wo.pk)
-        else:
-            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
-            print("Form errors:", form.errors)
-            print("Formset errors:", formset.errors)
+
     else:
         form = WorkOrderForm(instance=wo)
         formset = WorkOrderMaterialFormSet(instance=wo)
 
+    # -----------------------------
+    # FILE LIBRARY (ВАЖНО)
+    # -----------------------------
+    attached_ids = wo.attachments.values_list("file_id", flat=True)
+
+    all_files = (
+        File.objects
+        .exclude(id__in=attached_ids)  # 🔑 КЛЮЧЕВОЕ
+        .order_by("-uploaded_at")
+    )
+
     return render(
         request,
         "maintenance/wo_form.html",
-        {"form": form, "formset": formset, "create": False, "wo": wo},
+        {
+            "form": form,
+            "formset": formset,
+            "create": False,
+            "wo": wo,
+            "all_files": all_files,
+        },
     )
 
 
 def workorder_create(request):
     from .forms import WorkOrderForm, WorkOrderMaterialFormSet
+    from .models import File, WorkOrderAttachment
 
     if request.method == "POST":
         form = WorkOrderForm(request.POST, request.FILES)
         formset = WorkOrderMaterialFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
+            # =========================
+            # CREATE WORK ORDER
+            # =========================
             wo = form.save(commit=False)
 
             if wo.workstation and not wo.location:
@@ -281,23 +325,51 @@ def workorder_create(request):
 
             wo.save()
 
-            # 🔑 СОХРАНЕНИЕ ФАЙЛОВ
-            for f in form.cleaned_data.get("files", []):
-                WorkOrderFile.objects.create(work_order=wo, file=f)
+            # =========================
+            # FILES: existing (reuse from DB)
+            # =========================
+            existing_file_ids = list(map(int, request.POST.getlist("existing_files")))
 
+            for fid in existing_file_ids:
+                WorkOrderAttachment.objects.get_or_create(
+                    work_order=wo,
+                    file_id=fid,
+                )
+
+            # =========================
+            # FILES: new uploads
+            # =========================
+            for f in request.FILES.getlist("files"):
+                file_obj = File(file=f)
+                file_obj.save()
+
+                WorkOrderAttachment.objects.create(
+                    work_order=wo,
+                    file=file_obj,
+                )
+
+            # =========================
+            # MATERIALS
+            # =========================
             formset.instance = wo
             formset.save()
 
             messages.success(request, "Задача создана.")
             return redirect("maintenance:wo_detail", pk=wo.pk)
+
         else:
             messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
-            print("Form errors:", form.errors)
-            print("Formset errors:", formset.errors)
+            print("FORM ERRORS:", form.errors)
+            print("FORMSET ERRORS:", formset.errors)
 
     else:
         form = WorkOrderForm()
         formset = WorkOrderMaterialFormSet()
+
+    # =========================
+    # FILE LIBRARY (ALL FILES)
+    # =========================
+    all_files = File.objects.order_by("-uploaded_at")
 
     return render(
         request,
@@ -306,6 +378,7 @@ def workorder_create(request):
             "form": form,
             "formset": formset,
             "create": True,
+            "all_files": all_files,
         },
     )
 
@@ -315,10 +388,7 @@ class WorkOrderDeleteView(View):
         obj = get_object_or_404(WorkOrder, pk=pk)
 
         try:
-            # удалить файлы физически
-            for att in obj.attachments.all():
-                att.file.delete(save=False)
-
+            obj.attachments.all().delete()  # только связи
             obj.delete()
             return JsonResponse({"ok": True})
 
@@ -813,12 +883,9 @@ class PlannedOrderDetailView(DetailView):
 
         return ctx
 
-@require_POST
-def workorder_file_delete(request, pk):
-    file_obj = get_object_or_404(WorkOrderFile, pk=pk)
 
-    # физически удаляем файл
-    file_obj.file.delete(save=False)
-    file_obj.delete()
-
-    return JsonResponse({"ok": True})
+# @require_POST
+# def workorder_attachment_delete(request, pk):
+#     attachment = get_object_or_404(WorkOrderAttachment, pk=pk)
+#     attachment.delete()
+#     return JsonResponse({"ok": True})

@@ -219,13 +219,14 @@
 
                     {% if object.attachments.exists %}
                     <ul class="list-group list-group-flush">
-                        {% for f in object.attachments.all %}
+                        {% for att in object.attachments.all %}
                         <li class="list-group-item d-flex align-items-center gap-2">
                             <i class="bi bi-paperclip text-muted"></i>
-                            <a href="{{ f.file.url }}"
+                            <a href="{{ att.file.file.url }}"
                                target="_blank"
-                               rel="noopener">
-                                {{ f.file.name|cut:"workorders/" }}
+                               rel="noopener"
+                               class="text-decoration-none">
+                                {{ att.file.file.name|cut:"workorders/" }}
                             </a>
                         </li>
                         {% endfor %}

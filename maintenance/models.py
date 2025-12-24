@@ -431,19 +431,24 @@ class WorkOrderMaterial(models.Model):
         unique_together = ("work_order", "material")
 
 
-class WorkOrderFile(models.Model):
+class File(models.Model):
+    file = models.FileField(upload_to="workorders/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+
+class WorkOrderAttachment(models.Model):
     work_order = models.ForeignKey(
         WorkOrder,
         on_delete=models.CASCADE,
         related_name="attachments",
-        verbose_name="Задача"
     )
-    file = models.FileField("Файл", upload_to="workorders/")
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file = models.ForeignKey(
+        File,
+        on_delete=models.CASCADE,
+        related_name="work_orders",
+    )
+    attached_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Файл задачи"
-        verbose_name_plural = "Файлы задачи"
-
-    def __str__(self):
-        return self.file.name
+        unique_together = ("work_order", "file")
