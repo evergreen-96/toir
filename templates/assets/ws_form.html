@@ -6,217 +6,216 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="row justify-content-center">
-    <div class="col-xl-10 col-lg-11">
+  <div class="col-xl-10 col-lg-11">
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
 
-                <!-- ===== Header ===== -->
-                <div class="mb-3">
-                    <h1 class="h4 mb-1">
-                        {% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}
-                    </h1>
-                    <div class="text-muted small">
-                        Основные характеристики и параметры
-                    </div>
-                </div>
-
-                <!-- ===== Legend ===== -->
-                <div class="text-muted small mb-4">
-                    <span class="text-danger fw-semibold">*</span> — обязательные поля
-                </div>
-
-                <form method="post" enctype="multipart/form-data" novalidate>
-                    {% csrf_token %}
-
-                    <!-- ================= ОБЩИЕ СВЕДЕНИЯ ================= -->
-                    <h6 class="fw-semibold mb-3">Общие сведения</h6>
-
-                    <div class="row g-3">
-
-                        <!-- Название -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                {{ form.name.label }}
-                                {% if form.name.field.required %}
-                                <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            {{ form.name|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Категория -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.category.label }}
-                                {% if form.category.field.required %}
-                                <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            {{ form.category|add_class:"form-select" }}
-                        </div>
-
-                        <!-- Статус -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.status.label }}
-                                {% if form.status.field.required %}
-                                <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            {{ form.status|add_class:"form-select" }}
-                        </div>
-                        <!-- Глобальное состояние -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.global_state.label }}
-                                <span class="text-danger">*</span>
-                            </label>
-                            {{ form.global_state|add_class:"form-select" }}
-                        </div>
-                        <!-- Тип -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.type_name.label }}
-                                {% if form.type_name.field.required %}
-                                <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            {{ form.type_name|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Производитель -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.manufacturer.label }}
-                            </label>
-                            {{ form.manufacturer|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Модель -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.model.label }}
-                            </label>
-                            {{ form.model|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Серийный номер -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.serial_number.label }}
-                            </label>
-                            {{ form.serial_number|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Инвентарный номер -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.inventory_number.label }}
-                            </label>
-                            {{ form.inventory_number|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Локация -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.location.label }}
-                                {% if form.location.field.required %}
-                                <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            {{ form.location|add_class:"form-select" }}
-                        </div>
-
-                        <!-- Ответственный -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.responsible.label }}
-                            </label>
-                            {{ form.responsible|add_class:"form-select" }}
-                        </div>
-
-                        <!-- Ввод -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.commissioning_date.label }}
-                            </label>
-                            {{ form.commissioning_date|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Гарантия -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                {{ form.warranty_until.label }}
-                            </label>
-                            {{ form.warranty_until|add_class:"form-control" }}
-                        </div>
-
-                    </div>
-
-                    <!-- ================= ФОТО ================= -->
-                    <hr class="my-4">
-                    <h6 class="fw-semibold mb-3">Фотография</h6>
-
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-6">
-                            {{ form.photo|add_class:"form-control" }}
-                            <div class="form-text">JPG или PNG</div>
-                        </div>
-
-                        {% if not create and object.photo %}
-                        <div class="col-md-6 text-center">
-                            <img
-                                    src="{{ object.photo.url }}"
-                                    class="img-fluid rounded border"
-                                    style="max-height: 180px"
-                                    alt="{{ object.name }}"
-                            >
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- ================= ОПИСАНИЕ ================= -->
-                    <hr class="my-4">
-                    <h6 class="fw-semibold mb-3">Описание</h6>
-
-                    {{ form.description|add_class:"form-control" }}
-                    {% if form.errors %}
-                    <div class="alert alert-danger">
-                        {{ form.errors }}
-                    </div>
-                    {% endif %}
-                    <!-- ================= ACTIONS ================= -->
-                    <div class="d-flex justify-content-between align-items-center mt-4">
-                        <a class="btn btn-outline-secondary" href="{% url 'assets:asset_list' %}">
-                            Отмена
-                        </a>
-                        <button class="btn btn-primary px-4" type="submit">
-                            Сохранить
-                        </button>
-                    </div>
-
-                </form>
-
-            </div>
+        <!-- =====================================================
+             1. HEADER
+             ===================================================== -->
+        <div class="mb-3">
+          <h1 class="h4 mb-1">
+            {% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}
+          </h1>
+          <div class="text-muted small">
+            Основные характеристики и параметры
+          </div>
         </div>
 
+        <div class="text-muted small mb-4">
+          <span class="text-danger fw-semibold">*</span> — обязательные поля
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+
+          <!-- =====================================================
+               2. ОСНОВНЫЕ ХАРАКТЕРИСТИКИ
+               ===================================================== -->
+          <div class="mb-4">
+            <div class="section-header">Основные характеристики</div>
+
+            <div class="row g-3">
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  {{ form.name.label }}{% if form.name.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                {{ form.name|add_class:"form-control" }}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                  {{ form.category.label }}{% if form.category.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                {{ form.category|add_class:"form-select" }}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                  {{ form.status.label }}{% if form.status.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                {{ form.status|add_class:"form-select" }}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                  {{ form.global_state.label }}<span class="text-danger">*</span>
+                </label>
+                {{ form.global_state|add_class:"form-select" }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                  {{ form.type_name.label }}{% if form.type_name.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                {{ form.type_name|add_class:"form-control" }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.manufacturer.label }}</label>
+                {{ form.manufacturer|add_class:"form-control" }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.model.label }}</label>
+                {{ form.model|add_class:"form-control" }}
+              </div>
+
+            </div>
+          </div>
+
+          <!-- =====================================================
+               3. ИДЕНТИФИКАЦИЯ И УЧЁТ
+               ===================================================== -->
+          <div class="mb-4">
+            <div class="section-header">Идентификация и учёт</div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.serial_number.label }}</label>
+                {{ form.serial_number|add_class:"form-control" }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.inventory_number.label }}</label>
+                {{ form.inventory_number|add_class:"form-control" }}
+              </div>
+            </div>
+          </div>
+
+          <!-- =====================================================
+               4. РАСПОЛОЖЕНИЕ И ОТВЕТСТВЕННОСТЬ
+               ===================================================== -->
+          <div class="mb-4">
+            <div class="section-header">Расположение и ответственность</div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                  {{ form.location.label }}{% if form.location.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                {{ form.location|add_class:"form-select" }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.responsible.label }}</label>
+                {{ form.responsible|add_class:"form-select" }}
+              </div>
+            </div>
+          </div>
+
+          <!-- =====================================================
+               5. ЭКСПЛУАТАЦИЯ И ГАРАНТИЯ
+               ===================================================== -->
+          <div class="mb-4">
+            <div class="section-header">Эксплуатация</div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.commissioning_date.label }}</label>
+                {{ form.commissioning_date|add_class:"form-control" }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">{{ form.warranty_until.label }}</label>
+                {{ form.warranty_until|add_class:"form-control" }}
+              </div>
+            </div>
+          </div>
+
+          <!-- =====================================================
+               6. ФОТО
+               ===================================================== -->
+          <div class="mb-4">
+            <div class="section-header">Фотография</div>
+
+            <div class="row g-3 align-items-center">
+              <div class="col-md-6">
+                {{ form.photo|add_class:"form-control" }}
+                <div class="form-text">JPG или PNG</div>
+              </div>
+
+              {% if not create and object.photo %}
+              <div class="col-md-6 text-center">
+                <img src="{{ object.photo.url }}"
+                     class="img-fluid rounded border"
+                     style="max-height: 180px"
+                     alt="{{ object.name }}">
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- =====================================================
+               7. ОПИСАНИЕ
+               ===================================================== -->
+          <div class="mb-4">
+            <div class="section-header">Описание</div>
+            {{ form.description|add_class:"form-control" }}
+          </div>
+
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            {{ form.errors }}
+          </div>
+          {% endif %}
+
+          <!-- =====================================================
+               8. ACTIONS
+               ===================================================== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'assets:asset_list' %}">
+              Отмена
+            </a>
+            <button class="btn btn-primary px-4" type="submit">
+              Сохранить
+            </button>
+          </div>
+
+        </form>
+
+      </div>
     </div>
+
+  </div>
 </div>
 
-<!-- ================= JS ================= -->
+<!-- =====================================================
+     JS
+     ===================================================== -->
 <script>
-    $(document).ready(function () {
-        $('#id_location, #id_responsible').select2({
-            width: '100%',
-            placeholder: 'Выберите',
-            allowClear: true
-        });
-
-        $('#id_commissioning_date, #id_warranty_until').attr('type', 'date');
+  $(document).ready(function () {
+    $('#id_location, #id_responsible').select2({
+      width: '100%',
+      placeholder: 'Выберите',
+      allowClear: true
     });
-</script>
 
+    $('#id_commissioning_date, #id_warranty_until').attr('type', 'date');
+  });
+</script>
 {% endblock %}

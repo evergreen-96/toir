@@ -4,14 +4,14 @@
 {% block content %}
 
 <!-- ===== Header ===== -->
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1 class="mb-0">Оборудование</h1>
     <div class="text-muted small">Список и состояние оборудования</div>
   </div>
 
-  <div class="d-flex align-items-center gap-2">
-    <div class="btn-group" role="group" aria-label="View switch">
+  <div class="d-flex gap-2">
+    <div class="btn-group">
       <button id="view-cards" type="button" class="btn btn-outline-secondary active">
         Карточки
       </button>
@@ -19,6 +19,7 @@
         Таблица
       </button>
     </div>
+
     <a class="btn btn-success" href="{% url 'assets:asset_new' %}">
       + Оборудование
     </a>
@@ -26,87 +27,75 @@
 </div>
 
 <!-- ================= ФИЛЬТРЫ ================= -->
-<form method="get" class="card shadow-sm border-0 mb-4">
-  <div class="card-body">
-    <div class="row g-3 align-items-end">
+<form class="row g-2 mb-3" method="get">
 
-      <!-- Поиск -->
-      <div class="col-md-4">
-        <label class="form-label fw-semibold">Поиск</label>
-        <input
-          type="text"
-          name="q"
-          class="form-control"
-          placeholder="Название, тип, модель"
-          value="{{ request.GET.q }}"
-        >
-      </div>
-
-      <!-- Категория -->
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Категория</label>
-        <select name="category" class="form-select">
-          <option value="">Все</option>
-          {% for value,label in categories %}
-            <option value="{{ value }}"
-              {% if request.GET.category == value|stringformat:"s" %}selected{% endif %}
-            >
-              {{ label }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Статус -->
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Статус</label>
-        <select name="status" class="form-select">
-          <option value="">Все</option>
-          {% for value,label in statuses %}
-            <option value="{{ value }}"
-              {% if request.GET.status == value|stringformat:"s" %}selected{% endif %}
-            >
-              {{ label }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Локация -->
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Локация</label>
-        <select name="location" class="form-select">
-          <option value="">Все</option>
-          {% for loc in locations %}
-            <option value="{{ loc.pk }}"
-              {% if request.GET.location == loc.pk|stringformat:"s" %}selected{% endif %}
-            >
-              {{ loc.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Кнопки -->
-      <div class="col-md-2 d-flex gap-2">
-        <button class="btn btn-primary w-100" type="submit">
-          Применить
-        </button>
-        <a class="btn btn-outline-secondary w-100" href="{% url 'assets:asset_list' %}">
-          Сброс
-        </a>
-      </div>
-
-    </div>
+  <div class="col-md-4">
+    <input
+      class="form-control"
+      type="search"
+      name="q"
+      placeholder="Название, тип, модель"
+      value="{{ request.GET.q }}"
+    >
   </div>
+
+  <div class="col-md-2">
+    <select name="category" class="form-select">
+      <option value="">Категория: все</option>
+      {% for value,label in categories %}
+        <option value="{{ value }}"
+          {% if request.GET.category == value|stringformat:"s" %}selected{% endif %}
+        >
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-2">
+    <select name="status" class="form-select">
+      <option value="">Статус: все</option>
+      {% for value,label in statuses %}
+        <option value="{{ value }}"
+          {% if request.GET.status == value|stringformat:"s" %}selected{% endif %}
+        >
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-2">
+    <select name="location" class="form-select">
+      <option value="">Локация: все</option>
+      {% for loc in locations %}
+        <option value="{{ loc.pk }}"
+          {% if request.GET.location == loc.pk|stringformat:"s" %}selected{% endif %}
+        >
+          {{ loc.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-2 d-flex gap-2">
+    <button class="btn btn-primary w-100" type="submit">
+      Фильтр
+    </button>
+    <a class="btn btn-outline-secondary w-100" href="{% url 'assets:asset_list' %}">
+      Сброс
+    </a>
+  </div>
+
 </form>
 
-{# ================= ВИД 1: Карточки ================= #}
+<!-- ================= ВИД 1: Карточки ================= -->
 <div id="cards-view" class="row g-3">
+
   {% for x in object_list %}
     <div class="col-md-6 col-lg-4">
       <a
-        class="card h-100 text-decoration-none shadow-sm border-0"
+        class="card h-100 text-decoration-none shadow-sm border-0 hover-shadow"
         href="{% url 'assets:asset_detail' x.pk %}"
       >
         {% if x.photo %}
@@ -117,41 +106,58 @@
             alt="{{ x.name }}"
           >
         {% endif %}
+
         <div class="card-body">
           <h5 class="card-title mb-1">{{ x.name }}</h5>
-          <p class="card-text mb-1">
-            <small class="text-muted">
-              {{ x.get_category_display }}
-              {% if x.type_name %} • {{ x.type_name }}{% endif %}
-            </small>
-          </p>
-          <small class="text-muted">
-            {{ x.get_status_display }} • {{ x.location }}
-          </small>
+
+          <div class="text-muted small mb-1">
+            {{ x.get_category_display }}
+            {% if x.type_name %} • {{ x.type_name }}{% endif %}
+          </div>
+
+          <div class="small">
+            {% if x.status == 'active' %}
+              <span class="badge text-bg-success">Работает</span>
+            {% elif x.status == 'repair' %}
+              <span class="badge text-bg-warning">В ремонте</span>
+            {% elif x.status == 'broken' %}
+              <span class="badge text-bg-danger">Неисправно</span>
+            {% else %}
+              <span class="badge text-bg-secondary">
+                {{ x.get_status_display }}
+              </span>
+            {% endif %}
+
+            <span class="text-muted ms-2">{{ x.location }}</span>
+          </div>
         </div>
       </a>
     </div>
+
   {% empty %}
     <div class="col-12">
-      <div class="alert alert-secondary mb-0">Ничего не найдено</div>
+      <div class="alert alert-secondary mb-0">
+        Ничего не найдено
+      </div>
     </div>
   {% endfor %}
+
 </div>
 
-{# ================= ВИД 2: Таблица ================= #}
+<!-- ================= ВИД 2: Таблица ================= -->
 <div id="table-view" class="table-responsive d-none">
   <table class="table table-hover align-middle">
+
     <thead class="table-light">
       <tr>
         <th style="width:56px;">Фото</th>
         <th>Название</th>
         <th>Категория</th>
-        <th>Тип</th>
         <th>Статус</th>
         <th>Локация</th>
-        <th></th>
       </tr>
     </thead>
+
     <tbody>
       {% for x in object_list %}
         <tr
@@ -162,38 +168,60 @@
             {% if x.photo %}
               <img
                 src="{{ x.photo.url }}"
-                style="width:48px;height:48px;object-fit:cover;border-radius:6px;"
+                style="width:40px;height:40px;object-fit:cover;border-radius:6px;"
                 alt=""
               >
             {% else %}
               <span class="text-muted">—</span>
             {% endif %}
           </td>
-          <td class="fw-semibold">{{ x.name }}</td>
-          <td>{{ x.get_category_display }}</td>
-          <td>{{ x.type_name|default:"—" }}</td>
-          <td>{{ x.get_status_display }}</td>
-          <td>{{ x.location }}</td>
-          <td>
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'assets:asset_detail' x.pk %}">
-              Открыть
-            </a>
+
+          <td class="fw-semibold">
+            {{ x.name }}
+            <div class="text-muted small">
+              {{ x.type_name|default:"—" }}
+            </div>
           </td>
+
+          <td>{{ x.get_category_display }}</td>
+
+          <td>
+            {% if x.status == 'prod' %}
+             <span class="badge text-bg-success">Работает</span>
+            {% elif x.status == 'problem' %}
+              <span class="badge text-bg-danger">Аварийный ремонт</span>
+            {% elif x.status == 'maint' %}
+             <span class="badge text-bg-warning">Техническое обслуживание</span>
+            {% elif x.status == 'setup' %}
+              <span class="badge text-bg-info">Пусконаладочные работы</span>
+            {% else %}
+             <span class="badge text-bg-secondary">
+                {{ x.get_status_display }}
+              </span>
+            {% endif %}
+
+          </td>
+
+          <td>{{ x.location }}</td>
         </tr>
+
       {% empty %}
         <tr>
-          <td colspan="7">
-            <div class="alert alert-secondary mb-0">Ничего не найдено</div>
+          <td colspan="6">
+            <div class="alert alert-secondary mb-0">
+              Ничего не найдено
+            </div>
           </td>
         </tr>
       {% endfor %}
     </tbody>
+
   </table>
 </div>
 
 {% include "includes/pagination.html" %}
 
-<!-- ================= JS: View switch + row click ================= -->
+<!-- ================= JS ================= -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const KEY = 'assets_view_mode';
@@ -211,11 +239,10 @@ document.addEventListener('DOMContentLoaded', function () {
     try { localStorage.setItem(KEY, mode); } catch(e) {}
   }
 
-  cardsBtn?.addEventListener('click', () => apply('cards'));
-  tableBtn?.addEventListener('click', () => apply('table'));
+  cardsBtn.addEventListener('click', () => apply('cards'));
+  tableBtn.addEventListener('click', () => apply('table'));
   apply(localStorage.getItem(KEY) || 'cards');
 
-  // Клик по строке таблицы
   document.querySelectorAll('.table-row-link').forEach(row => {
     row.addEventListener('click', e => {
       if (e.target.closest('a,button')) return;
@@ -228,6 +255,11 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
 .table-row-link { cursor: pointer; }
 .table-row-link:hover { background-color: rgba(0,0,0,.03); }
+
+.hover-shadow:hover {
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+  transform: translateY(-1px);
+}
 </style>
 
 {% endblock %}

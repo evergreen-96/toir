@@ -333,173 +333,186 @@
    Select2 — TOiR Bootstrap-like
    ===================================================== */
 
-.select2-container {
-    width: 100% !important;
-    font-size: 1rem;
-}
+        .select2-container {
+            width: 100% !important;
+            font-size: 1rem;
+        }
 
-/* ===== Control ===== */
-.select2-container--default .select2-selection--single {
-    height: calc(2.375rem + 2px); /* как form-select */
-    padding: 0.375rem 0.75rem;
-    padding-right: 2.25rem;
+        /* ===== Control ===== */
+        .select2-container--default .select2-selection--single {
+            height: calc(2.375rem + 2px); /* как form-select */
+            padding: 0.375rem 0.75rem;
+            padding-right: 2.25rem;
 
-    border-radius: 0.375rem;
-    border: 1px solid var(--bs-border-color);
-    background-color: var(--bs-body-bg);
+            border-radius: 0.375rem;
+            border: 1px solid var(--bs-border-color);
+            background-color: var(--bs-body-bg);
 
-    display: flex;
-    align-items: center;
-    position: relative;
+            display: flex;
+            align-items: center;
+            position: relative;
 
-    transition: border-color .15s ease-in-out,
-                box-shadow .15s ease-in-out,
-                background-color .15s ease-in-out;
-}
+            transition: border-color .15s ease-in-out,
+            box-shadow .15s ease-in-out,
+            background-color .15s ease-in-out;
+        }
 
-/* текст */
-.select2-container--default
-.select2-selection--single
-.select2-selection__rendered {
-    padding: 0;
-    color: var(--bs-body-color);
-    line-height: 1.5;
-}
+        /* текст */
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__rendered {
+            padding: 0;
+            color: var(--bs-body-color);
+            line-height: 1.5;
+        }
 
-/* placeholder */
-.select2-container--default
-.select2-selection__placeholder {
-    color: var(--bs-secondary-color);
-}
+        /* placeholder */
+        .select2-container--default
+        .select2-selection__placeholder {
+            color: var(--bs-secondary-color);
+        }
 
-/* стрелка */
-.select2-container--default
-.select2-selection--single
-.select2-selection__arrow {
-    position: absolute;
-    right: .75rem;
-    inset-block: 0;
-    display: flex;
-    align-items: center;
-    pointer-events: none;
-}
+        /* стрелка */
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__arrow {
+            position: absolute;
+            right: .75rem;
+            inset-block: 0;
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+        }
 
-.select2-container--default
-.select2-selection--single
-.select2-selection__arrow b {
-    border-width: 5px 5px 0;
-    border-style: solid;
-    border-color: currentColor transparent transparent;
-    opacity: .6;
-}
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__arrow b {
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: currentColor transparent transparent;
+            opacity: .6;
+        }
 
-/* ===== Focus ===== */
-.select2-container--focus
-.select2-selection--single {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
-}
+        /* ===== Focus ===== */
+        .select2-container--focus
+        .select2-selection--single {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
+        }
 
-/* ===== Disabled ===== */
-.select2-container--disabled
-.select2-selection--single {
-    background-color: var(--bs-secondary-bg);
-    opacity: .65;
-    cursor: not-allowed;
-}
+        /* ===== Disabled ===== */
+        .select2-container--disabled
+        .select2-selection--single {
+            background-color: var(--bs-secondary-bg);
+            opacity: .65;
+            cursor: not-allowed;
+        }
 
-/* ===== Clear (×) ===== */
-.select2-container--default
-.select2-selection__clear {
-    color: var(--bs-secondary-color);
-    margin-right: .25rem;
-}
+        /* ===== Clear (×) ===== */
+        .select2-container--default
+        .select2-selection__clear {
+            color: var(--bs-secondary-color);
+            margin-right: .25rem;
+        }
 
-.select2-container--default
-.select2-selection__clear:hover {
-    color: var(--bs-body-color);
-}
+        .select2-container--default
+        .select2-selection__clear:hover {
+            color: var(--bs-body-color);
+        }
 
-/* =====================================================
-   Dropdown
-   ===================================================== */
+        /* =====================================================
+           Dropdown
+           ===================================================== */
 
-.select2-dropdown {
-    border-radius: .375rem;
-    border: 1px solid var(--bs-border-color);
-    background-color: var(--bs-body-bg);
+        .select2-dropdown {
+            border-radius: .375rem;
+            border: 1px solid var(--bs-border-color);
+            background-color: var(--bs-body-bg);
 
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .15);
-    overflow: hidden;
-}
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .15);
+            overflow: hidden;
+        }
 
-/* search */
-.select2-search--dropdown {
-    padding: .5rem;
-    border-bottom: 1px solid var(--bs-border-color);
-}
+        /* search */
+        .select2-search--dropdown {
+            padding: .5rem;
+            border-bottom: 1px solid var(--bs-border-color);
+        }
 
-.select2-search--dropdown .select2-search__field {
-    height: calc(2.375rem + 2px);
-    padding: .375rem .75rem;
+        .select2-search--dropdown .select2-search__field {
+            height: calc(2.375rem + 2px);
+            padding: .375rem .75rem;
 
-    border-radius: .375rem;
-    border: 1px solid var(--bs-border-color);
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
-}
+            border-radius: .375rem;
+            border: 1px solid var(--bs-border-color);
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+        }
 
-.select2-search--dropdown .select2-search__field:focus {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
-    outline: none;
-}
+        .select2-search--dropdown .select2-search__field:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
+            outline: none;
+        }
 
-/* results */
-.select2-results__options {
-    max-height: 240px;
-}
+        /* results */
+        .select2-results__options {
+            max-height: 240px;
+        }
 
-/* option */
-.select2-results__option {
-    padding: .5rem .75rem;
-    font-size: .95rem;
-    cursor: pointer;
-}
+        /* option */
+        .select2-results__option {
+            padding: .5rem .75rem;
+            font-size: .95rem;
+            cursor: pointer;
+        }
 
-/* hover */
-.select2-results__option--highlighted {
-    background-color: var(--bs-primary-bg-subtle);
-    color: var(--bs-body-color);
-}
+        /* hover */
+        .select2-results__option--highlighted {
+            background-color: var(--bs-primary-bg-subtle);
+            color: var(--bs-body-color);
+        }
 
-/* selected */
-.select2-results__option--selected {
-    background-color: var(--bs-secondary-bg);
-    font-weight: 600;
-}
+        /* selected */
+        .select2-results__option--selected {
+            background-color: var(--bs-secondary-bg);
+            font-weight: 600;
+        }
 
-/* =====================================================
-   Dark theme tweaks
-   ===================================================== */
+        /* =====================================================
+           Dark theme tweaks
+           ===================================================== */
 
-[data-bs-theme="dark"] .select2-dropdown {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
-}
+        [data-bs-theme="dark"] .select2-dropdown {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+        }
 
-[data-bs-theme="dark"]
-.select2-results__option--highlighted {
-    background-color: rgba(13,110,253,.2);
-}
+        [data-bs-theme="dark"]
+        .select2-results__option--highlighted {
+            background-color: rgba(13, 110, 253, .2);
+        }
 
-.file-row.is-removed {
-    opacity: 0.45;
-    background-color: var(--bs-light);
-}
+        .file-row.is-removed {
+            opacity: 0.45;
+            background-color: var(--bs-light);
+        }
 
-.file-row.is-removed a {
-    text-decoration: line-through;
-}
+        .file-row.is-removed a {
+            text-decoration: line-through;
+        }
+
+        .table-row-link {
+            cursor: pointer;
+        }
+
+        .table-row-link:hover {
+            background-color: rgba(0, 0, 0, .03);
+        }
+
+        .hover-shadow:hover {
+            box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08);
+            transform: translateY(-1px);
+        }
     </style>
 
 
@@ -753,89 +766,89 @@
 
 {% include "includes/_confirm_delete_modal.html" %}
 <script>
-(function () {
+    (function () {
 
-  const modalEl = document.getElementById("confirmDeleteModal");
-  if (!modalEl) return;
+        const modalEl = document.getElementById("confirmDeleteModal");
+        if (!modalEl) return;
 
-  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
-  const form = document.getElementById("confirmDeleteForm");
-  const nameEl = document.getElementById("confirmDeleteObjectName");
+        const form = document.getElementById("confirmDeleteForm");
+        const nameEl = document.getElementById("confirmDeleteObjectName");
 
-  const errorBlock = document.getElementById("deleteErrorBlock");
-  const errorText = document.getElementById("deleteErrorText");
-  const errorList = document.getElementById("deleteErrorRelated");
+        const errorBlock = document.getElementById("deleteErrorBlock");
+        const errorText = document.getElementById("deleteErrorText");
+        const errorList = document.getElementById("deleteErrorRelated");
 
-  let currentDeleteUrl = null;
-  let currentRedirectUrl = null;
+        let currentDeleteUrl = null;
+        let currentRedirectUrl = null;
 
-  // === Открытие модалки ===
-  document.addEventListener("click", function (e) {
-    const btn = e.target.closest("[data-confirm-delete]");
-    if (!btn) return;
+        // === Открытие модалки ===
+        document.addEventListener("click", function (e) {
+            const btn = e.target.closest("[data-confirm-delete]");
+            if (!btn) return;
 
-    e.preventDefault();
+            e.preventDefault();
 
-    currentDeleteUrl = btn.dataset.deleteUrl;
-    currentRedirectUrl = btn.dataset.redirectUrl || "/";
+            currentDeleteUrl = btn.dataset.deleteUrl;
+            currentRedirectUrl = btn.dataset.redirectUrl || "/";
 
-    nameEl.textContent = btn.dataset.deleteName || "этот объект";
+            nameEl.textContent = btn.dataset.deleteName || "этот объект";
 
-    // reset ошибок
-    errorBlock.classList.add("d-none");
-    errorText.textContent = "";
-    errorList.innerHTML = "";
+            // reset ошибок
+            errorBlock.classList.add("d-none");
+            errorText.textContent = "";
+            errorList.innerHTML = "";
 
-    modal.show();
-  });
-
-  // === Подтверждение удаления ===
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    if (!currentDeleteUrl) return;
-
-    fetch(currentDeleteUrl, {
-      method: "POST",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
-      },
-    })
-    .then(async response => {
-      let data = {};
-      try {
-        data = await response.json();
-      } catch {
-        throw { error: "Некорректный ответ сервера" };
-      }
-
-      if (response.ok && data.ok) {
-        modal.hide();
-        window.location.href = currentRedirectUrl;
-        return;
-      }
-
-      throw data;
-    })
-    .catch(data => {
-      errorText.textContent = data.error || "Ошибка удаления";
-      errorList.innerHTML = "";
-
-      if (Array.isArray(data.related)) {
-        data.related.forEach(item => {
-          const li = document.createElement("li");
-          li.textContent = item;
-          errorList.appendChild(li);
+            modal.show();
         });
-      }
 
-      errorBlock.classList.remove("d-none");
-    });
-  });
+        // === Подтверждение удаления ===
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
 
-})();
+            if (!currentDeleteUrl) return;
+
+            fetch(currentDeleteUrl, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+            })
+                .then(async response => {
+                    let data = {};
+                    try {
+                        data = await response.json();
+                    } catch {
+                        throw {error: "Некорректный ответ сервера"};
+                    }
+
+                    if (response.ok && data.ok) {
+                        modal.hide();
+                        window.location.href = currentRedirectUrl;
+                        return;
+                    }
+
+                    throw data;
+                })
+                .catch(data => {
+                    errorText.textContent = data.error || "Ошибка удаления";
+                    errorList.innerHTML = "";
+
+                    if (Array.isArray(data.related)) {
+                        data.related.forEach(item => {
+                            const li = document.createElement("li");
+                            li.textContent = item;
+                            errorList.appendChild(li);
+                        });
+                    }
+
+                    errorBlock.classList.remove("d-none");
+                });
+        });
+
+    })();
 </script>
 
 {% block extra_js %}{% endblock %}
