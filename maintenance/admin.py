@@ -6,7 +6,7 @@ from .models import (
     WorkOrder,
     WorkOrderMaterial,
     PlannedOrder,
-    File,
+    File, WorkOrderAttachment,
 )
 
 

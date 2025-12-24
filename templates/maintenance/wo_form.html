@@ -564,7 +564,10 @@
             const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
             del.checked = !del.checked;
 
-            $(row).find("select, input").prop("disabled", del.checked);
+            $(row)
+                .find("select, input:not([type='hidden'])")
+                .not('[name$="-DELETE"]')
+                .prop("disabled", del.checked);
         });
 
         const container = document.getElementById("materials-container");

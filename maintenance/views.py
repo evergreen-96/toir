@@ -9,6 +9,7 @@ from django import forms
 from django.contrib import messages
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -71,51 +72,74 @@ from assets.models import (
 
 def home(request):
     today = timezone.localdate()
+    yesterday = today - timedelta(days=1)
 
-    stats = {
-        "total": WorkOrder.objects.exclude(
-            status__in=[WorkOrderStatus.DONE, WorkOrderStatus.CANCELED]
-        ).count(),
+    # =====================
+    # KPI: сегодня + дельта
+    # =====================
+    def wo_count(**filters):
+        return WorkOrder.objects.filter(**filters).count()
 
-        "new": WorkOrder.objects.filter(
+    stats_today = {
+        "new": wo_count(
             status=WorkOrderStatus.NEW,
             created_at__date=today
-        ).count(),
-
-        "in_progress": WorkOrder.objects.filter(
+        ),
+        "in_progress": wo_count(
             status=WorkOrderStatus.IN_PROGRESS
-        ).count(),
-
-        "done": WorkOrder.objects.filter(
+        ),
+        "done": wo_count(
             status=WorkOrderStatus.DONE,
             date_finish=today
-        ).count(),
-
-        "failed": WorkOrder.objects.filter(
-            status=WorkOrderStatus.FAILED
-        ).count(),
+        ),
+        "failed": wo_count(
+            status=WorkOrderStatus.FAILED,
+            created_at__date=today
+        ),
     }
 
-    # ---------- Доступность оборудования ----------
+    stats_yesterday = {
+        "new": wo_count(
+            status=WorkOrderStatus.NEW,
+            created_at__date=yesterday
+        ),
+        "done": wo_count(
+            status=WorkOrderStatus.DONE,
+            date_finish=yesterday
+        ),
+    }
+
+    stats = {
+        **stats_today,
+        "delta_new": stats_today["new"] - stats_yesterday["new"],
+        "delta_done": stats_today["done"] - stats_yesterday["done"],
+    }
+
+    # =====================
+    # Доступность оборудования
+    # =====================
     ws_qs = Workstation.objects.filter(
         global_state=WorkstationGlobalState.ACTIVE
     )
 
-    total_ws = ws_qs.count()
-    in_prod = ws_qs.filter(status=WorkstationStatus.PROD).count()
-    emergency = ws_qs.filter(status=WorkstationStatus.PROBLEM).count()
-    not_working = ws_qs.filter(
-        status__in=[WorkstationStatus.MAINT, WorkstationStatus.SETUP]
-    ).count()
+    prod = ws_qs.filter(status=WorkstationStatus.PROD).count()
+    maint = ws_qs.filter(status=WorkstationStatus.MAINT).count()
+    setup = ws_qs.filter(status=WorkstationStatus.SETUP).count()
+    problem = ws_qs.filter(status=WorkstationStatus.PROBLEM).count()
+
+    denominator = prod + maint + setup + problem
 
     availability = {
-        "pct": round((in_prod / total_ws * 100), 1) if total_ws else 0,
-        "in_prod": in_prod,
-        "emergency": emergency,
-        "not_working": not_working,
+        "pct": round((prod / denominator * 100), 1) if denominator else 0,
+        "in_prod": prod,
+        "not_working": maint + setup,
+        "emergency": problem,
+        "total": denominator,
     }
 
-    # ---------- Выполнено сегодня ----------
+    # =====================
+    # Выполнено сегодня
+    # =====================
     done_today = WorkOrder.objects.filter(
         status=WorkOrderStatus.DONE,
         date_finish=today
@@ -126,15 +150,19 @@ def home(request):
         "emergency": done_today.filter(category=WorkCategory.EMERGENCY).count(),
     }
 
-    # ---------- Выполнено по людям ----------
+    # =====================
+    # Выполнено по людям
+    # =====================
     done_by_people = (
         done_today
-        .values("responsible_id", "responsible__name")
+        .values("responsible__name")
         .annotate(cnt=Count("id"))
         .order_by("-cnt")
     )
 
-    # ---------- Заявки по категориям ----------
+    # =====================
+    # Заявки по категориям (сегодня)
+    # =====================
     orders_by_category = (
         WorkOrder.objects
         .filter(created_at__date=today)
@@ -142,7 +170,21 @@ def home(request):
         .annotate(cnt=Count("id"))
     )
 
-    # ---------- Ближайшие планы ----------
+    # =====================
+    # Заявки за 7 дней (график)
+    # =====================
+    orders_7d = (
+        WorkOrder.objects
+        .filter(created_at__date__gte=today - timedelta(days=6))
+        .annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(cnt=Count("id"))
+        .order_by("day")
+    )
+
+    # =====================
+    # Ближайшие планы
+    # =====================
     upcoming = (
         PlannedOrder.objects
         .filter(
@@ -159,6 +201,7 @@ def home(request):
         "done_stats": done_stats,
         "done_by_people": done_by_people,
         "orders_by_category": orders_by_category,
+        "orders_7d": orders_7d,
         "upcoming": upcoming,
     })
 
@@ -243,6 +286,9 @@ def workorder_update(request, pk: int):
         formset = WorkOrderMaterialFormSet(request.POST, instance=wo)
 
         if form.is_valid() and formset.is_valid():
+            # =========================
+            # WORK ORDER
+            # =========================
             wo = form.save(commit=False)
             wo._history_user = request.user
             wo._change_reason = build_change_reason(
@@ -250,10 +296,13 @@ def workorder_update(request, pk: int):
             )
             wo.save()
 
-            # -----------------------------
-            # EXISTING FILES (reuse)
-            # -----------------------------
-            existing_file_ids = list(map(int, request.POST.getlist("existing_files")))
+            # =========================
+            # FILES: existing (reuse)
+            # =========================
+            existing_file_ids = list(
+                map(int, request.POST.getlist("existing_files"))
+            )
+
             qs = WorkOrderAttachment.objects.filter(work_order=wo)
 
             if existing_file_ids:
@@ -267,9 +316,9 @@ def workorder_update(request, pk: int):
                     file_id=fid,
                 )
 
-            # -----------------------------
-            # NEW UPLOADS
-            # -----------------------------
+            # =========================
+            # FILES: new uploads
+            # =========================
             for f in request.FILES.getlist("files"):
                 file_obj = File(file=f)
                 file_obj.save()
@@ -279,16 +328,11 @@ def workorder_update(request, pk: int):
                     file=file_obj,
                 )
 
-            # -----------------------------
-            # Materials
-            # -----------------------------
-            instances = formset.save(commit=False)
-            for inst in instances:
-                inst.work_order = wo
-                inst.save()
-
-            for obj in formset.deleted_objects:
-                obj.delete()
+            # =========================
+            # MATERIALS (КЛЮЧЕВОЕ)
+            # =========================
+            formset.instance = wo
+            formset.save()  # 🔑 Django сам добавит / обновит / удалит
 
             messages.success(request, "Изменения сохранены.")
             return redirect("maintenance:wo_detail", pk=wo.pk)
@@ -297,14 +341,14 @@ def workorder_update(request, pk: int):
         form = WorkOrderForm(instance=wo)
         formset = WorkOrderMaterialFormSet(instance=wo)
 
-    # -----------------------------
-    # FILE LIBRARY (ВАЖНО)
-    # -----------------------------
+    # =========================
+    # FILE LIBRARY
+    # =========================
     attached_ids = wo.attachments.values_list("file_id", flat=True)
 
     all_files = (
         File.objects
-        .exclude(id__in=attached_ids)  # 🔑 КЛЮЧЕВОЕ
+        .exclude(id__in=attached_ids)
         .order_by("-uploaded_at")
     )
 
