@@ -1,7 +1,10 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
+
 from hr.models import HumanResource
 
 class Location(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("Название локации", max_length=255)
     parent = models.ForeignKey(
         "self",

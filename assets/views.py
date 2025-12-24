@@ -111,7 +111,13 @@ def ws_create(request):
     if request.method == "POST":
         form = WorkstationForm(request.POST, request.FILES)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "создание оборудования"
+            )
+            obj.save()
+            form.save_m2m()
             messages.success(request, "Оборудование создано.")
             return redirect("assets:asset_detail", pk=obj.pk)
     else:
@@ -133,7 +139,15 @@ def ws_update(request, pk):
     if request.method == "POST":
         form = WorkstationForm(request.POST, request.FILES, instance=obj)
         if form.is_valid():
-            obj = form.save()
+            from core.audit import build_change_reason
+
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "редактирование оборудования"
+            )
+            obj.save()
+            form.save_m2m()
             messages.success(request, "Изменения сохранены.")
             return redirect("assets:asset_detail", pk=obj.pk)
     else:
@@ -155,6 +169,10 @@ class WorkstationDeleteView(View):
         obj = get_object_or_404(Workstation, pk=pk)
 
         try:
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "удаление оборудования"
+            )
             obj.delete()
             return JsonResponse({"ok": True})
 
@@ -178,6 +196,9 @@ def ajax_get_workstation_status(request):
     })
 
 
+from core.audit import build_change_reason
+
+
 @require_POST
 def ajax_update_workstation_status(request):
     ws_id = request.POST.get("id")
@@ -190,9 +211,20 @@ def ajax_update_workstation_status(request):
 
     valid_statuses = {choice[0] for choice in WorkstationStatus.choices}
     if status not in valid_statuses:
-        return JsonResponse({"ok": False, "error": "invalid_status"}, status=400)
+        return JsonResponse(
+            {"ok": False, "error": "invalid_status"},
+            status=400,
+        )
 
     ws.status = status
+
+    # 🔑 AUDIT — ОБЯЗАТЕЛЬНО
+    ws._history_user = request.user
+    ws._change_reason = build_change_reason(
+        "смена статуса оборудования"
+    )
+
     ws.save(update_fields=["status"])
 
     return JsonResponse({"ok": True})
+

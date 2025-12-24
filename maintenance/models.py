@@ -4,6 +4,7 @@ from django.utils import timezone
 import calendar
 from datetime import datetime, time, timedelta, date
 from dateutil.relativedelta import relativedelta
+from simple_history.models import HistoricalRecords
 
 from hr.models import HumanResource
 from locations.models import Location
@@ -60,6 +61,7 @@ class IntervalUnit(models.TextChoices):
 
 
 class PlannedOrder(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("Название планового обслуживания", max_length=255)
     responsible_default = models.ForeignKey(
         HumanResource,
@@ -292,6 +294,7 @@ class PlannedOrder(models.Model):
 
 
 class WorkOrder(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("Название задачи", max_length=255)
 
     status = models.CharField(
@@ -428,6 +431,7 @@ class WorkOrder(models.Model):
 
 
 class WorkOrderMaterial(models.Model):
+    history = HistoricalRecords()
     work_order = models.ForeignKey(
         WorkOrder,
         on_delete=models.CASCADE,
@@ -445,12 +449,14 @@ class WorkOrderMaterial(models.Model):
 
 
 class File(models.Model):
+    history = HistoricalRecords()
     file = models.FileField(upload_to="workorders/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
 
 class WorkOrderAttachment(models.Model):
+    history = HistoricalRecords()
     work_order = models.ForeignKey(
         WorkOrder,
         on_delete=models.CASCADE,

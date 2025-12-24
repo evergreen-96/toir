@@ -39,14 +39,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # My apps
     'core',
     "hr",
     "locations",
     "assets",
     "inventory",
     "maintenance",
+    # 3rd party
     'django_select2',
-
+    "simple_history",
 ]
 
 MIDDLEWARE = [
@@ -58,6 +60,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "simple_history.middleware.HistoryRequestMiddleware",
+    "core.middleware.RequestContextMiddleware",
 ]
 
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'

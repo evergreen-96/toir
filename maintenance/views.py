@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.views.generic import ListView, DetailView, DeleteView
 
 from assets.models import Workstation
+from core.audit import build_change_reason
 from hr.models import HumanResource
 from .forms import WorkOrderMaterialFormSet, WorkOrderForm
 
@@ -242,7 +243,12 @@ def workorder_update(request, pk: int):
         formset = WorkOrderMaterialFormSet(request.POST, instance=wo)
 
         if form.is_valid() and formset.is_valid():
-            wo = form.save()
+            wo = form.save(commit=False)
+            wo._history_user = request.user
+            wo._change_reason = build_change_reason(
+                "редактирование задачи обслуживания"
+            )
+            wo.save()
 
             # -----------------------------
             # EXISTING FILES (reuse)
@@ -332,6 +338,10 @@ def workorder_create(request):
             if wo.workstation and not wo.location:
                 wo.location = wo.workstation.location
 
+            wo._history_user = request.user
+            wo._change_reason = build_change_reason(
+                "создание задачи обслуживания"
+            )
             wo.save()
 
             # =========================
@@ -398,6 +408,10 @@ class WorkOrderDeleteView(View):
 
         try:
             obj.attachments.all().delete()  # только связи
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "удаление задачи обслуживания"
+            )
             obj.delete()
             return JsonResponse({"ok": True})
 
@@ -414,6 +428,10 @@ def wo_set_status(request, pk, status):
     wo = get_object_or_404(WorkOrder, pk=pk)
 
     try:
+        wo._history_user = request.user
+        wo._change_reason = build_change_reason(
+            f"смена статуса задачи → {status}"
+        )
         wo.set_status(status)
     except ValueError:
         messages.error(request, "Недопустимый переход статуса.")
@@ -643,7 +661,13 @@ def planned_order_create(request):
                 "Форма пуста. Заполните основные параметры плана."
             )
         elif form.is_valid():
-            form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "создание плановых работ"
+            )
+            obj.save()
+            form.save_m2m()
             messages.success(request, "План создан.")
             return redirect("maintenance:plan_list")
 
@@ -676,7 +700,13 @@ def planned_order_update(request, pk: int):
             )
 
         elif form.is_valid():
-            form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "редактирование плановых работ"
+            )
+            obj.save()
+            form.save_m2m()
             messages.success(request, "План сохранён.")
             return redirect("maintenance:plan_list")
 
@@ -703,6 +733,10 @@ class PlannedOrderDeleteView(View):
         obj = get_object_or_404(PlannedOrder, pk=pk)
 
         try:
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "удаление плановых работ"
+            )
             obj.delete()
             return JsonResponse({"ok": True})
 
@@ -724,7 +758,10 @@ def planned_order_run_now(request, pk: int):
     if request.method == "POST":
         resp = obj.responsible_default or HumanResource.objects.first()
         if resp:
-            WorkOrder.objects.create(
+            # =========================
+            # CREATE WORK ORDER FROM PLAN
+            # =========================
+            wo = WorkOrder.objects.create(
                 name=obj.name,
                 responsible=resp,
                 workstation=obj.workstation,
@@ -733,12 +770,21 @@ def planned_order_run_now(request, pk: int):
                 category=obj.category or WorkCategory.PM,
                 labor_plan_hours=obj.labor_plan_hours,
                 priority=obj.priority or Priority.MED,
-                createrd_from_plan=obj
+                createrd_from_plan=obj,
             )
 
+            # 🔑 AUDIT: создание задачи из плана
+            wo._history_user = request.user
+            wo._change_reason = build_change_reason(
+                f"создание задачи из плана #{obj.pk}"
+            )
+            wo.save()
+
+            # =========================
+            # CALCULATE NEXT RUN
+            # =========================
             base = obj.next_run or obj.compute_initial_next_run()
 
-            # Рассчитываем следующий запуск
             if obj.interval_unit == IntervalUnit.MONTH and obj.day_of_month:
                 dom = int(obj.day_of_month)
                 base_local = timezone.localtime(base)
@@ -749,24 +795,42 @@ def planned_order_run_now(request, pk: int):
                 nxt_date = date(y2, m2, d2)
 
                 tz = timezone.get_default_timezone()
-                nxt = timezone.make_aware(datetime.combine(nxt_date, RUN_TIME), tz)
+                nxt = timezone.make_aware(
+                    datetime.combine(nxt_date, RUN_TIME),
+                    tz
+                )
 
             else:
                 nxt = obj._add_interval(base, obj.interval_value, obj.interval_unit)
 
-                # Для day/week/month — фиксируем 00:00:01 (чтобы не было "дрейфа" по времени)
-                if obj.interval_unit in {IntervalUnit.DAY, IntervalUnit.WEEK, IntervalUnit.MONTH}:
+                # day / week / month → фиксируем 00:00:01
+                if obj.interval_unit in {
+                    IntervalUnit.DAY,
+                    IntervalUnit.WEEK,
+                    IntervalUnit.MONTH,
+                }:
                     nxt_local = timezone.localtime(nxt)
                     nxt_date = nxt_local.date()
                     tz = timezone.get_default_timezone()
-                    nxt = timezone.make_aware(datetime.combine(nxt_date, RUN_TIME), tz)
+                    nxt = timezone.make_aware(
+                        datetime.combine(nxt_date, RUN_TIME),
+                        tz
+                    )
 
-                # Для minute — просто убираем микросекунды/секунды (как у тебя было)
+                # minute → убираем секунды и микросекунды
                 if obj.interval_unit == IntervalUnit.MINUTE:
                     nxt = nxt.replace(second=0, microsecond=0)
 
+            # =========================
+            # UPDATE NEXT_RUN WITH AUDIT
+            # =========================
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "ручной запуск плана (создание задачи)"
+            )
             obj.next_run = nxt
             obj.save(update_fields=["next_run"])
+
             messages.success(request, "Задача создана из плана.")
 
     return redirect("maintenance:plan_list")

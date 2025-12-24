@@ -1,4 +1,6 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
+
 from locations.models import Location
 from hr.models import HumanResource
 
@@ -20,6 +22,7 @@ class WorkstationStatus(models.TextChoices):
     SETUP = "setup", "Пусконаладочные работы"
 
 class Workstation(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("Название оборудования", max_length=255)
     category = models.CharField(
         "Категория оборудования",

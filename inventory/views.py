@@ -5,6 +5,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
+
+from core.audit import build_change_reason
 from .models import Warehouse, Material
 from .forms import WarehouseForm, MaterialForm
 from django.views.generic import ListView, DetailView
@@ -29,7 +31,14 @@ def warehouse_create(request):
     if request.method == "POST":
         form = WarehouseForm(request.POST)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "создание склада"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Склад создан.")
             return redirect("inventory:warehouse_detail", pk=obj.pk)
     else:
@@ -41,7 +50,14 @@ def warehouse_update(request, pk):
     if request.method == "POST":
         form = WarehouseForm(request.POST, instance=obj)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "редактирование склада"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Изменения сохранены.")
             return redirect("inventory:warehouse_detail", pk=obj.pk)
     else:
@@ -53,6 +69,10 @@ class WarehouseDeleteView(View):
         warehouse = get_object_or_404(Warehouse, pk=pk)
 
         try:
+            warehouse._history_user = request.user
+            warehouse._change_reason = build_change_reason(
+                "удаление склада"
+            )
             warehouse.delete()
             return JsonResponse({"ok": True})
 
@@ -90,7 +110,14 @@ def material_create(request):
     if request.method == "POST":
         form = MaterialForm(request.POST)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "создание материала"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Материал создан.")
             return redirect("inventory:material_detail", pk=obj.pk)
     else:
@@ -102,7 +129,14 @@ def material_update(request, pk):
     if request.method == "POST":
         form = MaterialForm(request.POST, instance=obj)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "редактирование материала"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Изменения сохранены.")
             return redirect("inventory:material_detail", pk=obj.pk)
     else:
@@ -114,6 +148,10 @@ class MaterialDeleteView(View):
         material = get_object_or_404(Material, pk=pk)
 
         try:
+            material._history_user = request.user
+            material._change_reason = build_change_reason(
+                "удаление материала"
+            )
             material.delete()
             return JsonResponse({"ok": True})
 

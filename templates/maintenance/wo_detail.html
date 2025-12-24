@@ -130,13 +130,13 @@
     </span>
 
                                 {% if request.user.is_staff %}
-<button
-    type="button"
-    class="btn btn-sm btn-outline-secondary"
-    id="ws-status-open-btn"
-    title="Изменить статус оборудования">
-    <i class="bi bi-pencil"></i>
-</button>
+                                <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        id="ws-status-open-btn"
+                                        title="Изменить статус оборудования">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
 
                                 {% endif %}
                             </div>
@@ -284,12 +284,24 @@
                     <ul class="list-group list-group-flush">
                         {% for m in object.materials.all %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
+
+                            <!-- Название материала -->
                             <div class="fw-semibold">
                                 {{ m.material.name }}
                             </div>
-                            <div class="text-muted small">
+
+                            <!-- План / факт с подсветкой -->
+                            {% if m.qty_used > m.qty_planned %}
+                            <div class="fw-semibold text-danger text-end">
+                                план: {{ m.qty_planned }} · факт: {{ m.qty_used }}
+                                <div class="small">(превышение)</div>
+                            </div>
+                            {% else %}
+                            <div class="fw-semibold text-end">
                                 план: {{ m.qty_planned }} · факт: {{ m.qty_used }}
                             </div>
+                            {% endif %}
+
                         </li>
                         {% endfor %}
                     </ul>
@@ -300,6 +312,7 @@
                     {% endif %}
                 </div>
 
+
             </div>
         </div>
 
@@ -307,108 +320,108 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-    const openBtn = document.getElementById("ws-status-open-btn");
-    const saveBtn = document.getElementById("ws-status-modal-save");
-    const select  = document.getElementById("ws-status-modal-select");
-    const label   = document.getElementById("ws-status-label");
-    const hint    = document.getElementById("ws-status-hint");
-    const modalEl = document.getElementById("wsStatusModal");
+        const openBtn = document.getElementById("ws-status-open-btn");
+        const saveBtn = document.getElementById("ws-status-modal-save");
+        const select = document.getElementById("ws-status-modal-select");
+        const label = document.getElementById("ws-status-label");
+        const hint = document.getElementById("ws-status-hint");
+        const modalEl = document.getElementById("wsStatusModal");
 
-    if (!openBtn || !saveBtn || !select || !modalEl) return;
+        if (!openBtn || !saveBtn || !select || !modalEl) return;
 
-    // =========================
-    // CSRF
-    // =========================
-    function getCSRFToken() {
-        const el = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
-        if (el?.value) return el.value;
+        // =========================
+        // CSRF
+        // =========================
+        function getCSRFToken() {
+            const el = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
+            if (el?.value) return el.value;
 
-        const m = document.cookie.match(/csrftoken=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : null;
-    }
-
-    // =========================
-    // Badge styles
-    // =========================
-    function badgeClass(status) {
-        return {
-            ok: "bg-success",
-            problem: "bg-danger",
-            maintenance: "bg-warning text-dark",
-            disabled: "bg-secondary",
-        }[status] || "bg-secondary";
-    }
-
-    // =========================
-    // ONE modal instance
-    // =========================
-    const modal = new bootstrap.Modal(modalEl, {
-        backdrop: true,
-        keyboard: true,
-        focus: true,
-    });
-
-    // =========================
-    // Open modal (ONLY via JS)
-    // =========================
-    openBtn.addEventListener("click", () => {
-        modal.show();
-    });
-
-    // =========================
-    // Save handler
-    // =========================
-    saveBtn.addEventListener("click", function () {
-        const status = select.value;
-        const token  = getCSRFToken();
-
-        if (!token) {
-            alert("CSRF token не найден. Обновите страницу.");
-            return;
+            const m = document.cookie.match(/csrftoken=([^;]+)/);
+            return m ? decodeURIComponent(m[1]) : null;
         }
 
-        saveBtn.disabled = true;
+        // =========================
+        // Badge styles
+        // =========================
+        function badgeClass(status) {
+            return {
+                ok: "bg-success",
+                problem: "bg-danger",
+                maintenance: "bg-warning text-dark",
+                disabled: "bg-secondary",
+            }[status] || "bg-secondary";
+        }
 
-        fetch("{% url 'maintenance:ajax_workstation_status_update' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": token,
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            },
-            body:
-                "id={{ object.workstation.pk }}&status=" +
-                encodeURIComponent(status),
-        })
-        .then(async r => {
-            const data = await r.json().catch(() => ({}));
-            if (!r.ok || !data.ok) throw data;
-            return data;
-        })
-        .then(() => {
-            // UI update
-            label.textContent =
-                select.options[select.selectedIndex].text;
-            label.className =
-                "badge " + badgeClass(status);
-
-            hint.classList.remove("d-none");
-            setTimeout(() => hint.classList.add("d-none"), 2000);
-
-            modal.hide();
-        })
-        .catch(err => {
-            console.error(err);
-            alert(err?.error || "Ошибка обновления статуса");
-        })
-        .finally(() => {
-            saveBtn.disabled = false;
+        // =========================
+        // ONE modal instance
+        // =========================
+        const modal = new bootstrap.Modal(modalEl, {
+            backdrop: true,
+            keyboard: true,
+            focus: true,
         });
-    });
 
-});
+        // =========================
+        // Open modal (ONLY via JS)
+        // =========================
+        openBtn.addEventListener("click", () => {
+            modal.show();
+        });
+
+        // =========================
+        // Save handler
+        // =========================
+        saveBtn.addEventListener("click", function () {
+            const status = select.value;
+            const token = getCSRFToken();
+
+            if (!token) {
+                alert("CSRF token не найден. Обновите страницу.");
+                return;
+            }
+
+            saveBtn.disabled = true;
+
+            fetch("{% url 'maintenance:ajax_workstation_status_update' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": token,
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                },
+                body:
+                    "id={{ object.workstation.pk }}&status=" +
+                    encodeURIComponent(status),
+            })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok || !data.ok) throw data;
+                    return data;
+                })
+                .then(() => {
+                    // UI update
+                    label.textContent =
+                        select.options[select.selectedIndex].text;
+                    label.className =
+                        "badge " + badgeClass(status);
+
+                    hint.classList.remove("d-none");
+                    setTimeout(() => hint.classList.add("d-none"), 2000);
+
+                    modal.hide();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert(err?.error || "Ошибка обновления статуса");
+                })
+                .finally(() => {
+                    saveBtn.disabled = false;
+                });
+        });
+
+    });
 </script>
 
 {% if object.workstation and request.user.is_staff %}

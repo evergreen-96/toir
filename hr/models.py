@@ -1,7 +1,10 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from simple_history.models import HistoricalRecords
+
 
 class HumanResource(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("ФИО", max_length=255)
     job_title = models.CharField("Должность", max_length=255, blank=True)
     manager = models.ForeignKey(

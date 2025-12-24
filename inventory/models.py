@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from assets.models import Workstation
 from hr.models import HumanResource
@@ -6,6 +7,7 @@ from locations.models import Location
 
 
 class Warehouse(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("Название склада", max_length=255)
     responsible = models.ForeignKey(HumanResource, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Ответственный')
     location = models.ForeignKey(
@@ -30,6 +32,7 @@ class MaterialUoM(models.TextChoices):
     HRS = "h",  "ч"
 
 class Material(models.Model):
+    history = HistoricalRecords()
     name = models.CharField("Полное наименование", max_length=255)
     group = models.CharField("Группа", max_length=255, blank=True)
     article = models.CharField("Артикул", max_length=255, blank=True)

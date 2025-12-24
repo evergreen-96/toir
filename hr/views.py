@@ -6,6 +6,8 @@ from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
 from django import forms
+
+from core.audit import build_change_reason
 from .models import HumanResource
 from django.db.models import Count
 
@@ -94,7 +96,14 @@ def hr_create(request):
     if request.method == "POST":
         form = HumanResourceForm(request.POST)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "создание сотрудника"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Сотрудник создан.")
             return redirect("hr:hr_detail", pk=obj.pk)
     else:
@@ -107,7 +116,14 @@ def hr_update(request, pk):
     if request.method == "POST":
         form = HumanResourceForm(request.POST, instance=obj)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "редактирование сотрудника"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Изменения сохранены.")
             return redirect("hr:hr_detail", pk=obj.pk)
     else:
@@ -120,6 +136,10 @@ class HumanResourceDeleteView(View):
         obj = get_object_or_404(HumanResource, pk=pk)
 
         try:
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "удаление сотрудника"
+            )
             obj.delete()
             return JsonResponse({"ok": True})
 

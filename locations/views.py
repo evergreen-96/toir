@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.db.models.deletion import ProtectedError
 from django.views.generic import ListView, DetailView, View
 
+from core.audit import build_change_reason
 from .models import Location
 from .forms import LocationForm
 
@@ -73,7 +74,14 @@ def location_create(request):
     if request.method == "POST":
         form = LocationForm(request.POST)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "создание локации"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Локация создана.")
             return redirect("locations:location_detail", pk=obj.pk)
     else:
@@ -99,7 +107,14 @@ def location_update(request, pk):
     if request.method == "POST":
         form = LocationForm(request.POST, instance=obj)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "редактирование локации"
+            )
+            obj.save()
+            form.save_m2m()
+
             messages.success(request, "Изменения сохранены.")
             return redirect("locations:location_detail", pk=obj.pk)
     else:
@@ -125,6 +140,10 @@ class LocationDeleteView(View):
         obj = get_object_or_404(Location, pk=pk)
 
         try:
+            obj._history_user = request.user
+            obj._change_reason = build_change_reason(
+                "удаление локации"
+            )
             obj.delete()
             return JsonResponse({"ok": True})
 

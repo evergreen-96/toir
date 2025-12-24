@@ -7,3 +7,4 @@ pillow
 whitenoise>=6.6
 python-dateutil>=2.9
 django_select2
+django-simple-history
