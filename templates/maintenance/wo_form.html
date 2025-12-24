@@ -476,16 +476,45 @@
         }
 
         const search = document.getElementById("fileSearch");
+
         if (search) {
             search.addEventListener("input", function () {
-                const q = this.value.toLowerCase();
+                const q = this.value.trim().toLowerCase();
+
                 document
-                    .querySelectorAll("#filesLibraryModal .list-group-item")
-                    .forEach(el => {
-                        el.style.display = el.innerText.toLowerCase().includes(q) ? "" : "none";
+                    .querySelectorAll('#filesLibraryModal label.list-group-item')
+                    .forEach(label => {
+                        const checkbox = label.querySelector('input[type="checkbox"]');
+                        const span = label.querySelector('span');
+                        const name = checkbox?.dataset.fileName || "";
+
+                        // сброс
+                        span.innerHTML = name;
+                        label.classList.remove("d-none");
+
+                        if (!q) return;
+
+                        const nameLower = name.toLowerCase();
+
+                        if (!nameLower.includes(q)) {
+                            label.classList.add("d-none");
+                            return;
+                        }
+
+                        // подсветка
+                        const start = nameLower.indexOf(q);
+                        const end = start + q.length;
+
+                        span.innerHTML =
+                            name.slice(0, start) +
+                            "<mark>" +
+                            name.slice(start, end) +
+                            "</mark>" +
+                            name.slice(end);
                     });
             });
         }
+
 
 // =====================================================
 // FILES: mark for detach (UI only, like materials)
