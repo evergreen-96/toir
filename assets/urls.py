@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import WorkstationListView, WorkstationDetailView, ws_create, ws_update, WorkstationDeleteView
+from .views import WorkstationListView, WorkstationDetailView, ws_create, ws_update, WorkstationDeleteView, \
+    ajax_get_workstation_status, ajax_update_workstation_status
 
 app_name = "assets"
 

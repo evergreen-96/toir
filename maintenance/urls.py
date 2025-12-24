@@ -1,6 +1,7 @@
 from django.urls import path
 from django.views.generic import DetailView
 
+from assets.views import ajax_get_workstation_status, ajax_update_workstation_status
 from .models import PlannedOrder
 from .views import (
     # Work Orders
@@ -22,11 +23,10 @@ urlpatterns = [
     path("workorders/<int:pk>/delete/", WorkOrderDeleteView.as_view(), name="wo_delete"),
     path("workorders/<int:pk>/set-status/<str:status>/", wo_set_status, name="wo_set_status"),
     path("ajax/workstations-by-location/", get_workstations_by_location, name="ajax_workstations_by_location"),
-    # path(
-    #     "workorders/files/<int:pk>/delete/",
-    #     workorder_attachment_delete,
-    #     name="wo_file_delete"
-    # ),
+
+    # Обновление статуса оборудование из задачи
+    path("ajax/workstation-status/", ajax_get_workstation_status, name="ajax_workstation_status"),
+    path("ajax/workstation-status/update/", ajax_update_workstation_status, name="ajax_workstation_status_update"),
 
     # Плановые обслуживания
     path("plans/", PlannedOrderListView.as_view(), name="plan_list"),
@@ -36,6 +36,6 @@ urlpatterns = [
     path("plans/<int:pk>/delete/", PlannedOrderDeleteView.as_view(), name="plan_delete"),
     path("plans/<int:pk>/run-now/", planned_order_run_now, name="plan_run_now"),
 
-    # ✅ Превью календаря/дат на 2 месяца (AJAX)
+    # Превью календаря/дат на 2 месяца (AJAX)
     path("plans/preview/", planned_order_preview, name="plan_preview"),
 ]

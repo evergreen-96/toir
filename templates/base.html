@@ -705,6 +705,36 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- CSRF vault: гарантирует наличие csrf token в DOM на любой странице -->
+<form id="csrf-vault" class="d-none">{% csrf_token %}</form>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Берём CSRF сначала из DOM (надёжно), потом из cookie (fallback)
+function getCSRFToken() {
+    const vault = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
+    if (vault && vault.value) return vault.value;
+
+    const c = getCookie('csrftoken');
+    if (c) return c;
+
+    return null;
+}
+</script>
 <script>
     // Переключатель темы (light/dark/auto)
     (function () {

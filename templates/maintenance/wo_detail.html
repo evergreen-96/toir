@@ -88,14 +88,16 @@
                 {% endif %}
 
                 <!-- =====================================================
-                     B. Контекст выполнения
-                     ===================================================== -->
+     B. Контекст выполнения
+     ===================================================== -->
                 <div class="form-section">
                     <div class="form-section-header">
                         Контекст выполнения
                     </div>
 
                     <div class="row g-3">
+
+                        <!-- ===== Локация ===== -->
                         <div class="col-md-4">
                             <div class="text-muted small">Локация</div>
                             <div class="fw-semibold">
@@ -103,21 +105,53 @@
                                 <a href="{% url 'locations:location_detail' object.location.pk %}">
                                     {{ object.location }}
                                 </a>
-                                {% else %}—{% endif %}
+                                {% else %}
+                                —
+                                {% endif %}
                             </div>
                         </div>
 
+                        <!-- ===== Оборудование + статус ===== -->
                         <div class="col-md-4">
                             <div class="text-muted small">Оборудование</div>
-                            <div class="fw-semibold">
-                                {% if object.workstation %}
+
+                            {% if object.workstation %}
+                            <div class="fw-semibold mb-1">
                                 <a href="{% url 'assets:asset_detail' object.workstation.pk %}">
                                     {{ object.workstation }}
                                 </a>
-                                {% else %}—{% endif %}
                             </div>
+
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+
+    <span class="badge bg-secondary"
+          id="ws-status-label">
+        {{ object.workstation.get_status_display }}
+    </span>
+
+                                {% if request.user.is_staff %}
+<button
+    type="button"
+    class="btn btn-sm btn-outline-secondary"
+    id="ws-status-open-btn"
+    title="Изменить статус оборудования">
+    <i class="bi bi-pencil"></i>
+</button>
+
+                                {% endif %}
+                            </div>
+
+                            <div class="small text-muted mt-1 d-none"
+                                 id="ws-status-hint">
+                                Статус оборудования обновлён
+                            </div>
+
+                            {% else %}
+                            —
+                            {% endif %}
                         </div>
 
+                        <!-- ===== Ответственный ===== -->
                         <div class="col-md-4">
                             <div class="text-muted small">Ответственный</div>
                             <div class="fw-semibold">
@@ -125,9 +159,12 @@
                                 <a href="{% url 'hr:hr_detail' object.responsible.pk %}">
                                     {{ object.responsible }}
                                 </a>
-                                {% else %}—{% endif %}
+                                {% else %}
+                                —
+                                {% endif %}
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -268,4 +305,114 @@
 
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const openBtn = document.getElementById("ws-status-open-btn");
+    const saveBtn = document.getElementById("ws-status-modal-save");
+    const select  = document.getElementById("ws-status-modal-select");
+    const label   = document.getElementById("ws-status-label");
+    const hint    = document.getElementById("ws-status-hint");
+    const modalEl = document.getElementById("wsStatusModal");
+
+    if (!openBtn || !saveBtn || !select || !modalEl) return;
+
+    // =========================
+    // CSRF
+    // =========================
+    function getCSRFToken() {
+        const el = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
+        if (el?.value) return el.value;
+
+        const m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    // =========================
+    // Badge styles
+    // =========================
+    function badgeClass(status) {
+        return {
+            ok: "bg-success",
+            problem: "bg-danger",
+            maintenance: "bg-warning text-dark",
+            disabled: "bg-secondary",
+        }[status] || "bg-secondary";
+    }
+
+    // =========================
+    // ONE modal instance
+    // =========================
+    const modal = new bootstrap.Modal(modalEl, {
+        backdrop: true,
+        keyboard: true,
+        focus: true,
+    });
+
+    // =========================
+    // Open modal (ONLY via JS)
+    // =========================
+    openBtn.addEventListener("click", () => {
+        modal.show();
+    });
+
+    // =========================
+    // Save handler
+    // =========================
+    saveBtn.addEventListener("click", function () {
+        const status = select.value;
+        const token  = getCSRFToken();
+
+        if (!token) {
+            alert("CSRF token не найден. Обновите страницу.");
+            return;
+        }
+
+        saveBtn.disabled = true;
+
+        fetch("{% url 'maintenance:ajax_workstation_status_update' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": token,
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            },
+            body:
+                "id={{ object.workstation.pk }}&status=" +
+                encodeURIComponent(status),
+        })
+        .then(async r => {
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.ok) throw data;
+            return data;
+        })
+        .then(() => {
+            // UI update
+            label.textContent =
+                select.options[select.selectedIndex].text;
+            label.className =
+                "badge " + badgeClass(status);
+
+            hint.classList.remove("d-none");
+            setTimeout(() => hint.classList.add("d-none"), 2000);
+
+            modal.hide();
+        })
+        .catch(err => {
+            console.error(err);
+            alert(err?.error || "Ошибка обновления статуса");
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+        });
+    });
+
+});
+</script>
+
+{% if object.workstation and request.user.is_staff %}
+{% include "includes/workstation_status_modal.html" %}
+{% endif %}
+
 {% endblock %}

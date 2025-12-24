@@ -488,20 +488,22 @@
                         const span = label.querySelector('span');
                         const name = checkbox?.dataset.fileName || "";
 
-                        // сброс
+                        // сброс подсветки
                         span.innerHTML = name;
-                        label.classList.remove("d-none");
 
-                        if (!q) return;
+                        if (!q) {
+                            label.style.display = "";
+                            return;
+                        }
 
                         const nameLower = name.toLowerCase();
 
                         if (!nameLower.includes(q)) {
-                            label.classList.add("d-none");
+                            label.style.display = "none";
                             return;
                         }
 
-                        // подсветка
+                        // подсветка совпадения
                         const start = nameLower.indexOf(q);
                         const end = start + q.length;
 
@@ -511,6 +513,8 @@
                             name.slice(start, end) +
                             "</mark>" +
                             name.slice(end);
+
+                        label.style.display = "";
                     });
             });
         }

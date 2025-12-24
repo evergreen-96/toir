@@ -1,6 +1,7 @@
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views import View
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, DetailView, DeleteView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -8,7 +9,7 @@ from django.contrib import messages
 from django.db.models.deletion import ProtectedError
 from django import forms
 
-from .models import Workstation
+from .models import Workstation, WorkstationStatus
 from locations.models import Location
 
 
@@ -163,3 +164,35 @@ class WorkstationDeleteView(View):
                 "error": "Нельзя удалить: есть связанные объекты",
                 "related": [str(o) for o in e.protected_objects],
             }, status=400)
+
+
+@require_GET
+def ajax_get_workstation_status(request):
+    ws_id = request.GET.get("id")
+    ws = get_object_or_404(Workstation, pk=ws_id)
+
+    return JsonResponse({
+        "ok": True,
+        "current": ws.status,
+        "choices": WorkstationStatus.choices,
+    })
+
+
+@require_POST
+def ajax_update_workstation_status(request):
+    ws_id = request.POST.get("id")
+    status = request.POST.get("status")
+
+    ws = get_object_or_404(Workstation, pk=ws_id)
+
+    if not request.user.is_staff:
+        return JsonResponse({"ok": False}, status=403)
+
+    valid_statuses = {choice[0] for choice in WorkstationStatus.choices}
+    if status not in valid_statuses:
+        return JsonResponse({"ok": False, "error": "invalid_status"}, status=400)
+
+    ws.status = status
+    ws.save(update_fields=["status"])
+
+    return JsonResponse({"ok": True})

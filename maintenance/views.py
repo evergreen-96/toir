@@ -217,8 +217,17 @@ class WorkOrderDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+
         ctx["allowed_transitions"] = self.object.get_allowed_transitions()
         ctx["files"] = self.object.attachments.all()
+
+        if self.object.workstation:
+            ctx["workstation_statuses"] = (
+                self.object.workstation._meta
+                .get_field("status")
+                .choices
+            )
+
         return ctx
 
 
@@ -883,9 +892,3 @@ class PlannedOrderDetailView(DetailView):
 
         return ctx
 
-
-# @require_POST
-# def workorder_attachment_delete(request, pk):
-#     attachment = get_object_or_404(WorkOrderAttachment, pk=pk)
-#     attachment.delete()
-#     return JsonResponse({"ok": True})

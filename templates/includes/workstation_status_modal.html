@@ -1,0 +1,77 @@
+<div class="modal fade"
+     id="wsStatusModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Изменение статуса оборудования
+                </h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Информация о станке -->
+                <div class="mb-3">
+                    <div class="fw-semibold">
+                        {{ object.workstation.name }}
+                    </div>
+                    <div class="text-muted small">
+                        {{ object.workstation.category }}
+                        {% if object.workstation.location %}
+                            · {{ object.workstation.location }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Текущий статус -->
+                <div class="mb-2 text-muted small">
+                    Текущий статус
+                </div>
+                <div class="mb-3">
+                    <span class="badge bg-secondary">
+                        {{ object.workstation.get_status_display }}
+                    </span>
+                </div>
+
+                <!-- Новый статус -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Новый статус
+                    </label>
+                    <select id="ws-status-modal-select"
+                            class="form-select">
+                        {% for value, label in workstation_statuses %}
+                            <option value="{{ value }}"
+                                    {% if value == object.workstation.status %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Отмена
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="ws-status-modal-save">
+                    Сохранить
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
