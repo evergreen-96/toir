@@ -2,6 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 
 from assets.models import Workstation
+from inventory.forms import MaterialSelectWithImage
 from .models import WorkOrder, WorkOrderMaterial
 
 
@@ -85,7 +86,11 @@ class WorkOrderMaterialForm(forms.ModelForm):
     class Meta:
         model = WorkOrderMaterial
         fields = ["material", "qty_planned", "qty_used"]
-
+        widgets = {
+            "material": MaterialSelectWithImage(
+                attrs={"class": "form-select js-select2"}
+            )
+        }
     def clean(self):
         cleaned = super().clean()
 

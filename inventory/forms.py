@@ -1,6 +1,8 @@
 from django import forms
 from .models import Warehouse, Material
 from assets.models import Workstation
+from django.forms import Select
+
 
 class WarehouseForm(forms.ModelForm):
     class Meta:
@@ -60,3 +62,21 @@ class MaterialForm(forms.ModelForm):
                 }
             ),
         }
+
+class MaterialSelectWithImage(Select):
+    def create_option(
+        self, name, value, label, selected, index, subindex=None, attrs=None
+    ):
+        option = super().create_option(
+            name, value, label, selected, index, subindex=subindex, attrs=attrs
+        )
+
+        # 🔑 ВАЖНО: value — это ModelChoiceIteratorValue
+        if value and hasattr(value, "value"):
+            material_id = value.value
+
+            material = self.choices.queryset.filter(pk=material_id).first()
+            if material and material.image:
+                option["attrs"]["data-image"] = material.image.url
+
+        return option

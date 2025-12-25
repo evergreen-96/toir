@@ -540,67 +540,99 @@
                 input.disabled = false;
             }
         });
-        // =====================================================
-        // Select2 для материалов
-        // =====================================================
-        function initSelect2(ctx) {
-            $(ctx).find(".js-select2").select2({
+// =====================================================
+    // Select2 для материалов + картинки
+    // =====================================================
+    function formatMaterial(option) {
+        if (!option.id) return option.text;
+
+        const img = option.element?.dataset?.image;
+        if (!img) return option.text;
+
+        return $(`
+            <span class="d-flex align-items-center gap-2">
+                <img src="${img}"
+                     class="rounded border"
+                     style="width:24px;height:24px;object-fit:cover">
+                <span>${option.text}</span>
+            </span>
+        `);
+    }
+
+    function initSelect2(ctx) {
+        $(ctx).find(".js-select2").each(function () {
+            if ($(this).hasClass("select2-hidden-accessible")) return;
+
+            $(this).select2({
                 width: "100%",
                 allowClear: true,
-                placeholder: "Выберите материал"
+                placeholder: "Выберите материал",
+                templateResult: formatMaterial,
+                templateSelection: formatMaterial,
+                escapeMarkup: m => m
             });
-        }
-
-        initSelect2(document);
-
-        // =====================================================
-        // Добавление / удаление материалов (formset)
-        // =====================================================
-        document.addEventListener("click", function (e) {
-            const btn = e.target.closest(".material-remove-btn");
-            if (!btn) return;
-
-            const row = btn.closest(".material-row");
-            const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-            del.checked = !del.checked;
-
-            $(row)
-                .find("select, input:not([type='hidden'])")
-                .not('[name$="-DELETE"]')
-                .prop("disabled", del.checked);
         });
+    }
 
-        const container = document.getElementById("materials-container");
-        const addBtn = document.getElementById("add-material");
-        const template = document.getElementById("material-template");
+    initSelect2(document);
 
-        if (container && addBtn && template) {
+    // =====================================================
+    // Удаление / восстановление материала (formset DELETE)
+    // =====================================================
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".material-remove-btn");
+        if (!btn) return;
 
-            const prefix = "{{ formset.prefix }}";
-            const totalForms = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
-            let index = parseInt(totalForms.value, 10);
+        const row = btn.closest(".material-row");
+        const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
 
-            addBtn.addEventListener("click", function () {
-                const clone = document.importNode(template.content, true);
+        del.checked = !del.checked;
+        row.classList.toggle("opacity-50", del.checked);
 
-                clone.querySelectorAll("[name],[id],[for]").forEach(el => {
-                    ["name", "id", "for"].forEach(attr => {
-                        if (el.hasAttribute(attr)) {
-                            el.setAttribute(
-                                attr,
-                                el.getAttribute(attr).replace(/__prefix__/g, index)
-                            );
-                        }
-                    });
+        $(row)
+            .find("select, input:not([type='hidden'])")
+            .not('[name$="-DELETE"]')
+            .prop("disabled", del.checked)
+            .trigger("change");
+    });
+
+    // =====================================================
+    // Добавление новой строки материала (formset)
+    // =====================================================
+    const container = document.getElementById("materials-container");
+    const addBtn = document.getElementById("add-material");
+    const template = document.getElementById("material-template");
+
+    if (container && addBtn && template) {
+
+        const prefix = "{{ formset.prefix }}";
+        const totalForms = document.querySelector(
+            `input[name="${prefix}-TOTAL_FORMS"]`
+        );
+        let index = parseInt(totalForms.value, 10);
+
+        addBtn.addEventListener("click", function () {
+            const clone = document.importNode(template.content, true);
+
+            clone.querySelectorAll("[name],[id],[for]").forEach(el => {
+                ["name", "id", "for"].forEach(attr => {
+                    if (el.hasAttribute(attr)) {
+                        el.setAttribute(
+                            attr,
+                            el.getAttribute(attr).replace(/__prefix__/g, index)
+                        );
+                    }
                 });
-
-                container.appendChild(clone);
-                initSelect2(container.lastElementChild);
-
-                totalForms.value = index + 1;
-                index += 1;
             });
-        }
+
+            container.appendChild(clone);
+
+            initSelect2(container.lastElementChild);
+
+            totalForms.value = index + 1;
+            index += 1;
+        });
+    }
 
         // =====================================================
         // LOCATION → WORKSTATION
