@@ -9,7 +9,7 @@ from .views import (
     # Planned Orders
     PlannedOrderListView, planned_order_create, planned_order_update, planned_order_run_now, PlannedOrderDeleteView,
     planned_order_preview,  # ✅ добавили
-    wo_set_status, get_workstations_by_location, PlannedOrderDetailView,
+    wo_set_status, get_workstations_by_location, PlannedOrderDetailView, ajax_material_search,
 )
 
 app_name = "maintenance"
@@ -27,7 +27,7 @@ urlpatterns = [
     # Обновление статуса оборудование из задачи
     path("ajax/workstation-status/", ajax_get_workstation_status, name="ajax_workstation_status"),
     path("ajax/workstation-status/update/", ajax_update_workstation_status, name="ajax_workstation_status_update"),
-
+    path('ajax/material-search/', ajax_material_search, name='ajax_material_search'),
     # Плановые обслуживания
     path("plans/", PlannedOrderListView.as_view(), name="plan_list"),
     path("plans/<int:pk>/", PlannedOrderDetailView.as_view(), name="plan_detail"),

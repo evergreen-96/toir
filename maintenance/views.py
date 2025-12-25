@@ -4,9 +4,11 @@ from datetime import datetime, time, timedelta, date
 import calendar
 
 from dateutil.relativedelta import relativedelta
+from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db.models import Count
 
+from inventory.models import Material
 from maintenance.models import (
     WorkOrder, PlannedOrder,
     WorkOrderStatus, WorkCategory
@@ -881,6 +883,60 @@ def planned_order_run_now(request, pk: int):
     return redirect("maintenance:plan_list")
 
 
+def ajax_material_search(request):
+    """AJAX поиск материалов"""
+    query = request.GET.get('q', '').strip()
+    page = request.GET.get('page', 1)
+
+    try:
+        page = int(page)
+    except (ValueError, TypeError):
+        page = 1
+
+    # Ищем материалы по названию или SKU
+    materials = Material.objects.filter(is_active=True).order_by('name')
+
+    if query:
+        materials = materials.filter(
+            Q(name__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(description__icontains=query)
+        )
+
+    # Пагинация
+    paginator = Paginator(materials, 20)
+    try:
+        page_obj = paginator.page(page)
+    except:
+        page_obj = paginator.page(1)
+
+    # Формируем результаты
+    results = []
+    for material in page_obj:
+        result = {
+            'id': material.id,
+            'text': material.name,
+            'sku': material.sku or '',
+        }
+
+        # Добавляем URL изображения если есть
+        if hasattr(material, 'image') and material.image:
+            result['image_url'] = material.image.url
+        elif hasattr(material, 'photo') and material.photo:
+            result['image_url'] = material.photo.url
+        elif hasattr(material, 'image_url') and material.image_url:
+            result['image_url'] = material.image_url
+        else:
+            result['image_url'] = ''
+
+        results.append(result)
+
+    return JsonResponse({
+        'results': results,
+        'pagination': {
+            'more': page_obj.has_next()
+        }
+    })
 # =========================
 # PLANNED ORDERS: PREVIEW ENDPOINT (AJAX)
 # =========================

@@ -6,6 +6,52 @@
 {% endblock %}
 
 {% block content %}
+<style>
+/* Стили для превью файлов */
+.file-thumb-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: zoom-in;
+    border: 1px solid var(--bs-border-color);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.file-thumb:hover {
+    transform: scale(1.02);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
+}
+
+.file-thumb-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-secondary-color);
+    font-size: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--bs-border-color);
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Модальное окно для увеличенного изображения */
+.modal-content.bg-transparent {
+    background: transparent;
+}
+</style>
+
 <div class="row justify-content-center">
     <div class="col-xl-8 col-lg-9">
 
@@ -25,18 +71,12 @@
                 <form id="wo-form" method="post" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
                     {{ form.non_field_errors }}
-                    {% if form.errors %}
-                    <pre class="bg-light p-3 small text-danger">
-{{ form.errors }}
-</pre>
-                    {% endif %}
+
                     <!-- ===============================
                          1. Основная информация
                          =============================== -->
-                    <div class="form-section">
-                        <div class="form-section-header">
-                            1. Основная информация
-                        </div>
+                    <div class="mb-4">
+                        <div class="section-header mb-3">1. Основная информация</div>
 
                         <!-- Название -->
                         <div class="mb-3">
@@ -116,237 +156,262 @@
                             {% endfor %}
                         </div>
 
-                        <!-- Дата начала -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.date_start.label }}
-                            </label>
-                            {{ form.date_start|add_class:"form-control" }}
-                            {% for e in form.date_start.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Дата окончания -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.date_finish.label }}
-                            </label>
-                            {{ form.date_finish|add_class:"form-control" }}
-                            {% for e in form.date_finish.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Трудоёмкость (план) -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.labor_plan_hours.label }}
-                            </label>
-                            {{ form.labor_plan_hours|add_class:"form-control" }}
-                            {% for e in form.labor_plan_hours.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Трудоёмкость (факт) -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.labor_fact_hours.label }}
-                            </label>
-                            {{ form.labor_fact_hours|add_class:"form-control" }}
-                            {% for e in form.labor_fact_hours.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- ===============================
-                             Файлы
-                             =============================== -->
-                        <div class="form-section">
-                            <div class="form-section-header">
-                                Файлы
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Дата начала -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.date_start.label }}
+                                    </label>
+                                    {{ form.date_start|add_class:"form-control" }}
+                                    {% for e in form.date_start.errors %}
+                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
                             </div>
+                            <div class="col-md-6">
+                                <!-- Дата окончания -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.date_finish.label }}
+                                    </label>
+                                    {{ form.date_finish|add_class:"form-control" }}
+                                    {% for e in form.date_finish.errors %}
+                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
 
-                            <!-- Actions -->
-                            <div class="d-flex flex-wrap gap-2 mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Трудоёмкость (план) -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.labor_plan_hours.label }}
+                                    </label>
+                                    {{ form.labor_plan_hours|add_class:"form-control" }}
+                                    {% for e in form.labor_plan_hours.errors %}
+                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Трудоёмкость (факт) -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.labor_fact_hours.label }}
+                                    </label>
+                                    {{ form.labor_fact_hours|add_class:"form-control" }}
+                                    {% for e in form.labor_fact_hours.errors %}
+                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <!-- Загрузка с устройства -->
-                                <label class="btn btn-outline-primary mb-0">
-                                    <i class="bi bi-upload"></i>
-                                    Загрузить с устройства
-                                    <input
-                                            type="file"
-                                            id="id_files"
-                                            name="files"
-                                            multiple
-                                            hidden
-                                    >
-                                </label>
+                    <!-- ===============================
+                         Файлы
+                         =============================== -->
+                    <div class="mb-4">
+                        <div class="section-header mb-3">Файлы</div>
 
-                                <!-- Открыть библиотеку файлов -->
-                                <button
-                                        type="button"
-                                        class="btn btn-outline-secondary"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#filesLibraryModal"
+                        <!-- Actions -->
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+
+                            <!-- Загрузка с устройства -->
+                            <label class="btn btn-outline-primary mb-0">
+                                <i class="bi bi-upload"></i>
+                                Загрузить с устройства
+                                <input
+                                        type="file"
+                                        id="id_files"
+                                        name="files"
+                                        multiple
+                                        hidden
                                 >
-                                    <i class="bi bi-folder2-open"></i>
-                                    Выбрать из библиотеки
+                            </label>
+
+                            <!-- Открыть библиотеку файлов -->
+                            <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#filesLibraryModal"
+                            >
+                                <i class="bi bi-folder2-open"></i>
+                                Выбрать из библиотеки
+                            </button>
+
+                        </div>
+
+                        <!-- Новые файлы (с устройства, JS) -->
+                        <ul class="list-group list-group-flush mb-2" id="new-files-list">
+                            <!-- заполняется JS -->
+                        </ul>
+
+                        <!-- Выбранные из библиотеки (до сохранения) -->
+                        <ul class="list-group list-group-flush mb-2" id="library-selected-list">
+                        </ul>
+
+                        <!-- Уже прикреплённые файлы -->
+                        <ul class="list-group list-group-flush mt-2">
+                            {% if wo.attachments.exists %}
+                            {% for att in wo.attachments.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center file-row">
+                                <div class="file-thumb-container">
+                                    {% with att.file.file.url as file_url %}
+                                    {% with att.file.file.name|cut:"workorders/" as file_name %}
+                                    {% if file_url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg' %}
+                                    <img src="{{ file_url }}"
+                                         class="file-thumb"
+                                         alt="Превью"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#filePreviewModal"
+                                         data-full-src="{{ file_url }}">
+                                    {% else %}
+                                    <div class="file-thumb-icon">
+                                        <i class="bi bi-file-earmark"></i>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="file-info">
+                                        <a href="{{ file_url }}"
+                                           target="_blank"
+                                           class="d-block text-truncate text-decoration-none"
+                                           title="{{ file_name }}">
+                                            {{ file_name }}
+                                        </a>
+                                        <div class="small text-muted">
+                                            {{ att.file.file.size|filesizeformat }}
+                                        </div>
+                                    </div>
+                                    {% endwith %}
+                                    {% endwith %}
+                                </div>
+
+                                <!-- источник истины -->
+                                <input type="hidden" name="existing_files" value="{{ att.file.id }}">
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger file-remove-btn ms-2"
+                                        title="Открепить файл">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </li>
+                            {% endfor %}
+                            {% else %}
+                            <li class="list-group-item text-muted small">
+                                Файлы пока не прикреплены
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <!-- ===============================
+                         2. Материалы
+                         =============================== -->
+                    <div class="mb-4">
+                        <div class="section-header mb-3">2. Материалы</div>
+
+                        {{ formset.management_form }}
+
+                        <div id="materials-container">
+                            {% for f in formset %}
+                            <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+
+                                {% for hf in f.hidden_fields %}{{ hf }}{% endfor %}
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                    <i class="bi bi-trash"></i>
                                 </button>
 
-                            </div>
+                                <div class="d-none">{{ f.DELETE }}</div>
 
-                            <!-- Новые файлы (с устройства, JS) -->
-                            <ul class="list-group list-group-flush mb-2" id="new-files-list">
-                                <!-- заполняется JS -->
-                            </ul>
-                            <!-- Выбранные из библиотеки (до сохранения) -->
-                            <ul class="list-group list-group-flush mb-2" id="library-selected-list">
-                            </ul>
-                            <!-- Уже прикреплённые файлы -->
-                            <ul class="list-group list-group-flush mt-2">
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold">{{ f.material.label }}</label>
+                                    {{ f.material|add_class:"form-select js-select2" }}
+                                    {% for e in f.material.errors %}
+                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
 
-                                {% if wo.attachments.exists %}
-                                {% for att in wo.attachments.all %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center file-row">
-
-                                    <a href="{{ att.file.file.url }}" target="_blank">
-                                        {{ att.file.file.name|cut:"workorders/" }}
-                                    </a>
-
-                                    <!-- источник истины -->
-                                    <input
-                                            type="hidden"
-                                            name="existing_files"
-                                            value="{{ att.file.id }}"
-                                    >
-
-                                    <button
-                                            type="button"
-                                            class="btn btn-sm btn-outline-danger file-remove-btn"
-                                            title="Открепить файл"
-                                    >
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                </li>
-                                {% endfor %}
-                                {% else %}
-                                <li class="list-group-item text-muted small">
-                                    Файлы пока не прикреплены
-                                </li>
-                                {% endif %}
-
-                            </ul>
-                        </div>
-
-                        <!-- ===============================
-                             2. Материалы
-                             =============================== -->
-                        <div class="form-section">
-                            <div class="form-section-header">
-                                2. Материалы
-                            </div>
-
-                            {{ formset.management_form }}
-
-                            <div id="materials-container">
-                                {% for f in formset %}
-                                <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-
-                                    {% for hf in f.hidden_fields %}{{ hf }}{% endfor %}
-
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                    <div class="d-none">{{ f.DELETE }}</div>
-
-                                    <div class="mb-2">
-                                        <label class="form-label fw-semibold">{{ f.material.label }}</label>
-                                        {{ f.material|add_class:"form-select js-select2" }}
-                                        {% for e in f.material.errors %}
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">{{ f.qty_planned.label }}</label>
+                                        {{ f.qty_planned|add_class:"form-control" }}
+                                        {% for e in f.qty_planned.errors %}
                                         <div class="text-danger small mt-1">{{ e }}</div>
                                         {% endfor %}
                                     </div>
-
-                                    <div class="row g-2">
-                                        <div class="col">
-                                            <label class="form-label fw-semibold">{{ f.qty_planned.label }}</label>
-                                            {{ f.qty_planned|add_class:"form-control" }}
-                                            {% for e in f.qty_planned.errors %}
-                                            <div class="text-danger small mt-1">{{ e }}</div>
-                                            {% endfor %}
-                                        </div>
-                                        <div class="col">
-                                            <label class="form-label fw-semibold">{{ f.qty_used.label }}</label>
-                                            {{ f.qty_used|add_class:"form-control" }}
-                                            {% for e in f.qty_used.errors %}
-                                            <div class="text-danger small mt-1">{{ e }}</div>
-                                            {% endfor %}
-                                        </div>
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">{{ f.qty_used.label }}</label>
+                                        {{ f.qty_used|add_class:"form-control" }}
+                                        {% for e in f.qty_used.errors %}
+                                        <div class="text-danger small mt-1">{{ e }}</div>
+                                        {% endfor %}
                                     </div>
-
                                 </div>
-                                {% endfor %}
+
                             </div>
+                            {% endfor %}
+                        </div>
 
-                            <button type="button" class="btn btn-outline-primary" id="add-material">
-                                <i class="bi bi-plus-lg"></i> Добавить материал
-                            </button>
+                        <button type="button" class="btn btn-outline-primary" id="add-material">
+                            <i class="bi bi-plus-lg"></i> Добавить материал
+                        </button>
 
-                            <!-- empty form template -->
-                            <template id="material-template">
-                                <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+                        <!-- empty form template -->
+                        <template id="material-template">
+                            <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
 
-                                    {% for hf in formset.empty_form.hidden_fields %}{{ hf }}{% endfor %}
+                                {% for hf in formset.empty_form.hidden_fields %}{{ hf }}{% endfor %}
 
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                    <i class="bi bi-trash"></i>
+                                </button>
 
-                                    <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+                                <div class="d-none">{{ formset.empty_form.DELETE }}</div>
 
-                                    <div class="mb-2">
-                                        <label class="form-label fw-semibold">
-                                            {{ formset.empty_form.material.label }}
-                                        </label>
-                                        {{ formset.empty_form.material|add_class:"form-select js-select2" }}
-                                    </div>
-
-                                    <div class="row g-2">
-                                        <div class="col">
-                                            <label class="form-label fw-semibold">
-                                                {{ formset.empty_form.qty_planned.label }}
-                                            </label>
-                                            {{ formset.empty_form.qty_planned|add_class:"form-control" }}
-                                        </div>
-                                        <div class="col">
-                                            <label class="form-label fw-semibold">
-                                                {{ formset.empty_form.qty_used.label }}
-                                            </label>
-                                            {{ formset.empty_form.qty_used|add_class:"form-control" }}
-                                        </div>
-                                    </div>
-
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold">
+                                        {{ formset.empty_form.material.label }}
+                                    </label>
+                                    {{ formset.empty_form.material|add_class:"form-select js-select2" }}
                                 </div>
-                            </template>
-                        </div>
 
-                        <!-- ===============================
-                             Actions
-                             =============================== -->
-                        <div class="d-flex justify-content-between mt-4">
-                            <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
-                                Отмена
-                            </a>
-                            <button class="btn btn-primary px-4" type="submit">
-                                Сохранить
-                            </button>
-                        </div>
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">
+                                            {{ formset.empty_form.qty_planned.label }}
+                                        </label>
+                                        {{ formset.empty_form.qty_planned|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label fw-semibold">
+                                            {{ formset.empty_form.qty_used.label }}
+                                        </label>
+                                        {{ formset.empty_form.qty_used|add_class:"form-control" }}
+                                    </div>
+                                </div>
+
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- ===============================
+                         Actions
+                         =============================== -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
+                            Отмена
+                        </a>
+                        <button class="btn btn-primary px-4" type="submit">
+                            Сохранить
+                        </button>
                     </div>
                 </form>
                 {% include "includes/_files_library_modal.html" %}
@@ -356,13 +421,22 @@
     </div>
 </div>
 
+<!-- Модальное окно для увеличения изображений -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="modal-body p-0 text-center">
+                <img id="modalPreviewImage" class="img-fluid rounded" src="" alt="">
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-
         // =====================================================
-// FILE LIBRARY: show selected (UI only), without saving
-// =====================================================
-        const selectedWrap = document.getElementById("library-selected-wrap");
+        // FILE LIBRARY: show selected (UI only), without saving
+        // =====================================================
         const selectedList = document.getElementById("library-selected-list");
         const modalEl = document.getElementById("filesLibraryModal");
 
@@ -381,25 +455,45 @@
 
             checked.forEach(cb => {
                 const name = cb.dataset.fileName || `Файл #${cb.value}`;
-                const url = cb.dataset.fileUrl; // ← ВОТ ОН
+                const url = cb.dataset.fileUrl;
+                const size = cb.dataset.fileSize || '';
+
+                // Определяем, является ли файл изображением
+                const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(name);
 
                 const li = document.createElement("li");
-                li.className = "list-group-item d-flex justify-content-between align-items-center";
+                li.className = "list-group-item d-flex justify-content-between align-items-center file-row";
 
                 li.innerHTML = `
-            <a href="${url}"
-               target="_blank"
-               class="text-truncate text-decoration-none">
-                ${name}
-            </a>
-            <button type="button"
-                    class="btn btn-sm btn-outline-danger"
-                    title="Убрать">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        `;
+                    <div class="file-thumb-container">
+                        ${isImage ?
+                            `<img src="${url}"
+                                  class="file-thumb"
+                                  alt="Превью"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#filePreviewModal"
+                                  data-full-src="${url}">` :
+                            `<div class="file-thumb-icon">
+                                <i class="bi bi-file-earmark"></i>
+                             </div>`
+                        }
+                        <div class="file-info">
+                            <a href="${url}"
+                               target="_blank"
+                               class="d-block text-truncate text-decoration-none"
+                               title="${name}">
+                                ${name}
+                            </a>
+                            ${size ? `<div class="small text-muted">${size}</div>` : ''}
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger ms-2"
+                            title="Убрать">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
 
-                // удаление = снять чекбокс в модалке
                 li.querySelector("button").addEventListener("click", () => {
                     cb.checked = false;
                     renderSelectedFromLibrary();
@@ -409,11 +503,11 @@
             });
         }
 
-
-// Обновляем список при закрытии модалки (кнопка “Добавить” тоже закрывает)
+        // Обновляем список при закрытии модалки
         if (modalEl) {
             modalEl.addEventListener("hidden.bs.modal", renderSelectedFromLibrary);
         }
+
         // =====================================================
         // FILES: add / preview / remove before submit
         // =====================================================
@@ -424,7 +518,6 @@
         let selectedFiles = [];
 
         if (input && list) {
-
             input.addEventListener("change", () => {
                 const newlySelected = Array.from(input.files);
 
@@ -447,18 +540,57 @@
 
                 selectedFiles.forEach((file, index) => {
                     const li = document.createElement("li");
-                    li.className = "list-group-item d-flex justify-content-between align-items-center";
+                    li.className = "list-group-item d-flex justify-content-between align-items-center file-row";
+
+                    // Создаем превью для изображений
+                    let previewContent = '';
+                    let isImage = false;
+                    if (file.type.startsWith('image/')) {
+                        isImage = true;
+                        const url = URL.createObjectURL(file);
+                        previewContent = `
+                            <img class="file-thumb"
+                                 src="${url}"
+                                 alt="Превью"
+                                 data-bs-toggle="modal"
+                                 data-bs-target="#filePreviewModal"
+                                 data-full-src="${url}"
+                                 data-blob="true">
+                        `;
+                    } else {
+                        previewContent = `
+                            <div class="file-thumb-icon">
+                                <i class="bi bi-file-earmark"></i>
+                            </div>
+                        `;
+                    }
 
                     li.innerHTML = `
-                    <span class="text-truncate">${file.name}</span>
-                    <button type="button"
-                            class="btn btn-sm btn-outline-danger"
-                            title="Убрать файл">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                `;
+                        <div class="file-thumb-container">
+                            ${previewContent}
+                            <div class="file-info">
+                                <span class="d-block text-truncate" title="${file.name}">
+                                    ${file.name}
+                                </span>
+                                <div class="small text-muted">
+                                    ${formatFileSize(file.size)}
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger ms-2"
+                                title="Убрать файл">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    `;
 
-                    li.querySelector("button").addEventListener("click", () => {
+                    const removeBtn = li.querySelector("button");
+                    removeBtn.addEventListener("click", () => {
+                        // Освобождаем Blob URL если он был создан
+                        const img = li.querySelector('img[data-blob="true"]');
+                        if (img) {
+                            URL.revokeObjectURL(img.src);
+                        }
                         selectedFiles.splice(index, 1);
                         syncInputFiles();
                         renderFiles();
@@ -468,6 +600,14 @@
                 });
             }
 
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
             function syncInputFiles() {
                 const dt = new DataTransfer();
                 selectedFiles.forEach(f => dt.items.add(f));
@@ -475,8 +615,10 @@
             }
         }
 
+        // =====================================================
+        // Поиск в библиотеке файлов
+        // =====================================================
         const search = document.getElementById("fileSearch");
-
         if (search) {
             search.addEventListener("input", function () {
                 const q = this.value.trim().toLowerCase();
@@ -519,10 +661,9 @@
             });
         }
 
-
-// =====================================================
-// FILES: mark for detach (UI only, like materials)
-// =====================================================
+        // =====================================================
+        // FILES: mark for detach (UI only, like materials)
+        // =====================================================
         document.addEventListener("click", function (e) {
             const btn = e.target.closest(".file-remove-btn");
             if (!btn) return;
@@ -540,99 +681,97 @@
                 input.disabled = false;
             }
         });
-// =====================================================
-    // Select2 для материалов + картинки
-    // =====================================================
-    function formatMaterial(option) {
-        if (!option.id) return option.text;
 
-        const img = option.element?.dataset?.image;
-        if (!img) return option.text;
+        // =====================================================
+        // Select2 для материалов + картинки
+        // =====================================================
+        function formatMaterial(option) {
+            if (!option.id) return option.text;
 
-        return $(`
-            <span class="d-flex align-items-center gap-2">
-                <img src="${img}"
-                     class="rounded border"
-                     style="width:24px;height:24px;object-fit:cover">
-                <span>${option.text}</span>
-            </span>
-        `);
-    }
+            const img = option.element?.dataset?.image;
+            if (!img) return option.text;
 
-    function initSelect2(ctx) {
-        $(ctx).find(".js-select2").each(function () {
-            if ($(this).hasClass("select2-hidden-accessible")) return;
+            return $(`
+                <span class="d-flex align-items-center gap-2">
+                    <img src="${img}"
+                         class="rounded border"
+                         style="width:24px;height:24px;object-fit:cover">
+                    <span>${option.text}</span>
+                </span>
+            `);
+        }
 
-            $(this).select2({
-                width: "100%",
-                allowClear: true,
-                placeholder: "Выберите материал",
-                templateResult: formatMaterial,
-                templateSelection: formatMaterial,
-                escapeMarkup: m => m
-            });
-        });
-    }
+        function initSelect2(ctx) {
+            $(ctx).find(".js-select2").each(function () {
+                if ($(this).hasClass("select2-hidden-accessible")) return;
 
-    initSelect2(document);
-
-    // =====================================================
-    // Удаление / восстановление материала (formset DELETE)
-    // =====================================================
-    document.addEventListener("click", function (e) {
-        const btn = e.target.closest(".material-remove-btn");
-        if (!btn) return;
-
-        const row = btn.closest(".material-row");
-        const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-
-        del.checked = !del.checked;
-        row.classList.toggle("opacity-50", del.checked);
-
-        $(row)
-            .find("select, input:not([type='hidden'])")
-            .not('[name$="-DELETE"]')
-            .prop("disabled", del.checked)
-            .trigger("change");
-    });
-
-    // =====================================================
-    // Добавление новой строки материала (formset)
-    // =====================================================
-    const container = document.getElementById("materials-container");
-    const addBtn = document.getElementById("add-material");
-    const template = document.getElementById("material-template");
-
-    if (container && addBtn && template) {
-
-        const prefix = "{{ formset.prefix }}";
-        const totalForms = document.querySelector(
-            `input[name="${prefix}-TOTAL_FORMS"]`
-        );
-        let index = parseInt(totalForms.value, 10);
-
-        addBtn.addEventListener("click", function () {
-            const clone = document.importNode(template.content, true);
-
-            clone.querySelectorAll("[name],[id],[for]").forEach(el => {
-                ["name", "id", "for"].forEach(attr => {
-                    if (el.hasAttribute(attr)) {
-                        el.setAttribute(
-                            attr,
-                            el.getAttribute(attr).replace(/__prefix__/g, index)
-                        );
-                    }
+                $(this).select2({
+                    width: "100%",
+                    allowClear: true,
+                    placeholder: "Выберите материал",
+                    templateResult: formatMaterial,
+                    templateSelection: formatMaterial,
+                    escapeMarkup: m => m
                 });
             });
+        }
 
-            container.appendChild(clone);
+        initSelect2(document);
 
-            initSelect2(container.lastElementChild);
+        // =====================================================
+        // Удаление / восстановление материала (formset DELETE)
+        // =====================================================
+        document.addEventListener("click", function (e) {
+            const btn = e.target.closest(".material-remove-btn");
+            if (!btn) return;
 
-            totalForms.value = index + 1;
-            index += 1;
+            const row = btn.closest(".material-row");
+            const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+            del.checked = !del.checked;
+            row.classList.toggle("opacity-50", del.checked);
+
+            $(row)
+                .find("select, input:not([type='hidden'])")
+                .not('[name$="-DELETE"]')
+                .prop("disabled", del.checked)
+                .trigger("change");
         });
-    }
+
+        // =====================================================
+        // Добавление новой строки материала (formset)
+        // =====================================================
+        const container = document.getElementById("materials-container");
+        const addBtn = document.getElementById("add-material");
+        const template = document.getElementById("material-template");
+
+        if (container && addBtn && template) {
+            const prefix = "{{ formset.prefix }}";
+            const totalForms = document.querySelector(
+                `input[name="${prefix}-TOTAL_FORMS"]`
+            );
+            let index = parseInt(totalForms.value, 10);
+
+            addBtn.addEventListener("click", function () {
+                const clone = document.importNode(template.content, true);
+
+                clone.querySelectorAll("[name],[id],[for]").forEach(el => {
+                    ["name", "id", "for"].forEach(attr => {
+                        if (el.hasAttribute(attr)) {
+                            el.setAttribute(
+                                attr,
+                                el.getAttribute(attr).replace(/__prefix__/g, index)
+                            );
+                        }
+                    });
+                });
+
+                container.appendChild(clone);
+                initSelect2(container.lastElementChild);
+                totalForms.value = index + 1;
+                index += 1;
+            });
+        }
 
         // =====================================================
         // LOCATION → WORKSTATION
@@ -641,7 +780,6 @@
         const $workstation = $("#id_workstation");
 
         if ($location.length && $workstation.length) {
-
             $location.select2({width: "100%"});
             $workstation.select2({
                 width: "100%",
@@ -703,7 +841,40 @@
             }
         }
 
+        // =====================================================
+        // Модальное окно для предпросмотра изображений
+        // =====================================================
+        const filePreviewModal = document.getElementById('filePreviewModal');
+        if (filePreviewModal) {
+            filePreviewModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const fullSrc = button.getAttribute('data-full-src');
+                const modalImage = document.getElementById('modalPreviewImage');
+                modalImage.src = fullSrc;
+            });
+
+            filePreviewModal.addEventListener('hidden.bs.modal', function () {
+                const modalImage = document.getElementById('modalPreviewImage');
+                modalImage.src = '';
+            });
+        }
+
+        // Освобождаем Blob URL при закрытии страницы
+        window.addEventListener('beforeunload', function () {
+            document.querySelectorAll('img[data-blob="true"]').forEach(img => {
+                URL.revokeObjectURL(img.src);
+            });
+        });
+
+        // Также освобождаем Blob URL при отправке формы
+        const form = document.getElementById('wo-form');
+        if (form) {
+            form.addEventListener('submit', function () {
+                document.querySelectorAll('img[data-blob="true"]').forEach(img => {
+                    URL.revokeObjectURL(img.src);
+                });
+            });
+        }
     });
 </script>
-
 {% endblock %}
