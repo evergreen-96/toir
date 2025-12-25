@@ -5,25 +5,25 @@
             <div class="modal-header">
                 <h5 class="modal-title">Библиотека файлов</h5>
                 <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
                 ></button>
             </div>
 
             <div class="modal-body">
 
                 <input
-                    type="search"
-                    class="form-control mb-3"
-                    placeholder="Поиск по имени файла…"
-                    id="fileSearch"
+                        type="search"
+                        class="form-control mb-3"
+                        placeholder="Поиск по имени файла…"
+                        id="fileSearch"
                 />
 
                 <div class="list-group">
                     {% for f in all_files %}
-                        <label class="list-group-item d-flex align-items-center gap-2">
-                            <input
+                    <label class="list-group-item d-flex align-items-center gap-2">
+                        <input
                                 class="form-check-input"
                                 type="checkbox"
                                 name="existing_files"
@@ -31,15 +31,19 @@
                                 form="wo-form"
                                 data-file-name="{{ f.file.name|cut:'workorders/' }}"
                                 data-file-url="{{ f.file.url }}"
-                            >
-                            <span class="text-truncate">
-                                {{ f.file.name|cut:"workorders/" }}
-                            </span>
-                        </label>
+                        >
+
+                        <!-- preview -->
+                        <div class="file-preview flex-shrink-0"></div>
+
+                        <span class="text-truncate flex-grow-1">
+        {{ f.file.name|cut:"workorders/" }}
+    </span>
+                    </label>
                     {% empty %}
-                        <div class="text-muted small">
-                            Файлов нет
-                        </div>
+                    <div class="text-muted small">
+                        Файлов нет
+                    </div>
                     {% endfor %}
                 </div>
 
@@ -47,9 +51,9 @@
 
             <div class="modal-footer">
                 <button
-                    type="button"
-                    class="btn btn-primary"
-                    data-bs-dismiss="modal"
+                        type="button"
+                        class="btn btn-primary"
+                        data-bs-dismiss="modal"
                 >
                     Добавить
                 </button>
@@ -57,4 +61,93 @@
 
         </div>
     </div>
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-transparent border-0">
+
+                <div class="modal-body p-0 text-center">
+                    <img
+                            id="imagePreviewModalImg"
+                            src=""
+                            class="img-fluid rounded shadow"
+                            style="max-height: 90vh;"
+                    >
+                </div>
+
+                <button
+                        type="button"
+                        class="btn-close position-absolute top-0 end-0 m-3"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                ></button>
+
+            </div>
+        </div>
+    </div>
 </div>
+<style>
+    .file-preview {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .file-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const imageModalEl = document.getElementById("imagePreviewModal");
+    const imageModalImg = document.getElementById("imagePreviewModalImg");
+    const imageModal = imageModalEl
+        ? new bootstrap.Modal(imageModalEl)
+        : null;
+
+    document
+        .querySelectorAll('#filesLibraryModal input[type="checkbox"]')
+        .forEach(cb => {
+
+            const label = cb.closest("label");
+            const preview = label.querySelector(".file-preview");
+            const url = cb.dataset.fileUrl;
+
+            if (!preview || !url) return;
+
+            const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+
+            if (isImage) {
+                const img = document.createElement("img");
+                img.src = url;
+                img.loading = "lazy";
+                img.style.cursor = "zoom-in";
+
+                // 🔍 КЛИК → ОТКРЫТЬ В БОЛЬШОМ ВИДЕ
+                img.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (!imageModal) return;
+
+                    imageModalImg.src = url;
+                    imageModal.show();
+                });
+
+                preview.appendChild(img);
+            } else {
+                preview.innerHTML = `
+                    <i class="bi bi-file-earmark text-muted fs-4"></i>
+                `;
+            }
+        });
+
+});
+</script>
