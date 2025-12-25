@@ -4,6 +4,18 @@ from datetime import datetime, time, timedelta, date
 import calendar
 
 from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+from django.db.models import Count
+
+from maintenance.models import (
+    WorkOrder, PlannedOrder,
+    WorkOrderStatus, WorkCategory
+)
+from assets.models import (
+    Workstation,
+    WorkstationStatus,
+    WorkstationGlobalState
+)
 
 from django import forms
 from django.contrib import messages
@@ -51,23 +63,6 @@ def _clamp_dom(y: int, m: int, dom: int) -> int:
 def _fmt_local(dt) -> str:
     """aware dt -> 'YYYY-MM-DD HH:MM:SS' (local tz)"""
     return timezone.localtime(dt).strftime("%Y-%m-%d %H:%M:%S")
-
-
-# =========================
-# HOME
-# =========================
-from django.utils import timezone
-from django.db.models import Count
-
-from maintenance.models import (
-    WorkOrder, PlannedOrder,
-    WorkOrderStatus, WorkCategory
-)
-from assets.models import (
-    Workstation,
-    WorkstationStatus,
-    WorkstationGlobalState
-)
 
 
 def home(request):
@@ -590,6 +585,12 @@ class PlannedOrderForm(forms.ModelForm):
 
         # === делаем ответственного обязательным ===
         self.fields["responsible_default"].required = True
+
+        self.fields["category"].choices = [
+            (value, label)
+            for value, label in self.fields["category"].choices
+            if value != WorkCategory.EMERGENCY
+        ]
 
         self.fields["interval_value"].required = False
         self.fields["interval_unit"].required = False

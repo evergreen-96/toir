@@ -239,85 +239,266 @@
                     </div>
                 </div>
 
-                <!-- =====================================================
+               <!-- =====================================================
      D. Описание и вложения
      ===================================================== -->
-                {% if object.description or object.attachments.exists %}
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Описание и вложения
-                    </div>
+{% if object.description or object.attachments.exists %}
+<div class="form-section">
+    <div class="form-section-header">
+        Описание и вложения
+    </div>
 
-                    {% if object.description %}
-                    <div class="mb-3">
-                        {{ object.description|linebreaks }}
-                    </div>
-                    {% endif %}
+    {% if object.description %}
+    <div class="mb-4">
+        {{ object.description|linebreaks }}
+    </div>
+    {% endif %}
 
-                    {% if object.attachments.exists %}
-                    <ul class="list-group list-group-flush">
-                        {% for att in object.attachments.all %}
-                        <li class="list-group-item d-flex align-items-center gap-2">
-                            <i class="bi bi-paperclip text-muted"></i>
-                            <a href="{{ att.file.file.url }}"
-                               target="_blank"
-                               rel="noopener"
-                               class="text-decoration-none">
-                                {{ att.file.file.name|cut:"workorders/" }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                {% endif %}
+    {% if object.attachments.exists %}
+    <div class="table-responsive">
+        <table class="table table-sm align-middle attachments-table">
+            <thead class="table-light">
+            <tr>
+                <th style="width:56px;"></th>
+                <th>Файл</th>
+                <th style="width:120px;" class="text-end"></th>
+            </tr>
+            </thead>
 
-                <!-- =====================================================
-                     E. Материалы
-                     ===================================================== -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Материалы
-                    </div>
+            <tbody>
+            {% for att in object.attachments.all %}
+            {% with fname=att.file.file.name|lower %}
+            <tr>
 
-                    {% if object.materials.all %}
-                    <ul class="list-group list-group-flush">
-                        {% for m in object.materials.all %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-
-                            <!-- Название материала -->
-                            <div class="fw-semibold">
-                                {{ m.material.name }}
-                            </div>
-
-                            <!-- План / факт с подсветкой -->
-                            {% if m.qty_used > m.qty_planned %}
-                            <div class="fw-semibold text-danger text-end">
-                                план: {{ m.qty_planned }} · факт: {{ m.qty_used }}
-                                <div class="small">(превышение)</div>
-                            </div>
-                            {% else %}
-                            <div class="fw-semibold text-end">
-                                план: {{ m.qty_planned }} · факт: {{ m.qty_used }}
-                            </div>
-                            {% endif %}
-
-                        </li>
-                        {% endfor %}
-                    </ul>
+                <!-- Preview / Icon -->
+                <td>
+                    {% if ".jpg" in fname or ".jpeg" in fname or ".png" in fname or ".webp" in fname or ".gif" in fname %}
+                    <img
+                        src="{{ att.file.file.url }}"
+                        alt="{{ att.file.file.name|cut:'workorders/' }}"
+                        class="attachment-table-thumb attachment-thumb-zoom"
+                        loading="lazy"
+                        data-bs-toggle="modal"
+                        data-bs-target="#attachmentImageModal"
+                        data-image="{{ att.file.file.url }}"
+                        data-title="{{ att.file.file.name|cut:'workorders/' }}"
+                    >
                     {% else %}
-                    <div class="text-muted">
-                        Материалы не добавлены
+                    <div class="attachment-icon">
+                        {% if ".pdf" in fname %}
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        {% elif ".xls" in fname or ".xlsx" in fname %}
+                        <i class="bi bi-file-earmark-excel"></i>
+                        {% elif ".doc" in fname or ".docx" in fname %}
+                        <i class="bi bi-file-earmark-word"></i>
+                        {% else %}
+                        <i class="bi bi-file-earmark"></i>
+                        {% endif %}
                     </div>
                     {% endif %}
-                </div>
+                </td>
+
+                <!-- Name -->
+                <td>
+                    {{ att.file.file.name|cut:"workorders/" }}
+                </td>
+
+                <!-- Download -->
+                <td class="text-end">
+                    <a href="{{ att.file.file.url }}"
+                       download
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-download"></i>
+                        Скачать
+                    </a>
+                </td>
+
+            </tr>
+            {% endwith %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+<!-- =====================================================
+     E. Материалы
+     ===================================================== -->
+<div class="form-section">
+    <div class="form-section-header">
+        Материалы
+    </div>
+
+    {% if object.materials.exists %}
+    <div class="table-responsive">
+        <table class="table table-sm align-middle materials-table">
+            <thead class="table-light">
+            <tr>
+                <th style="width:56px;"></th>
+                <th>Материал</th>
+                <th class="text-end">План</th>
+                <th class="text-end">Факт</th>
+                <th style="width:40px;"></th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for m in object.materials.all %}
+            <tr class="{% if m.qty_used > m.qty_planned %}table-danger-subtle{% endif %}">
+
+                <!-- Preview -->
+                <td>
+                    {% if m.material.image %}
+                    <img
+                        src="{{ m.material.image.url }}"
+                        alt="{{ m.material.name }}"
+                        class="material-table-thumb material-thumb-img"
+                        loading="lazy"
+                        data-bs-toggle="modal"
+                        data-bs-target="#materialImageModal"
+                        data-image="{{ m.material.image.url }}"
+                        data-title="{{ m.material.name }}"
+                    >
+                    {% else %}
+                    <div class="material-thumb-placeholder">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    {% endif %}
+                </td>
+
+                <!-- Name -->
+                <td>
+                    <a href="{% url 'inventory:material_detail' m.material.pk %}"
+                       class="fw-semibold text-decoration-none">
+                        {{ m.material.name }}
+                    </a>
+                </td>
+
+                <!-- Planned -->
+                <td class="text-end">
+                    {{ m.qty_planned }}
+                </td>
+
+                <!-- Used -->
+                <td class="text-end {% if m.qty_used > m.qty_planned %}text-danger fw-semibold{% endif %}">
+                    {{ m.qty_used }}
+                </td>
+
+                <!-- Warning -->
+                <td class="text-center">
+                    {% if m.qty_used > m.qty_planned %}
+                    <i class="bi bi-exclamation-triangle-fill text-danger"
+                       title="Превышение плана"></i>
+                    {% endif %}
+                </td>
+
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-muted">
+        Материалы не добавлены
+    </div>
+    {% endif %}
+</div>
 
 
             </div>
         </div>
 
+        <!-- Attachment image modal -->
+        <div class="modal fade" id="attachmentImageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content bg-transparent border-0 shadow-none">
+                    <div class="modal-body p-0 text-center">
+                        <img id="attachmentImageModalImg" class="img-fluid rounded" src="" alt="">
+                        <div class="text-muted small mt-2" id="attachmentImageModalTitle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Material image modal -->
+        <div class="modal fade" id="materialImageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content bg-transparent border-0 shadow-none">
+                    <div class="modal-body p-0 text-center">
+                        <img id="materialImageModalImg" class="img-fluid rounded" src="" alt="">
+                        <div class="text-muted small mt-2" id="materialImageModalTitle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+<style>
+/* =====================================================
+   Tables: common
+   ===================================================== */
+
+.attachments-table,
+.materials-table {
+    font-size: .9rem;
+}
+
+.attachments-table tbody tr:hover,
+.materials-table tbody tr:hover {
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* =====================================================
+   Image thumbnails (attachments + materials)
+   ===================================================== */
+
+.attachment-table-thumb,
+.material-table-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: .4rem;
+    border: 1px solid var(--bs-border-color);
+    cursor: zoom-in;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.attachment-table-thumb:hover,
+.material-table-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .25);
+}
+
+/* =====================================================
+   Placeholder / icons (no image)
+   ===================================================== */
+
+.attachment-icon,
+.material-thumb-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: .4rem;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-secondary-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--bs-primary);
+}
+
+/* =====================================================
+   Materials table specifics
+   ===================================================== */
+
+.materials-table td.text-danger {
+    font-weight: 600;
+}
+</style>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -421,7 +602,38 @@
                 });
         });
 
-    });
+
+function bindImageModal(imgSelector, modalImgId, modalTitleId) {
+        const modalImg = document.getElementById(modalImgId);
+        const modalTitle = document.getElementById(modalTitleId);
+
+        document.querySelectorAll(imgSelector).forEach(img => {
+            img.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                modalImg.src = this.dataset.image;
+                modalImg.alt = this.dataset.title || "";
+                modalTitle.textContent = this.dataset.title || "";
+            });
+        });
+    }
+
+    // Attachments
+    bindImageModal(
+        ".attachment-thumb-zoom",
+        "attachmentImageModalImg",
+        "attachmentImageModalTitle"
+    );
+
+    // Materials
+    bindImageModal(
+        ".material-thumb-img",
+        "materialImageModalImg",
+        "materialImageModalTitle"
+    );
+
+});
 </script>
 
 {% if object.workstation and request.user.is_staff %}

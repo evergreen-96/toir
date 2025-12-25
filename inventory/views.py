@@ -108,7 +108,7 @@ class MaterialDetailView(DetailView):
 
 def material_create(request):
     if request.method == "POST":
-        form = MaterialForm(request.POST)
+        form = MaterialForm(request.POST, request.FILES)  # 🔑 ВАЖНО
         if form.is_valid():
             obj = form.save(commit=False)
             obj._history_user = request.user
@@ -122,12 +122,22 @@ def material_create(request):
             return redirect("inventory:material_detail", pk=obj.pk)
     else:
         form = MaterialForm()
-    return render(request, "inventory/material_form.html", {"form": form, "create": True})
+
+    return render(
+        request,
+        "inventory/material_form.html",
+        {
+            "form": form,
+            "create": True,
+        }
+    )
+
 
 def material_update(request, pk):
     obj = get_object_or_404(Material, pk=pk)
+
     if request.method == "POST":
-        form = MaterialForm(request.POST, instance=obj)
+        form = MaterialForm(request.POST, request.FILES, instance=obj)  # 🔑 ВАЖНО
         if form.is_valid():
             obj = form.save(commit=False)
             obj._history_user = request.user
@@ -141,7 +151,16 @@ def material_update(request, pk):
             return redirect("inventory:material_detail", pk=obj.pk)
     else:
         form = MaterialForm(instance=obj)
-    return render(request, "inventory/material_form.html", {"form": form, "create": False, "obj": obj})
+
+    return render(
+        request,
+        "inventory/material_form.html",
+        {
+            "form": form,
+            "create": False,
+            "obj": obj,
+        }
+    )
 
 class MaterialDeleteView(View):
     def post(self, request, pk):

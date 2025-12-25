@@ -26,6 +26,7 @@ class MaterialForm(forms.ModelForm):
             "qty_reserved",
             "warehouse",
             "suitable_for",
+            "image",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),

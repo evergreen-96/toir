@@ -48,6 +48,12 @@ class Material(models.Model):
         related_name="compatible_materials",
         verbose_name="Подходит для оборудования",
     )
+    image = models.ImageField(
+        "Фото",
+        upload_to="materials/",
+        null=True,
+        blank=True
+    )
 
     class Meta:
         verbose_name = "Номенклатура"
