@@ -15,7 +15,7 @@ class HumanResource(models.Model):
         on_delete=models.SET_NULL,
         related_name="subordinates",
     )
-
+    is_active = models.BooleanField(blank=True, null=True, default=True)
     class Meta:
         verbose_name = "Сотрудник"
         verbose_name_plural = "Сотрудники"
