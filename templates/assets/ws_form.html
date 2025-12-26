@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% load form_extras %}
-
+{% load static form_extras %}
 {% block title %}
 {% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}
 {% endblock %}
@@ -8,82 +7,166 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-xl-10 col-lg-11">
-
     <div class="card shadow-sm border-0">
       <div class="card-body">
-
         <!-- =====================================================
              1. HEADER
              ===================================================== -->
         <div class="mb-3">
           <h1 class="h4 mb-1">
-            {% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}
+            {% if create %}
+            <i class="fas fa-plus-circle me-2 text-success"></i>
+            Новое оборудование
+            {% else %}
+            <i class="fas fa-edit me-2 text-primary"></i>
+            Редактирование оборудования
+            {% endif %}
           </h1>
           <div class="text-muted small">
+            {% if create %}
+            Добавление нового оборудования в систему
+            {% else %}
             Основные характеристики и параметры
+            {% endif %}
           </div>
         </div>
 
-        <div class="text-muted small mb-4">
-          <span class="text-danger fw-semibold">*</span> — обязательные поля
+        <div class="alert alert-info d-flex align-items-center mb-4">
+          <i class="fas fa-info-circle fa-2x me-3"></i>
+          <div>
+            <strong>Внимание!</strong>
+            Поля, отмеченные <span class="text-danger fw-semibold">*</span>, обязательны для заполнения.
+            {% if not create %}
+            <br>
+            <small>Последнее изменение: {{ object.updated_at|date:"d.m.Y H:i" }}</small>
+            {% endif %}
+          </div>
         </div>
 
-        <form method="post" enctype="multipart/form-data" novalidate>
+        <form method="post" enctype="multipart/form-data" id="workstationForm" novalidate>
           {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ form.non_field_errors }}
+          </div>
+          {% endif %}
 
           <!-- =====================================================
                2. ОСНОВНЫЕ ХАРАКТЕРИСТИКИ
                ===================================================== -->
           <div class="mb-4">
-            <div class="section-header">Основные характеристики</div>
+            <div class="section-header">
+              <i class="fas fa-info-circle me-2"></i>
+              Основные характеристики
+            </div>
 
             <div class="row g-3">
-
+              <!-- Название -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">
-                  {{ form.name.label }}{% if form.name.field.required %}<span class="text-danger">*</span>{% endif %}
+                  <i class="fas fa-tag me-1"></i>
+                  {{ form.name.label }}
+                  <span class="text-danger">*</span>
                 </label>
                 {{ form.name|add_class:"form-control" }}
+                {% if form.name.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.name.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">Наименование оборудования для идентификации</div>
               </div>
 
+              <!-- Категория -->
               <div class="col-md-3">
                 <label class="form-label fw-semibold">
-                  {{ form.category.label }}{% if form.category.field.required %}<span class="text-danger">*</span>{% endif %}
+                  <i class="fas fa-folder me-1"></i>
+                  {{ form.category.label }}
+                  <span class="text-danger">*</span>
                 </label>
                 {{ form.category|add_class:"form-select" }}
+                {% if form.category.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.category.errors }}
+                </div>
+                {% endif %}
               </div>
 
+              <!-- Статус -->
               <div class="col-md-3">
                 <label class="form-label fw-semibold">
-                  {{ form.status.label }}{% if form.status.field.required %}<span class="text-danger">*</span>{% endif %}
+                  <i class="fas fa-power-off me-1"></i>
+                  {{ form.status.label }}
+                  <span class="text-danger">*</span>
                 </label>
                 {{ form.status|add_class:"form-select" }}
+                {% if form.status.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.status.errors }}
+                </div>
+                {% endif %}
               </div>
 
+              <!-- Глобальное состояние -->
               <div class="col-md-3">
                 <label class="form-label fw-semibold">
-                  {{ form.global_state.label }}<span class="text-danger">*</span>
+                  <i class="fas fa-globe me-1"></i>
+                  {{ form.global_state.label }}
+                  <span class="text-danger">*</span>
                 </label>
                 {{ form.global_state|add_class:"form-select" }}
+                {% if form.global_state.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.global_state.errors }}
+                </div>
+                {% endif %}
               </div>
 
+              <!-- Тип -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">
-                  {{ form.type_name.label }}{% if form.type_name.field.required %}<span class="text-danger">*</span>{% endif %}
+                  <i class="fas fa-cog me-1"></i>
+                  {{ form.type_name.label }}
+                  <span class="text-danger">*</span>
                 </label>
                 {{ form.type_name|add_class:"form-control" }}
+                {% if form.type_name.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.type_name.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">Например: Станок, Компьютер, Принтер</div>
               </div>
 
+              <!-- Производитель -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.manufacturer.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-industry me-1"></i>
+                  {{ form.manufacturer.label }}
+                </label>
                 {{ form.manufacturer|add_class:"form-control" }}
+                {% if form.manufacturer.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.manufacturer.errors }}
+                </div>
+                {% endif %}
               </div>
 
+              <!-- Модель -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.model.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-barcode me-1"></i>
+                  {{ form.model.label }}
+                </label>
                 {{ form.model|add_class:"form-control" }}
+                {% if form.model.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.model.errors }}
+                </div>
+                {% endif %}
               </div>
-
             </div>
           </div>
 
@@ -91,17 +174,40 @@
                3. ИДЕНТИФИКАЦИЯ И УЧЁТ
                ===================================================== -->
           <div class="mb-4">
-            <div class="section-header">Идентификация и учёт</div>
+            <div class="section-header">
+              <i class="fas fa-id-card me-2"></i>
+              Идентификация и учёт
+            </div>
 
             <div class="row g-3">
+              <!-- Серийный номер -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.serial_number.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-hashtag me-1"></i>
+                  {{ form.serial_number.label }}
+                </label>
                 {{ form.serial_number|add_class:"form-control" }}
+                {% if form.serial_number.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.serial_number.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">Серийный номер от производителя</div>
               </div>
 
+              <!-- Инвентарный номер -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.inventory_number.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-clipboard-list me-1"></i>
+                  {{ form.inventory_number.label }}
+                </label>
                 {{ form.inventory_number|add_class:"form-control" }}
+                {% if form.inventory_number.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.inventory_number.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">Уникальный номер в вашей системе</div>
               </div>
             </div>
           </div>
@@ -110,19 +216,39 @@
                4. РАСПОЛОЖЕНИЕ И ОТВЕТСТВЕННОСТЬ
                ===================================================== -->
           <div class="mb-4">
-            <div class="section-header">Расположение и ответственность</div>
+            <div class="section-header">
+              <i class="fas fa-map-marker-alt me-2"></i>
+              Расположение и ответственность
+            </div>
 
             <div class="row g-3">
+              <!-- Локация -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">
-                  {{ form.location.label }}{% if form.location.field.required %}<span class="text-danger">*</span>{% endif %}
+                  <i class="fas fa-building me-1"></i>
+                  {{ form.location.label }}
+                  <span class="text-danger">*</span>
                 </label>
                 {{ form.location|add_class:"form-select" }}
+                {% if form.location.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.location.errors }}
+                </div>
+                {% endif %}
               </div>
 
+              <!-- Ответственный -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.responsible.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-user me-1"></i>
+                  {{ form.responsible.label }}
+                </label>
                 {{ form.responsible|add_class:"form-select" }}
+                {% if form.responsible.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.responsible.errors }}
+                </div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -131,17 +257,39 @@
                5. ЭКСПЛУАТАЦИЯ И ГАРАНТИЯ
                ===================================================== -->
           <div class="mb-4">
-            <div class="section-header">Эксплуатация</div>
+            <div class="section-header">
+              <i class="fas fa-cogs me-2"></i>
+              Эксплуатация
+            </div>
 
             <div class="row g-3">
+              <!-- Дата ввода -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.commissioning_date.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-calendar-check me-1"></i>
+                  {{ form.commissioning_date.label }}
+                </label>
                 {{ form.commissioning_date|add_class:"form-control" }}
+                {% if form.commissioning_date.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.commissioning_date.errors }}
+                </div>
+                {% endif %}
               </div>
 
+              <!-- Гарантия -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">{{ form.warranty_until.label }}</label>
+                <label class="form-label fw-semibold">
+                  <i class="fas fa-shield-alt me-1"></i>
+                  {{ form.warranty_until.label }}
+                </label>
                 {{ form.warranty_until|add_class:"form-control" }}
+                {% if form.warranty_until.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.warranty_until.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">Оставьте пустым, если гарантия не предусмотрена</div>
               </div>
             </div>
           </div>
@@ -150,20 +298,40 @@
                6. ФОТО
                ===================================================== -->
           <div class="mb-4">
-            <div class="section-header">Фотография</div>
+            <div class="section-header">
+              <i class="fas fa-camera me-2"></i>
+              Фотография
+            </div>
 
             <div class="row g-3 align-items-center">
               <div class="col-md-6">
-                {{ form.photo|add_class:"form-control" }}
-                <div class="form-text">JPG или PNG</div>
+                <div class="input-group">
+                  {{ form.photo|add_class:"form-control" }}
+                  <button class="btn btn-outline-secondary" type="button" id="clearPhotoBtn">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                {% if form.photo.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.photo.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">JPG, PNG или GIF. Максимальный размер: 5MB</div>
               </div>
 
               {% if not create and object.photo %}
-              <div class="col-md-6 text-center">
-                <img src="{{ object.photo.url }}"
-                     class="img-fluid rounded border"
-                     style="max-height: 180px"
-                     alt="{{ object.name }}">
+              <div class="col-md-6">
+                <div class="card">
+                  <div class="card-body text-center">
+                    <img src="{{ object.photo.url }}"
+                         class="img-fluid rounded border mb-2"
+                         style="max-height: 180px"
+                         alt="{{ object.name }}">
+                    <div class="small text-muted">
+                      Текущее фото
+                    </div>
+                  </div>
+                </div>
               </div>
               {% endif %}
             </div>
@@ -173,49 +341,228 @@
                7. ОПИСАНИЕ
                ===================================================== -->
           <div class="mb-4">
-            <div class="section-header">Описание</div>
+            <div class="section-header">
+              <i class="fas fa-file-alt me-2"></i>
+              Описание
+            </div>
             {{ form.description|add_class:"form-control" }}
+            {% if form.description.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.description.errors }}
+            </div>
+            {% endif %}
+            <div class="form-text">Дополнительная информация, заметки, особенности</div>
           </div>
-
-          {% if form.errors %}
-          <div class="alert alert-danger">
-            {{ form.errors }}
-          </div>
-          {% endif %}
 
           <!-- =====================================================
                8. ACTIONS
                ===================================================== -->
-          <div class="d-flex justify-content-between align-items-center mt-4">
-            <a class="btn btn-outline-secondary"
-               href="{% url 'assets:asset_list' %}">
-              Отмена
-            </a>
-            <button class="btn btn-primary px-4" type="submit">
-              Сохранить
-            </button>
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <div>
+              <a class="btn btn-outline-secondary" href="{% url 'assets:asset_list' %}">
+                <i class="fas fa-times me-1"></i>
+                Отмена
+              </a>
+              {% if not create %}
+              <a class="btn btn-outline-info ms-2" href="{% url 'assets:asset_detail' object.pk %}">
+                <i class="fas fa-eye me-1"></i>
+                Просмотр
+              </a>
+              {% endif %}
+            </div>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary" type="button" id="saveAndAddAnother">
+                <i class="fas fa-plus me-1"></i>
+                Сохранить и добавить
+              </button>
+              <button class="btn btn-primary px-4" type="submit" id="saveBtn">
+                <i class="fas fa-save me-1"></i>
+                Сохранить
+              </button>
+            </div>
           </div>
 
         </form>
 
       </div>
     </div>
-
   </div>
 </div>
 
 <!-- =====================================================
      JS
      ===================================================== -->
+<script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'admin/js/vendor/select2/select2.full.js' %}"></script>
 <script>
-  $(document).ready(function () {
+$(document).ready(function () {
+    // Инициализация Select2
     $('#id_location, #id_responsible').select2({
-      width: '100%',
-      placeholder: 'Выберите',
-      allowClear: true
+        width: '100%',
+        placeholder: 'Выберите',
+        allowClear: true,
+        theme: 'bootstrap-5'
     });
 
+    // Установка типа date для полей с датами
     $('#id_commissioning_date, #id_warranty_until').attr('type', 'date');
-  });
+
+    // Очистка поля фото
+    $('#clearPhotoBtn').click(function() {
+        $('#id_photo').val('');
+    });
+
+    // Валидация дат
+    function validateDates() {
+        const commissioningDate = $('#id_commissioning_date').val();
+        const warrantyDate = $('#id_warranty_until').val();
+
+        if (commissioningDate && warrantyDate) {
+            const commission = new Date(commissioningDate);
+            const warranty = new Date(warrantyDate);
+
+            if (warranty < commission) {
+                alert('Дата окончания гарантии не может быть раньше даты ввода в эксплуатацию');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Проверка обязательных полей
+    function validateRequiredFields() {
+        const requiredFields = [
+            '#id_name',
+            '#id_category',
+            '#id_status',
+            '#id_global_state',
+            '#id_type_name',
+            '#id_location'
+        ];
+
+        let isValid = true;
+
+        requiredFields.forEach(function(fieldId) {
+            const field = $(fieldId);
+            if (!field.val()) {
+                field.addClass('is-invalid');
+                isValid = false;
+            } else {
+                field.removeClass('is-invalid');
+            }
+        });
+
+        return isValid;
+    }
+
+    // Обработка отправки формы
+    $('#workstationForm').on('submit', function(e) {
+        if (!validateRequiredFields() || !validateDates()) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Показываем индикатор загрузки
+        $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Сохранение...');
+    });
+
+    // Сохранить и добавить еще
+    $('#saveAndAddAnother').click(function() {
+        if (validateRequiredFields() && validateDates()) {
+            // Добавляем скрытое поле для редиректа
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'save_and_add',
+                value: '1'
+            }).appendTo('#workstationForm');
+
+            $('#workstationForm').submit();
+        }
+    });
+
+    // Автоматический расчет даты гарантии (3 года от даты ввода)
+    $('#id_commissioning_date').change(function() {
+        if (!$(this).val()) return;
+
+        const commissioningDate = new Date($(this).val());
+        const warrantyDate = new Date(commissioningDate);
+        warrantyDate.setFullYear(warrantyDate.getFullYear() + 3);
+
+        // Форматируем дату для input type="date"
+        const formattedDate = warrantyDate.toISOString().split('T')[0];
+
+        // Устанавливаем только если поле пустое
+        if (!$('#id_warranty_until').val()) {
+            $('#id_warranty_until').val(formattedDate);
+        }
+    });
+
+    // Динамическая проверка статуса при изменении глобального состояния
+    $('#id_global_state').change(function() {
+        const globalState = $(this).val();
+        const statusField = $('#id_status');
+
+        if (globalState === 'arch' || globalState === 'decommissioned') {
+            // Если оборудование в архиве или выведено из эксплуатации,
+            // предлагаем установить соответствующий статус
+            if (statusField.val() !== 'decommissioned') {
+                if (confirm('Рекомендуется установить статус "Выведено из эксплуатации" для оборудования в архиве. Сменить статус?')) {
+                    statusField.val('decommissioned').trigger('change');
+                }
+            }
+        }
+    });
+
+    // Показ предупреждения при выборе статуса "Аварийный ремонт"
+    $('#id_status').change(function() {
+        if ($(this).val() === 'problem') {
+            alert('Внимание! При статусе "Аварийный ремонт" рекомендуется создать заявку на ремонт.');
+        }
+    });
+
+    // Улучшение UX для полей с ошибками
+    $('.is-invalid').each(function() {
+        $(this).addClass('is-invalid');
+    });
+
+    // Фокус на первое поле с ошибкой
+    const firstError = $('.is-invalid').first();
+    if (firstError.length) {
+        firstError.focus();
+    }
+});
 </script>
+
+<style>
+.section-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--bs-heading-color);
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.select2-container--bootstrap-5 {
+    width: 100% !important;
+}
+
+.form-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.invalid-feedback {
+    display: block !important;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
 {% endblock %}

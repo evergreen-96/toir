@@ -1,198 +1,638 @@
 {% extends "base.html" %}
-{% block title %}{{ object.name }}{% endblock %}
+{% load static %}
+{% block title %}{{ workstation.name }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-xl-10 col-lg-11">
-
         <div class="card shadow-sm border-0">
             <div class="card-body">
-
                 <!-- =====================================================
                      1. HEADER + ACTIONS
                      ===================================================== -->
                 <div class="d-flex justify-content-between align-items-start mb-4">
                     <div>
-                        <h1 class="h4 mb-1">{{ object.name }}</h1>
+                        <h1 class="h4 mb-1">{{ workstation.name }}</h1>
                         <div class="text-muted small">
+                            <i class="fas fa-microchip me-1"></i>
                             Оборудование · карточка
+                            <span class="ms-3">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Создано: {{ workstation.created_at|date:"d.m.Y" }}
+                            </span>
                         </div>
                     </div>
 
                     <div class="d-flex gap-2">
-                        <a class="btn btn-outline-secondary"
-                           href="{% url 'assets:asset_list' %}">
+                        {% if perms.assets.change_workstation %}
+                        <a class="btn btn-outline-secondary" href="{% url 'assets:export_csv' %}?id={{ workstation.id }}">
+                            <i class="fas fa-download me-1"></i>
+                            Экспорт
+                        </a>
+                        {% endif %}
+
+                        <a class="btn btn-outline-secondary" href="{% url 'assets:asset_list' %}">
+                            <i class="fas fa-arrow-left me-1"></i>
                             Назад
                         </a>
 
-                        <a class="btn btn-primary"
-                           href="{% url 'assets:asset_edit' object.pk %}">
+                        {% if perms.assets.change_workstation %}
+                        <a class="btn btn-primary" href="{% url 'assets:asset_edit' workstation.pk %}">
+                            <i class="fas fa-edit me-1"></i>
                             Редактировать
                         </a>
+                        {% endif %}
 
-                        <a class="btn btn-sm btn-outline-danger"
-                           href="#"
-                           data-confirm-delete
-                           data-delete-url="{% url 'assets:asset_delete' object.pk %}"
-                           data-delete-name="«{{ object.name }}»"
-                           data-redirect-url="{% url 'assets:asset_list' %}">
+                        {% if perms.assets.delete_workstation %}
+                        <button class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-1"></i>
                             Удалить
-                        </a>
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
-
 
                 <!-- =====================================================
                      2. ОСНОВНЫЕ ХАРАКТЕРИСТИКИ
                      ===================================================== -->
                 <div class="mb-4">
-                    <div class="section-header">Основные характеристики</div>
+                    <div class="section-header">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Основные характеристики
+                    </div>
 
                     <div class="detail-grid">
                         <div class="detail-item">
                             <div class="detail-label">Категория</div>
-                            <div class="detail-value">{{ object.get_category_display }}</div>
+                            <div class="detail-value">
+                                <span class="badge bg-primary">{{ workstation.get_category_display }}</span>
+                            </div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Статус</div>
-                            <div class="detail-value">{{ object.get_status_display }}</div>
+                            <div class="detail-value">
+                                {% with status=workstation.status %}
+                                {% if status == "prod" %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    {{ workstation.get_status_display }}
+                                </span>
+                                {% elif status == "problem" %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    {{ workstation.get_status_display }}
+                                </span>
+                                {% elif status == "maint" %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-tools me-1"></i>
+                                    {{ workstation.get_status_display }}
+                                </span>
+                                {% elif status == "setup" %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-cog me-1"></i>
+                                    {{ workstation.get_status_display }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ workstation.get_status_display }}</span>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Глобальное состояние</div>
+                            <div class="detail-value">
+                                {% with state=workstation.global_state %}
+                                {% if state == "active" %}
+                                <span class="badge bg-success">{{ workstation.get_global_state_display }}</span>
+                                {% elif state == "arch" %}
+                                <span class="badge bg-secondary">{{ workstation.get_global_state_display }}</span>
+                                {% elif state == "reserve" %}
+                                <span class="badge bg-info">{{ workstation.get_global_state_display }}</span>
+                                {% elif state == "decommissioned" %}
+                                <span class="badge bg-dark">{{ workstation.get_global_state_display }}</span>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Тип</div>
-                            <div class="detail-value">{{ object.type_name|default:"—" }}</div>
+                            <div class="detail-value">{{ workstation.type_name|default:"—" }}</div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Производитель / модель</div>
                             <div class="detail-value">
-                                {{ object.manufacturer|default:"—" }}
-                                {% if object.model %} / {{ object.model }}{% endif %}
+                                {% if workstation.manufacturer %}
+                                {{ workstation.manufacturer }}
+                                {% if workstation.model %} / {{ workstation.model }}{% endif %}
+                                {% else %}
+                                —
+                                {% endif %}
                             </div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Серийный №</div>
-                            <div class="detail-value">{{ object.serial_number|default:"—" }}</div>
+                            <div class="detail-value">
+                                {% if workstation.serial_number %}
+                                <code>{{ workstation.serial_number }}</code>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Инвентарный №</div>
-                            <div class="detail-value">{{ object.inventory_number|default:"—" }}</div>
+                            <div class="detail-value">
+                                {% if workstation.inventory_number %}
+                                <span class="badge bg-light text-dark border">
+                                    {{ workstation.inventory_number }}
+                                </span>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Возраст оборудования</div>
+                            <div class="detail-value">
+                                {% if workstation.age_in_years %}
+                                {{ workstation.age_in_years }} лет
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-
 
                 <!-- =====================================================
                      3. РАСПОЛОЖЕНИЕ И ОТВЕТСТВЕННОСТЬ
                      ===================================================== -->
                 <div class="mb-4">
-                    <div class="section-header">Расположение и ответственность</div>
+                    <div class="section-header">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Расположение и ответственность
+                    </div>
 
                     <div class="detail-grid">
                         <div class="detail-item">
                             <div class="detail-label">Локация</div>
-                            <div class="detail-value">{{ object.location|default:"—" }}</div>
+                            <div class="detail-value">
+                                <i class="fas fa-building me-1 text-muted"></i>
+                                {{ workstation.location|default:"—" }}
+                            </div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Ответственный</div>
-                            <div class="detail-value">{{ object.responsible|default:"—" }}</div>
+                            <div class="detail-value">
+{% if workstation.responsible.job_title %}
+<br>
+<small class="text-muted">
+    <i class="fas fa-briefcase me-1"></i>
+    {{ workstation.responsible.job_title }}
+</small>
+{% endif %}
+<br>
+<small class="text-muted">
+    <i class="fas fa-briefcase me-1"></i>
+    {{ workstation.responsible.job_title }}
+</small>
+{% endif %}
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Создал</div>
+                            <div class="detail-value">
+                                {% if workstation.created_by %}
+                                <i class="fas fa-user-plus me-1 text-muted"></i>
+                                {{ workstation.created_by.get_full_name|default:workstation.created_by.username }}
+                                <br>
+                                <small class="text-muted">
+                                    {{ workstation.created_at|date:"d.m.Y H:i" }}
+                                </small>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-
 
                 <!-- =====================================================
                      4. ЭКСПЛУАТАЦИЯ И ГАРАНТИЯ
                      ===================================================== -->
                 <div class="mb-4">
-                    <div class="section-header">Эксплуатация</div>
+                    <div class="section-header">
+                        <i class="fas fa-cogs me-2"></i>
+                        Эксплуатация
+                    </div>
 
                     <div class="detail-grid">
                         <div class="detail-item">
                             <div class="detail-label">Ввод в эксплуатацию</div>
-                            <div class="detail-value">{{ object.commissioning_date|default:"—" }}</div>
+                            <div class="detail-value">
+                                {% if workstation.commissioning_date %}
+                                <i class="fas fa-calendar-check me-1 text-muted"></i>
+                                {{ workstation.commissioning_date|date:"d.m.Y" }}
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
                         </div>
 
                         <div class="detail-item">
                             <div class="detail-label">Гарантия до</div>
-                            <div class="detail-value">{{ object.warranty_until|default:"—" }}</div>
+                            <div class="detail-value">
+                                {% if workstation.warranty_until %}
+                                <i class="fas fa-shield-alt me-1 text-muted"></i>
+                                {{ workstation.warranty_until|date:"d.m.Y" }}
+                                {% if workstation.is_under_warranty %}
+                                <span class="badge bg-success ms-2">
+                                    <i class="fas fa-check me-1"></i>
+                                    Действует
+                                </span>
+                                {% else %}
+                                <span class="badge bg-dark ms-2">
+                                    <i class="fas fa-times me-1"></i>
+                                    Истекла
+                                </span>
+                                {% endif %}
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-
 
                 <!-- =====================================================
                      5. ФОТО
                      ===================================================== -->
+                {% if workstation.photo or perms.assets.change_workstation %}
                 <div class="mb-4">
-                    <div class="section-header">Фото</div>
-
-                    {% if object.photo %}
-                    <img src="{{ object.photo.url }}"
-                         class="asset-photo-thumb rounded"
-                         alt="{{ object.name }}"
-                         data-bs-toggle="modal"
-                         data-bs-target="#assetPhotoModal">
-                    {% else %}
-                    <div class="text-muted fst-italic">
-                        Фото не загружено
+                    <div class="section-header">
+                        <i class="fas fa-camera me-2"></i>
+                        Фотография
                     </div>
-                    {% endif %}
-                    {% if object.photo %}
-                    <div class="modal fade" id="assetPhotoModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                            <div class="modal-content bg-transparent border-0 shadow-none">
-                                <div class="modal-body p-0 text-center">
-                                    <img src="{{ object.photo.url }}"
-                                         class="img-fluid rounded"
-                                         alt="{{ object.name }}">
-                                </div>
+
+                    <div class="d-flex align-items-start gap-3">
+                        {% if workstation.photo %}
+                        <div class="position-relative">
+                            <img src="{{ workstation.photo.url }}"
+                                 class="asset-photo-thumb rounded"
+                                 alt="{{ workstation.name }}"
+                                 data-bs-toggle="modal"
+                                 data-bs-target="#assetPhotoModal">
+                            <div class="mt-2 text-center small text-muted">
+                                Нажмите для увеличения
                             </div>
                         </div>
-                    </div>
-                    {% endif %}
-                </div>
+                        {% endif %}
 
-
-                <!-- =====================================================
-                     6. ОПИСАНИЕ
-                     ===================================================== -->
-                {% if object.description %}
-                <div>
-                    <div class="section-header">Описание</div>
-                    <div class="text-muted">
-                        {{ object.description|linebreaks }}
+                        {% if perms.assets.change_workstation and not workstation.photo %}
+                        <div class="alert alert-warning d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <strong>Фотография отсутствует</strong><br>
+                                <small>Рекомендуется добавить фото для удобства идентификации</small>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
 
+                <!-- =====================================================
+                     6. ОПИСАНИЕ
+                     ===================================================== -->
+                {% if workstation.description %}
+                <div class="mb-4">
+                    <div class="section-header">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Описание
+                    </div>
+                    <div class="border rounded p-3 bg-light">
+                        {{ workstation.description|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- =====================================================
+                     7. ИСТОРИЯ ИЗМЕНЕНИЙ
+                     ===================================================== -->
+                {% if history %}
+                <div class="mt-4">
+                    <div class="section-header">
+                        <i class="fas fa-history me-2"></i>
+                        История изменений
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Пользователь</th>
+                                    <th>Изменения</th>
+                                    <th>Причина</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for h in history %}
+                                <tr>
+                                    <td class="text-nowrap">
+                                        {{ h.history_date|date:"d.m.Y H:i" }}
+                                    </td>
+                                    <td>
+                                        {% if h.history_user %}
+                                        {{ h.history_user.get_full_name|default:h.history_user.username }}
+                                        {% else %}
+                                        система
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if h.prev_record %}
+                                        {% with changes=h.diff_against h.prev_record %}
+                                        {% for change in changes.changes %}
+                                        <div class="small">
+                                            <strong>{{ change.field }}:</strong>
+                                            <span class="text-danger">{{ change.old|default:"—" }}</span>
+                                            →
+                                            <span class="text-success">{{ change.new|default:"—" }}</span>
+                                        </div>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        {{ h.history_change_reason|default:"—" }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if history|length >= 10 %}
+                    <div class="text-center mt-2">
+                        <a href="#" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-history me-1"></i>
+                            Показать всю историю
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Footer -->
+            <div class="card-footer bg-transparent border-top-0">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-id-card me-1"></i>
+                            ID: {{ workstation.id }}
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">
+                            Обновлено: {{ workstation.updated_at|date:"d.m.Y H:i" }}
+                        </small>
+                    </div>
+                </div>
             </div>
         </div>
-
     </div>
 </div>
 
+<!-- Модальные окна -->
+{% if workstation.photo %}
+<div class="modal fade" id="assetPhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="modal-body p-0 text-center">
+                <img src="{{ workstation.photo.url }}"
+                     class="img-fluid rounded"
+                     alt="{{ workstation.name }}">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Модальное окно удаления -->
+{% if perms.assets.delete_workstation %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Удаление оборудования</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить оборудование <strong>«{{ workstation.name }}»</strong>?</p>
+                {% if workstation.serial_number %}
+                <p class="text-muted small">
+                    Серийный номер: {{ workstation.serial_number }}
+                </p>
+                {% endif %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить. Все данные об оборудовании будут удалены.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Отмена
+                </button>
+                <form method="post" action="{% url 'assets:asset_delete' workstation.pk %}" id="deleteForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>
+                        Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <style>
-    .asset-photo-thumb {
+.asset-photo-thumb {
     max-width: 240px;
     max-height: 240px;
     object-fit: contain;
     cursor: zoom-in;
     border: 1px solid var(--bs-border-color);
     transition: transform .15s ease, box-shadow .15s ease;
-  }
+}
 
-  .asset-photo-thumb:hover {
+.asset-photo-thumb:hover {
     transform: scale(1.02);
     box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
-  }
+}
 
-  .modal-content {
+.section-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--bs-heading-color);
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding-bottom: 0.5rem;
+}
+
+.detail-label {
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.modal-content {
     background: transparent;
-  }
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка удаления
+    const deleteForm = document.getElementById('deleteForm');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Accept': 'application/json',
+                },
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert('Ошибка при удалении: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при удалении');
+            });
+        });
+    }
+
+    // Быстрое изменение статуса
+    const statusBadge = document.querySelector('.detail-item .detail-value .badge');
+    if (statusBadge && {% if perms.assets.change_workstation %}true{% else %}false{% endif %}) {
+        statusBadge.style.cursor = 'pointer';
+        statusBadge.title = 'Нажмите для изменения статуса';
+
+        statusBadge.addEventListener('click', function() {
+            const workstationId = {{ workstation.id }};
+
+            fetch(`{% url 'assets:ajax_get_status' %}?id=${workstationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.can_change) {
+                        // Показываем диалог изменения статуса
+                        showStatusChangeDialog(workstationId, data);
+                    }
+                });
+        });
+    }
+
+    function showStatusChangeDialog(workstationId, data) {
+        // Создаем модальное окно для изменения статуса
+        const modalHtml = `
+            <div class="modal fade" id="statusChangeModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Изменение статуса</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Текущий статус: <strong>${data.current_display}</strong></p>
+                            <div class="mb-3">
+                                <label class="form-label">Новый статус:</label>
+                                <select class="form-select" id="newStatus">
+                                    ${Object.entries(data.choices).map(([value, label]) =>
+                                        `<option value="${value}" ${value === data.current ? 'selected' : ''}>${label}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="button" class="btn btn-primary" id="saveStatusBtn">Сохранить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Добавляем модальное окно в DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('statusChangeModal'));
+
+        // Обработчик сохранения
+        document.getElementById('saveStatusBtn').addEventListener('click', function() {
+            const newStatus = document.getElementById('newStatus').value;
+
+            fetch('{% url 'assets:ajax_update_status %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: `id=${workstationId}&status=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.ok) {
+                    modal.hide();
+                    location.reload(); // Перезагружаем страницу для обновления статуса
+                } else {
+                    alert('Ошибка при изменении статуса: ' + result.error);
+                }
+            });
+        });
+
+        modal.show();
+    }
+});
+</script>
 {% endblock %}
