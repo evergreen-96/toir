@@ -1,41 +1,109 @@
 from django.urls import path
-from django.views.generic import DetailView
 
 from assets.views import ajax_get_workstation_status, ajax_update_workstation_status
-from .models import PlannedOrder
-from .views import (
-    # Work Orders
-    WorkOrderListView, WorkOrderDetailView, workorder_create, workorder_update, WorkOrderDeleteView,
-    # Planned Orders
-    PlannedOrderListView, planned_order_create, planned_order_update, planned_order_run_now, PlannedOrderDeleteView,
-    planned_order_preview,  # ✅ добавили
-    wo_set_status, get_workstations_by_location, PlannedOrderDetailView, ajax_material_search,
-)
+from . import views
 
 app_name = "maintenance"
 
 urlpatterns = [
-    # Рабочие задачи
-    path("workorders/", WorkOrderListView.as_view(), name="wo_list"),
-    path("workorders/new/", workorder_create, name="wo_new"),
-    path("workorders/<int:pk>/", WorkOrderDetailView.as_view(), name="wo_detail"),
-    path("workorders/<int:pk>/edit/", workorder_update, name="wo_edit"),
-    path("workorders/<int:pk>/delete/", WorkOrderDeleteView.as_view(), name="wo_delete"),
-    path("workorders/<int:pk>/set-status/<str:status>/", wo_set_status, name="wo_set_status"),
-    path("ajax/workstations-by-location/", get_workstations_by_location, name="ajax_workstations_by_location"),
+    # ============================================
+    # РАБОЧИЕ ЗАДАЧИ (WORK ORDERS)
+    # ============================================
 
-    # Обновление статуса оборудование из задачи
-    path("ajax/workstation-status/", ajax_get_workstation_status, name="ajax_workstation_status"),
-    path("ajax/workstation-status/update/", ajax_update_workstation_status, name="ajax_workstation_status_update"),
-    path('ajax/material-search/', ajax_material_search, name='ajax_material_search'),
-    # Плановые обслуживания
-    path("plans/", PlannedOrderListView.as_view(), name="plan_list"),
-    path("plans/<int:pk>/", PlannedOrderDetailView.as_view(), name="plan_detail"),
-    path("plans/new/", planned_order_create, name="plan_new"),
-    path("plans/<int:pk>/edit/", planned_order_update, name="plan_edit"),
-    path("plans/<int:pk>/delete/", PlannedOrderDeleteView.as_view(), name="plan_delete"),
-    path("plans/<int:pk>/run-now/", planned_order_run_now, name="plan_run_now"),
+    # Список всех рабочих задач
+    path("workorders/",
+         views.WorkOrderListView.as_view(),
+         name="wo_list"),
 
-    # Превью календаря/дат на 2 месяца (AJAX)
-    path("plans/preview/", planned_order_preview, name="plan_preview"),
+    # Создание новой задачи
+    path("workorders/new/",
+         views.workorder_create,
+         name="wo_new"),
+
+    # Детальная страница задачи
+    path("workorders/<int:pk>/",
+         views.WorkOrderDetailView.as_view(),
+         name="wo_detail"),
+
+    # Редактирование задачи
+    path("workorders/<int:pk>/edit/",
+         views.workorder_update,
+         name="wo_edit"),
+
+    # Удаление задачи (AJAX)
+    path("workorders/<int:pk>/delete/",
+         views.WorkOrderDeleteView.as_view(),
+         name="wo_delete"),
+
+    # Изменение статуса задачи
+    path("workorders/<int:pk>/set-status/<str:status>/",
+         views.wo_set_status,
+         name="wo_set_status"),
+
+    # ============================================
+    # ПЛАНОВЫЕ РАБОТЫ (PLANNED ORDERS)
+    # ============================================
+
+    # Список всех плановых работ
+    path("plans/",
+         views.PlannedOrderListView.as_view(),
+         name="plan_list"),
+
+    # Детальная страница плана
+    path("plans/<int:pk>/",
+         views.PlannedOrderDetailView.as_view(),
+         name="plan_detail"),
+
+    # Создание нового плана
+    path("plans/new/",
+         views.planned_order_create,
+         name="plan_new"),
+
+    # Редактирование плана
+    path("plans/<int:pk>/edit/",
+         views.planned_order_update,
+         name="plan_edit"),
+
+    # Удаление плана (AJAX)
+    path("plans/<int:pk>/delete/",
+         views.PlannedOrderDeleteView.as_view(),
+         name="plan_delete"),
+
+    # Ручной запуск плана (создание задачи)
+    path("plans/<int:pk>/run-now/",
+         views.planned_order_run_now,
+         name="plan_run_now"),
+
+    # ============================================
+    # AJAX И ВСПОМОГАТЕЛЬНЫЕ ЭНДПОИНТЫ
+    # ============================================
+
+    # Получение оборудования по выбранной локации (AJAX)
+    path("ajax/workstations-by-location/",
+         views.get_workstations_by_location,
+         name="ajax_workstations_by_location"),
+
+    # Поиск материалов (AJAX для Select2)
+    path('ajax/material-search/',
+         views.ajax_material_search,
+         name='ajax_material_search'),
+
+    # Превью дат запуска плана (AJAX)
+    path("plans/preview/",
+         views.planned_order_preview,
+         name="plan_preview"),
+
+    # ============================================
+    # ИНТЕГРАЦИЯ С МОДУЛЕМ ОБОРУДОВАНИЯ (ASSETS)
+    # ============================================
+
+    # Получение текущего статуса оборудования
+    path("ajax/workstation-status/",
+         ajax_get_workstation_status,
+         name="ajax_workstation_status"),
+
+    # Обновление статуса оборудования
+    path("ajax/workstation-status/update/",
+         ajax_update_workstation_status,
+         name="ajax_workstation_status_update"),
 ]

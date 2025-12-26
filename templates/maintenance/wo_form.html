@@ -2,54 +2,69 @@
 {% load form_extras %}
 
 {% block title %}
-{% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
+    {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
 {% endblock %}
 
 {% block content %}
 <style>
-/* Стили для превью файлов */
-.file-thumb-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+    /* Стили для превью файлов */
+    .file-thumb-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-.file-thumb {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 6px;
-    cursor: zoom-in;
-    border: 1px solid var(--bs-border-color);
-    transition: transform .15s ease, box-shadow .15s ease;
-}
+    .file-thumb {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+        cursor: zoom-in;
+        border: 1px solid var(--bs-border-color);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
 
-.file-thumb:hover {
-    transform: scale(1.02);
-    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
-}
+    .file-thumb:hover {
+        transform: scale(1.02);
+        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
+    }
 
-.file-thumb-icon {
-    width: 80px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--bs-secondary-color);
-    font-size: 32px;
-    border-radius: 6px;
-    border: 1px solid var(--bs-border-color);
-}
+    .file-thumb-icon {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bs-secondary-color);
+        font-size: 32px;
+        border-radius: 6px;
+        border: 1px solid var(--bs-border-color);
+    }
 
-.file-info {
-    flex: 1;
-    min-width: 0;
-}
+    .file-info {
+        flex: 1;
+        min-width: 0;
+    }
 
-/* Модальное окно для увеличенного изображения */
-.modal-content.bg-transparent {
-    background: transparent;
-}
+    /* Модальное окно для увеличенного изображения */
+    .modal-content.bg-transparent {
+        background: transparent;
+    }
+
+    /* Стили для строк материалов */
+    .material-row {
+        border: 1px solid var(--bs-border-color);
+    }
+
+    .material-row.is-removed {
+        opacity: 0.5;
+        background-color: var(--bs-secondary-bg);
+    }
+
+    .file-row.is-removed {
+        opacity: 0.5;
+        text-decoration: line-through;
+    }
 </style>
 
 <div class="row justify-content-center">
@@ -58,7 +73,9 @@
         <div class="card shadow-sm border-0">
             <div class="card-body">
 
-                <!-- ===== Header ===== -->
+                <!-- =====================================================
+                     ЗАГОЛОВОК СТРАНИЦЫ
+                     ===================================================== -->
                 <div class="mb-4">
                     <h1 class="h4 mb-1">
                         {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
@@ -68,35 +85,38 @@
                     </div>
                 </div>
 
+                <!-- =====================================================
+                     ОСНОВНАЯ ФОРМА
+                     ===================================================== -->
                 <form id="wo-form" method="post" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
                     {{ form.non_field_errors }}
 
-                    <!-- ===============================
-                         1. Основная информация
-                         =============================== -->
+                    <!-- =====================================================
+                         1. ОСНОВНАЯ ИНФОРМАЦИЯ
+                         ===================================================== -->
                     <div class="mb-4">
                         <div class="section-header mb-3">1. Основная информация</div>
 
-                        <!-- Название -->
+                        <!-- Название задачи -->
                         <div class="mb-3">
                             <label class="form-label fw-semibold required">
                                 {{ form.name.label }}
                             </label>
                             {{ form.name|add_class:"form-control" }}
-                            {% for e in form.name.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for error in form.name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
 
-                        <!-- Категория -->
+                        <!-- Категория работ -->
                         <div class="mb-3">
                             <label class="form-label fw-semibold required">
                                 {{ form.category.label }}
                             </label>
                             {{ form.category|add_class:"form-select" }}
-                            {% for e in form.category.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for error in form.category.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
 
@@ -107,8 +127,8 @@
                                 {{ form.location.label }}
                             </label>
                             {{ form.location|add_class:"form-select" }}
-                            {% for e in form.location.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for error in form.location.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
                         {% endif %}
@@ -120,8 +140,8 @@
                                 {{ form.workstation.label }}
                             </label>
                             {{ form.workstation|add_class:"form-select" }}
-                            {% for e in form.workstation.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for error in form.workstation.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
                         {% endif %}
@@ -140,8 +160,8 @@
                                 {{ form.priority.label }}
                             </label>
                             {{ form.priority|add_class:"form-select" }}
-                            {% for e in form.priority.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for error in form.priority.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
 
@@ -151,223 +171,226 @@
                                 {{ form.responsible.label }}
                             </label>
                             {{ form.responsible|add_class:"form-select" }}
-                            {% for e in form.responsible.errors %}
-                            <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for error in form.responsible.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
 
+                        <!-- Даты начала и окончания -->
                         <div class="row">
                             <div class="col-md-6">
-                                <!-- Дата начала -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">
                                         {{ form.date_start.label }}
                                     </label>
                                     {{ form.date_start|add_class:"form-control" }}
-                                    {% for e in form.date_start.errors %}
-                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% for error in form.date_start.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
                                     {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <!-- Дата окончания -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">
                                         {{ form.date_finish.label }}
                                     </label>
                                     {{ form.date_finish|add_class:"form-control" }}
-                                    {% for e in form.date_finish.errors %}
-                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% for error in form.date_finish.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
                                     {% endfor %}
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Трудоёмкость -->
                         <div class="row">
                             <div class="col-md-6">
-                                <!-- Трудоёмкость (план) -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">
                                         {{ form.labor_plan_hours.label }}
                                     </label>
                                     {{ form.labor_plan_hours|add_class:"form-control" }}
-                                    {% for e in form.labor_plan_hours.errors %}
-                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% for error in form.labor_plan_hours.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
                                     {% endfor %}
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <!-- Трудоёмкость (факт) -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">
                                         {{ form.labor_fact_hours.label }}
                                     </label>
                                     {{ form.labor_fact_hours|add_class:"form-control" }}
-                                    {% for e in form.labor_fact_hours.errors %}
-                                    <div class="text-danger small mt-1">{{ e }}</div>
+                                    {% for error in form.labor_fact_hours.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
                                     {% endfor %}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ===============================
-                         Файлы
-                         =============================== -->
+                    <!-- =====================================================
+                         ФАЙЛЫ
+                         ===================================================== -->
                     <div class="mb-4">
                         <div class="section-header mb-3">Файлы</div>
 
-                        <!-- Actions -->
+                        <!-- Кнопки загрузки файлов -->
                         <div class="d-flex flex-wrap gap-2 mb-3">
-
                             <!-- Загрузка с устройства -->
                             <label class="btn btn-outline-primary mb-0">
                                 <i class="bi bi-upload"></i>
                                 Загрузить с устройства
-                                <input
-                                        type="file"
-                                        id="id_files"
-                                        name="files"
-                                        multiple
-                                        hidden
-                                >
+                                <input type="file"
+                                       id="id_files"
+                                       name="files"
+                                       multiple
+                                       hidden>
                             </label>
 
-                            <!-- Открыть библиотеку файлов -->
-                            <button
-                                    type="button"
+                            <!-- Выбор из библиотеки -->
+                            <button type="button"
                                     class="btn btn-outline-secondary"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#filesLibraryModal"
-                            >
+                                    data-bs-target="#filesLibraryModal">
                                 <i class="bi bi-folder2-open"></i>
                                 Выбрать из библиотеки
                             </button>
-
                         </div>
 
-                        <!-- Новые файлы (с устройства, JS) -->
+                        <!-- Список новых файлов -->
                         <ul class="list-group list-group-flush mb-2" id="new-files-list">
-                            <!-- заполняется JS -->
+                            <!-- Заполняется JavaScript -->
                         </ul>
 
-                        <!-- Выбранные из библиотеки (до сохранения) -->
+                        <!-- Список файлов из библиотеки -->
                         <ul class="list-group list-group-flush mb-2" id="library-selected-list">
+                            <!-- Заполняется JavaScript -->
                         </ul>
 
-                        <!-- Уже прикреплённые файлы -->
-                        <ul class="list-group list-group-flush mt-2">
+                        <!-- Существующие вложения -->
+                        <ul class="list-group list-group-flush mt-2" id="existing-files-list">
                             {% if wo.attachments.exists %}
-                            {% for att in wo.attachments.all %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center file-row">
-                                <div class="file-thumb-container">
-                                    {% with att.file.file.url as file_url %}
-                                    {% with att.file.file.name|cut:"workorders/" as file_name %}
-                                    {% if file_url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg' %}
-                                    <img src="{{ file_url }}"
-                                         class="file-thumb"
-                                         alt="Превью"
-                                         data-bs-toggle="modal"
-                                         data-bs-target="#filePreviewModal"
-                                         data-full-src="{{ file_url }}">
-                                    {% else %}
-                                    <div class="file-thumb-icon">
-                                        <i class="bi bi-file-earmark"></i>
-                                    </div>
-                                    {% endif %}
+                                {% for attachment in wo.attachments.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center file-row">
+                                        <div class="file-thumb-container">
+                                            {% with attachment.file.file.url as file_url %}
+                                            {% with attachment.file.file.name|cut:"workorders/" as file_name %}
+                                            {% if file_url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg' %}
+                                                <img src="{{ file_url }}"
+                                                     class="file-thumb"
+                                                     alt="Превью"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#filePreviewModal"
+                                                     data-full-src="{{ file_url }}">
+                                            {% else %}
+                                                <div class="file-thumb-icon">
+                                                    <i class="bi bi-file-earmark"></i>
+                                                </div>
+                                            {% endif %}
 
-                                    <div class="file-info">
-                                        <a href="{{ file_url }}"
-                                           target="_blank"
-                                           class="d-block text-truncate text-decoration-none"
-                                           title="{{ file_name }}">
-                                            {{ file_name }}
-                                        </a>
-                                        <div class="small text-muted">
-                                            {{ att.file.file.size|filesizeformat }}
+                                            <div class="file-info">
+                                                <a href="{{ file_url }}"
+                                                   target="_blank"
+                                                   class="d-block text-truncate text-decoration-none"
+                                                   title="{{ file_name }}">
+                                                    {{ file_name }}
+                                                </a>
+                                                <div class="small text-muted">
+                                                    {{ attachment.file.file.size|filesizeformat }}
+                                                </div>
+                                            </div>
+                                            {% endwith %}
+                                            {% endwith %}
                                         </div>
-                                    </div>
-                                    {% endwith %}
-                                    {% endwith %}
-                                </div>
 
-                                <!-- источник истины -->
-                                <input type="hidden" name="existing_files" value="{{ att.file.id }}">
+                                        <!-- Скрытое поле для существующих файлов -->
+                                        <input type="hidden"
+                                               name="existing_files"
+                                               value="{{ attachment.file.id }}">
 
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger file-remove-btn ms-2"
-                                        title="Открепить файл">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </li>
-                            {% endfor %}
+                                        <!-- Кнопка удаления -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger file-remove-btn ms-2"
+                                                title="Открепить файл">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </li>
+                                {% endfor %}
                             {% else %}
-                            <li class="list-group-item text-muted small">
-                                Файлы пока не прикреплены
-                            </li>
+                                <li class="list-group-item text-muted small">
+                                    Файлы пока не прикреплены
+                                </li>
                             {% endif %}
                         </ul>
                     </div>
 
-                    <!-- ===============================
-                         2. Материалы
-                         =============================== -->
+                    <!-- =====================================================
+                         2. МАТЕРИАЛЫ
+                         ===================================================== -->
                     <div class="mb-4">
                         <div class="section-header mb-3">2. Материалы</div>
 
                         {{ formset.management_form }}
 
+                        <!-- Контейнер для строк материалов -->
                         <div id="materials-container">
-                            {% for f in formset %}
-                            <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-
-                                {% for hf in f.hidden_fields %}{{ hf }}{% endfor %}
-
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-
-                                <div class="d-none">{{ f.DELETE }}</div>
-
-                                <div class="mb-2">
-                                    <label class="form-label fw-semibold">{{ f.material.label }}</label>
-                                    {{ f.material|add_class:"form-select js-select2" }}
-                                    {% for e in f.material.errors %}
-                                    <div class="text-danger small mt-1">{{ e }}</div>
+                            {% for form_material in formset %}
+                                <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+                                    {% for hidden_field in form_material.hidden_fields %}
+                                        {{ hidden_field }}
                                     {% endfor %}
-                                </div>
 
-                                <div class="row g-2">
-                                    <div class="col">
-                                        <label class="form-label fw-semibold">{{ f.qty_planned.label }}</label>
-                                        {{ f.qty_planned|add_class:"form-control" }}
-                                        {% for e in f.qty_planned.errors %}
-                                        <div class="text-danger small mt-1">{{ e }}</div>
+                                    <!-- Кнопка удаления материала -->
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                    <!-- Скрытое поле DELETE -->
+                                    <div class="d-none">{{ form_material.DELETE }}</div>
+
+                                    <!-- Выбор материала -->
+                                    <div class="mb-2">
+                                        <label class="form-label fw-semibold">{{ form_material.material.label }}</label>
+                                        {{ form_material.material|add_class:"form-select js-select2-material" }}
+                                        {% for error in form_material.material.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
                                         {% endfor %}
                                     </div>
-                                    <div class="col">
-                                        <label class="form-label fw-semibold">{{ f.qty_used.label }}</label>
-                                        {{ f.qty_used|add_class:"form-control" }}
-                                        {% for e in f.qty_used.errors %}
-                                        <div class="text-danger small mt-1">{{ e }}</div>
-                                        {% endfor %}
+
+                                    <!-- Количества -->
+                                    <div class="row g-2">
+                                        <div class="col">
+                                            <label class="form-label fw-semibold">{{ form_material.qty_planned.label }}</label>
+                                            {{ form_material.qty_planned|add_class:"form-control" }}
+                                            {% for error in form_material.qty_planned.errors %}
+                                                <div class="text-danger small mt-1">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label fw-semibold">{{ form_material.qty_used.label }}</label>
+                                            {{ form_material.qty_used|add_class:"form-control" }}
+                                            {% for error in form_material.qty_used.errors %}
+                                                <div class="text-danger small mt-1">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                 </div>
-
-                            </div>
                             {% endfor %}
                         </div>
 
-                        <button type="button" class="btn btn-outline-primary" id="add-material">
+                        <!-- Кнопка добавления материала -->
+                        <button type="button" class="btn btn-outline-primary" id="add-material-btn">
                             <i class="bi bi-plus-lg"></i> Добавить материал
                         </button>
 
-                        <!-- empty form template -->
+                        <!-- Шаблон для новой строки материала -->
                         <template id="material-template">
                             <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-
-                                {% for hf in formset.empty_form.hidden_fields %}{{ hf }}{% endfor %}
+                                {% for hidden_field in formset.empty_form.hidden_fields %}
+                                    {{ hidden_field }}
+                                {% endfor %}
 
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
@@ -380,7 +403,7 @@
                                     <label class="form-label fw-semibold">
                                         {{ formset.empty_form.material.label }}
                                     </label>
-                                    {{ formset.empty_form.material|add_class:"form-select js-select2" }}
+                                    {{ formset.empty_form.material|add_class:"form-select js-select2-material" }}
                                 </div>
 
                                 <div class="row g-2">
@@ -397,14 +420,13 @@
                                         {{ formset.empty_form.qty_used|add_class:"form-control" }}
                                     </div>
                                 </div>
-
                             </div>
                         </template>
                     </div>
 
-                    <!-- ===============================
-                         Actions
-                         =============================== -->
+                    <!-- =====================================================
+                         КНОПКИ ДЕЙСТВИЙ
+                         ===================================================== -->
                     <div class="d-flex justify-content-between mt-4">
                         <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
                             Отмена
@@ -414,14 +436,17 @@
                         </button>
                     </div>
                 </form>
+
+                <!-- Модальное окно библиотеки файлов -->
                 {% include "includes/_files_library_modal.html" %}
             </div>
         </div>
-
     </div>
 </div>
 
-<!-- Модальное окно для увеличения изображений -->
+<!-- =====================================================
+     МОДАЛЬНОЕ ОКНО ДЛЯ ПРЕДПРОСМОТРА ИЗОБРАЖЕНИЙ
+     ===================================================== -->
 <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-transparent border-0 shadow-none">
@@ -432,268 +457,360 @@
     </div>
 </div>
 
+<!-- =====================================================
+     JAVASCRIPT
+     ===================================================== -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // =====================================================
-        // FILE LIBRARY: show selected (UI only), without saving
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
         // =====================================================
-        const selectedList = document.getElementById("library-selected-list");
-        const modalEl = document.getElementById("filesLibraryModal");
+        const CSRF_TOKEN = getCsrfToken();
+        const WS_URL = "{% url 'maintenance:ajax_workstations_by_location' %}";
+        const MATERIAL_SEARCH_URL = "{% url 'maintenance:ajax_material_search' %}";
 
-        function renderSelectedFromLibrary() {
-            const list = document.getElementById("library-selected-list");
-            if (!list) return;
+        // =====================================================
+        // УТИЛИТЫ
+        // =====================================================
 
-            const checked = Array.from(
-                document.querySelectorAll(
-                    '#filesLibraryModal input[name="existing_files"]:checked'
-                )
-            );
+        /**
+         * Получает CSRF-токен из формы или cookie
+         */
+        function getCsrfToken() {
+            const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            if (csrfInput) return csrfInput.value;
 
-            list.innerHTML = "";
-            if (checked.length === 0) return;
+            const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
+            return cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+        }
 
-            checked.forEach(cb => {
-                const name = cb.dataset.fileName || `Файл #${cb.value}`;
-                const url = cb.dataset.fileUrl;
-                const size = cb.dataset.fileSize || '';
+        /**
+         * Форматирует размер файла в читаемый вид
+         */
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Байт';
+            const k = 1024;
+            const sizes = ['Байт', 'КБ', 'МБ', 'ГБ'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
-                // Определяем, является ли файл изображением
-                const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(name);
+        /**
+         * Проверяет, является ли файл изображением по расширению
+         */
+        function isImageFile(filename) {
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+            const extension = filename.split('.').pop().toLowerCase();
+            return imageExtensions.includes(extension);
+        }
 
+        /**
+         * Получает иконку файла по его расширению
+         */
+        function getFileIcon(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'pdf': 'bi-file-earmark-pdf',
+                'doc': 'bi-file-earmark-word',
+                'docx': 'bi-file-earmark-word',
+                'xls': 'bi-file-earmark-excel',
+                'xlsx': 'bi-file-earmark-excel',
+                'zip': 'bi-file-earmark-zip',
+                'rar': 'bi-file-earmark-zip'
+            };
+            return iconMap[extension] || 'bi-file-earmark';
+        }
+
+        // =====================================================
+        // ФУНКЦИОНАЛЬНОСТЬ ДЛЯ РАБОТЫ С ФАЙЛАМИ
+        // =====================================================
+
+        let selectedFiles = [];
+        const fileInput = document.getElementById("id_files");
+        const newFilesList = document.getElementById("new-files-list");
+        const librarySelectedList = document.getElementById("library-selected-list");
+
+        if (fileInput && newFilesList) {
+            /**
+             * Обработчик изменения файлового input
+             */
+            fileInput.addEventListener("change", handleFileInputChange);
+
+            /**
+             * Рендерит список выбранных файлов
+             */
+            function renderSelectedFiles() {
+                newFilesList.innerHTML = "";
+
+                selectedFiles.forEach((file, index) => {
+                    const listItem = createFileListItem(file, index);
+                    newFilesList.appendChild(listItem);
+                });
+            }
+
+            /**
+             * Создает элемент списка для файла
+             */
+            function createFileListItem(file, index) {
                 const li = document.createElement("li");
                 li.className = "list-group-item d-flex justify-content-between align-items-center file-row";
+
+                const isImage = file.type.startsWith('image/');
+                const thumbnailUrl = isImage ? URL.createObjectURL(file) : null;
 
                 li.innerHTML = `
                     <div class="file-thumb-container">
                         ${isImage ?
-                            `<img src="${url}"
-                                  class="file-thumb"
+                            `<img class="file-thumb"
+                                  src="${thumbnailUrl}"
                                   alt="Превью"
                                   data-bs-toggle="modal"
                                   data-bs-target="#filePreviewModal"
-                                  data-full-src="${url}">` :
+                                  data-full-src="${thumbnailUrl}"
+                                  data-blob="true">` :
                             `<div class="file-thumb-icon">
-                                <i class="bi bi-file-earmark"></i>
-                             </div>`
+                                <i class="bi ${getFileIcon(file.name)}"></i>
+                            </div>`
                         }
                         <div class="file-info">
-                            <a href="${url}"
-                               target="_blank"
-                               class="d-block text-truncate text-decoration-none"
-                               title="${name}">
-                                ${name}
-                            </a>
-                            ${size ? `<div class="small text-muted">${size}</div>` : ''}
+                            <span class="d-block text-truncate" title="${file.name}">
+                                ${file.name}
+                            </span>
+                            <div class="small text-muted">
+                                ${formatFileSize(file.size)}
+                            </div>
                         </div>
                     </div>
                     <button type="button"
                             class="btn btn-sm btn-outline-danger ms-2"
-                            title="Убрать">
+                            title="Убрать файл"
+                            data-file-index="${index}">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 `;
 
-                li.querySelector("button").addEventListener("click", () => {
-                    cb.checked = false;
-                    renderSelectedFromLibrary();
-                });
+                // Добавляем обработчик удаления файла
+                const removeBtn = li.querySelector(`button[data-file-index="${index}"]`);
+                removeBtn.addEventListener("click", () => removeFile(index));
 
-                list.appendChild(li);
-            });
-        }
+                return li;
+            }
 
-        // Обновляем список при закрытии модалки
-        if (modalEl) {
-            modalEl.addEventListener("hidden.bs.modal", renderSelectedFromLibrary);
-        }
+            /**
+             * Обрабатывает добавление новых файлов
+             */
+            function handleFileInputChange(event) {
+                const newFiles = Array.from(event.target.files);
 
-        // =====================================================
-        // FILES: add / preview / remove before submit
-        // =====================================================
-        const input = document.getElementById("id_files");
-        const list = document.getElementById("new-files-list");
-
-        // 🔑 единый источник истины
-        let selectedFiles = [];
-
-        if (input && list) {
-            input.addEventListener("change", () => {
-                const newlySelected = Array.from(input.files);
-
-                newlySelected.forEach(file => {
-                    // защита от дублей (одно имя + размер)
-                    const exists = selectedFiles.some(
-                        f => f.name === file.name && f.size === file.size
+                newFiles.forEach(file => {
+                    // Проверка на дубликаты
+                    const isDuplicate = selectedFiles.some(
+                        existingFile => existingFile.name === file.name &&
+                                        existingFile.size === file.size
                     );
-                    if (!exists) {
+
+                    if (!isDuplicate) {
                         selectedFiles.push(file);
                     }
                 });
 
-                syncInputFiles();
-                renderFiles();
+                updateFileInput();
+                renderSelectedFiles();
+            }
+
+            /**
+             * Удаляет файл из списка
+             */
+            function removeFile(index) {
+                // Освобождаем Blob URL если он был создан
+                const fileRow = newFilesList.querySelector(`button[data-file-index="${index}"]`)?.closest('.file-row');
+                if (fileRow) {
+                    const blobImage = fileRow.querySelector('img[data-blob="true"]');
+                    if (blobImage) {
+                        URL.revokeObjectURL(blobImage.src);
+                    }
+                }
+
+                selectedFiles.splice(index, 1);
+                updateFileInput();
+                renderSelectedFiles();
+            }
+
+            /**
+             * Обновляет файловый input
+             */
+            function updateFileInput() {
+                const dataTransfer = new DataTransfer();
+                selectedFiles.forEach(file => dataTransfer.items.add(file));
+                fileInput.files = dataTransfer.files;
+            }
+        }
+
+        // =====================================================
+        // ФУНКЦИОНАЛЬНОСТЬ БИБЛИОТЕКИ ФАЙЛОВ
+        // =====================================================
+
+        /**
+         * Рендерит список выбранных файлов из библиотеки
+         */
+        function renderLibrarySelectedFiles() {
+            if (!librarySelectedList) return;
+
+            const checkedCheckboxes = document.querySelectorAll(
+                '#filesLibraryModal input[name="existing_files"]:checked'
+            );
+
+            librarySelectedList.innerHTML = "";
+
+            if (checkedCheckboxes.length === 0) return;
+
+            checkedCheckboxes.forEach(checkbox => {
+                const fileName = checkbox.dataset.fileName || `Файл #${checkbox.value}`;
+                const fileUrl = checkbox.dataset.fileUrl || '';
+                const fileSize = checkbox.dataset.fileSize || '';
+
+                const listItem = createLibraryFileListItem(fileName, fileUrl, fileSize, checkbox.value);
+                librarySelectedList.appendChild(listItem);
+            });
+        }
+
+        /**
+         * Создает элемент списка для файла из библиотеки
+         */
+        function createLibraryFileListItem(fileName, fileUrl, fileSize, fileId) {
+            const li = document.createElement("li");
+            li.className = "list-group-item d-flex justify-content-between align-items-center file-row";
+
+            const isImage = isImageFile(fileName);
+
+            li.innerHTML = `
+                <div class="file-thumb-container">
+                    ${isImage ?
+                        `<img src="${fileUrl}"
+                              class="file-thumb"
+                              alt="Превью"
+                              data-bs-toggle="modal"
+                              data-bs-target="#filePreviewModal"
+                              data-full-src="${fileUrl}">` :
+                        `<div class="file-thumb-icon">
+                            <i class="bi ${getFileIcon(fileName)}"></i>
+                         </div>`
+                    }
+                    <div class="file-info">
+                        <a href="${fileUrl}"
+                           target="_blank"
+                           class="d-block text-truncate text-decoration-none"
+                           title="${fileName}">
+                            ${fileName}
+                        </a>
+                        ${fileSize ? `<div class="small text-muted">${fileSize}</div>` : ''}
+                    </div>
+                </div>
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger ms-2"
+                        title="Убрать"
+                        data-file-id="${fileId}">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            `;
+
+            // Добавляем обработчик удаления
+            const removeBtn = li.querySelector(`button[data-file-id="${fileId}"]`);
+            removeBtn.addEventListener("click", () => {
+                const checkbox = document.querySelector(`input[name="existing_files"][value="${fileId}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+                renderLibrarySelectedFiles();
             });
 
-            function renderFiles() {
-                list.innerHTML = "";
+            return li;
+        }
 
-                selectedFiles.forEach((file, index) => {
-                    const li = document.createElement("li");
-                    li.className = "list-group-item d-flex justify-content-between align-items-center file-row";
+        // Обновляем список при закрытии модального окна библиотеки
+        const filesLibraryModal = document.getElementById("filesLibraryModal");
+        if (filesLibraryModal) {
+            filesLibraryModal.addEventListener("hidden.bs.modal", renderLibrarySelectedFiles);
+        }
 
-                    // Создаем превью для изображений
-                    let previewContent = '';
-                    let isImage = false;
-                    if (file.type.startsWith('image/')) {
-                        isImage = true;
-                        const url = URL.createObjectURL(file);
-                        previewContent = `
-                            <img class="file-thumb"
-                                 src="${url}"
-                                 alt="Превью"
-                                 data-bs-toggle="modal"
-                                 data-bs-target="#filePreviewModal"
-                                 data-full-src="${url}"
-                                 data-blob="true">
-                        `;
-                    } else {
-                        previewContent = `
-                            <div class="file-thumb-icon">
-                                <i class="bi bi-file-earmark"></i>
-                            </div>
-                        `;
+        // =====================================================
+        // ПОИСК В БИБЛИОТЕКЕ ФАЙЛОВ
+        // =====================================================
+        const fileSearchInput = document.getElementById("fileSearch");
+        if (fileSearchInput) {
+            fileSearchInput.addEventListener("input", function () {
+                const searchQuery = this.value.trim().toLowerCase();
+
+                document.querySelectorAll('#filesLibraryModal label.list-group-item').forEach(label => {
+                    const checkbox = label.querySelector('input[type="checkbox"]');
+                    const fileName = checkbox?.dataset.fileName || "";
+
+                    if (!searchQuery) {
+                        label.style.display = "";
+                        return;
                     }
 
-                    li.innerHTML = `
-                        <div class="file-thumb-container">
-                            ${previewContent}
-                            <div class="file-info">
-                                <span class="d-block text-truncate" title="${file.name}">
-                                    ${file.name}
-                                </span>
-                                <div class="small text-muted">
-                                    ${formatFileSize(file.size)}
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button"
-                                class="btn btn-sm btn-outline-danger ms-2"
-                                title="Убрать файл">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    `;
+                    const fileNameLower = fileName.toLowerCase();
 
-                    const removeBtn = li.querySelector("button");
-                    removeBtn.addEventListener("click", () => {
-                        // Освобождаем Blob URL если он был создан
-                        const img = li.querySelector('img[data-blob="true"]');
-                        if (img) {
-                            URL.revokeObjectURL(img.src);
-                        }
-                        selectedFiles.splice(index, 1);
-                        syncInputFiles();
-                        renderFiles();
-                    });
+                    if (!fileNameLower.includes(searchQuery)) {
+                        label.style.display = "none";
+                        return;
+                    }
 
-                    list.appendChild(li);
-                });
-            }
+                    // Подсветка совпадений
+                    const start = fileNameLower.indexOf(searchQuery);
+                    const end = start + searchQuery.length;
 
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            function syncInputFiles() {
-                const dt = new DataTransfer();
-                selectedFiles.forEach(f => dt.items.add(f));
-                input.files = dt.files;
-            }
-        }
-
-        // =====================================================
-        // Поиск в библиотеке файлов
-        // =====================================================
-        const search = document.getElementById("fileSearch");
-        if (search) {
-            search.addEventListener("input", function () {
-                const q = this.value.trim().toLowerCase();
-
-                document
-                    .querySelectorAll('#filesLibraryModal label.list-group-item')
-                    .forEach(label => {
-                        const checkbox = label.querySelector('input[type="checkbox"]');
-                        const span = label.querySelector('span');
-                        const name = checkbox?.dataset.fileName || "";
-
-                        // сброс подсветки
-                        span.innerHTML = name;
-
-                        if (!q) {
-                            label.style.display = "";
-                            return;
-                        }
-
-                        const nameLower = name.toLowerCase();
-
-                        if (!nameLower.includes(q)) {
-                            label.style.display = "none";
-                            return;
-                        }
-
-                        // подсветка совпадения
-                        const start = nameLower.indexOf(q);
-                        const end = start + q.length;
-
-                        span.innerHTML =
-                            name.slice(0, start) +
+                    const nameSpan = label.querySelector('span');
+                    if (nameSpan) {
+                        nameSpan.innerHTML =
+                            fileName.slice(0, start) +
                             "<mark>" +
-                            name.slice(start, end) +
+                            fileName.slice(start, end) +
                             "</mark>" +
-                            name.slice(end);
+                            fileName.slice(end);
+                    }
 
-                        label.style.display = "";
-                    });
+                    label.style.display = "";
+                });
             });
         }
 
         // =====================================================
-        // FILES: mark for detach (UI only, like materials)
+        // УПРАВЛЕНИЕ СУЩЕСТВУЮЩИМИ ВЛОЖЕНИЯМИ
         // =====================================================
-        document.addEventListener("click", function (e) {
-            const btn = e.target.closest(".file-remove-btn");
-            if (!btn) return;
+        document.addEventListener("click", function (event) {
+            const removeButton = event.target.closest(".file-remove-btn");
+            if (!removeButton) return;
 
-            const row = btn.closest(".file-row");
-            const input = row.querySelector('input[name="existing_files"]');
+            const fileRow = removeButton.closest(".file-row");
+            const fileInput = fileRow.querySelector('input[name="existing_files"]');
 
-            const isRemoved = row.classList.toggle("is-removed");
+            const isRemoved = fileRow.classList.toggle("is-removed");
 
             if (isRemoved) {
-                // помечаем к откреплению
-                input.disabled = true;
+                fileInput.disabled = true;
             } else {
-                // возвращаем файл
-                input.disabled = false;
+                fileInput.disabled = false;
             }
         });
 
         // =====================================================
-        // Select2 для материалов + картинки
+        // НАСТРОЙКА SELECT2 ДЛЯ МАТЕРИАЛОВ
         // =====================================================
-        function formatMaterial(option) {
+
+        /**
+         * Форматирует опцию для Select2 с изображением
+         */
+        function formatMaterialOption(option) {
             if (!option.id) return option.text;
 
-            const img = option.element?.dataset?.image;
-            if (!img) return option.text;
+            const imageUrl = option.element?.dataset?.image;
+            if (!imageUrl) return option.text;
 
             return $(`
                 <span class="d-flex align-items-center gap-2">
-                    <img src="${img}"
+                    <img src="${imageUrl}"
                          class="rounded border"
                          style="width:24px;height:24px;object-fit:cover">
                     <span>${option.text}</span>
@@ -701,156 +818,175 @@
             `);
         }
 
-        function initSelect2(ctx) {
-            $(ctx).find(".js-select2").each(function () {
+        /**
+         * Инициализирует Select2 для полей выбора материала
+         */
+        function initializeMaterialSelect2(container) {
+            $(container).find(".js-select2-material").each(function () {
                 if ($(this).hasClass("select2-hidden-accessible")) return;
 
                 $(this).select2({
                     width: "100%",
                     allowClear: true,
                     placeholder: "Выберите материал",
-                    templateResult: formatMaterial,
-                    templateSelection: formatMaterial,
-                    escapeMarkup: m => m
+                    templateResult: formatMaterialOption,
+                    templateSelection: formatMaterialOption,
+                    escapeMarkup: function(markup) { return markup; }
                 });
             });
         }
 
-        initSelect2(document);
+        initializeMaterialSelect2(document);
 
         // =====================================================
-        // Удаление / восстановление материала (formset DELETE)
+        // УПРАВЛЕНИЕ ФОРМСЕТОМ МАТЕРИАЛОВ
         // =====================================================
-        document.addEventListener("click", function (e) {
-            const btn = e.target.closest(".material-remove-btn");
-            if (!btn) return;
 
-            const row = btn.closest(".material-row");
-            const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        const materialsContainer = document.getElementById("materials-container");
+        const addMaterialButton = document.getElementById("add-material-btn");
+        const materialTemplate = document.getElementById("material-template");
 
-            del.checked = !del.checked;
-            row.classList.toggle("opacity-50", del.checked);
-
-            $(row)
-                .find("select, input:not([type='hidden'])")
-                .not('[name$="-DELETE"]')
-                .prop("disabled", del.checked)
-                .trigger("change");
-        });
-
-        // =====================================================
-        // Добавление новой строки материала (formset)
-        // =====================================================
-        const container = document.getElementById("materials-container");
-        const addBtn = document.getElementById("add-material");
-        const template = document.getElementById("material-template");
-
-        if (container && addBtn && template) {
-            const prefix = "{{ formset.prefix }}";
-            const totalForms = document.querySelector(
-                `input[name="${prefix}-TOTAL_FORMS"]`
+        if (materialsContainer && addMaterialButton && materialTemplate) {
+            const formsetPrefix = "{{ formset.prefix }}";
+            const totalFormsInput = document.querySelector(
+                `input[name="${formsetPrefix}-TOTAL_FORMS"]`
             );
-            let index = parseInt(totalForms.value, 10);
+            let formIndex = parseInt(totalFormsInput.value, 10);
 
-            addBtn.addEventListener("click", function () {
-                const clone = document.importNode(template.content, true);
+            /**
+             * Добавляет новую строку материала
+             */
+            addMaterialButton.addEventListener("click", function () {
+                const templateClone = document.importNode(materialTemplate.content, true);
 
-                clone.querySelectorAll("[name],[id],[for]").forEach(el => {
-                    ["name", "id", "for"].forEach(attr => {
-                        if (el.hasAttribute(attr)) {
-                            el.setAttribute(
-                                attr,
-                                el.getAttribute(attr).replace(/__prefix__/g, index)
-                            );
+                // Обновляем индексы в клонированном шаблоне
+                templateClone.querySelectorAll("[name],[id],[for]").forEach(element => {
+                    ["name", "id", "for"].forEach(attribute => {
+                        if (element.hasAttribute(attribute)) {
+                            const oldValue = element.getAttribute(attribute);
+                            const newValue = oldValue.replace(/__prefix__/g, formIndex);
+                            element.setAttribute(attribute, newValue);
                         }
                     });
                 });
 
-                container.appendChild(clone);
-                initSelect2(container.lastElementChild);
-                totalForms.value = index + 1;
-                index += 1;
+                materialsContainer.appendChild(templateClone);
+                initializeMaterialSelect2(materialsContainer.lastElementChild);
+                totalFormsInput.value = formIndex + 1;
+                formIndex += 1;
+            });
+
+            /**
+             * Обрабатывает удаление строки материала
+             */
+            materialsContainer.addEventListener("click", function (event) {
+                const removeButton = event.target.closest(".material-remove-btn");
+                if (!removeButton) return;
+
+                const materialRow = removeButton.closest(".material-row");
+                const deleteCheckbox = materialRow.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+                deleteCheckbox.checked = !deleteCheckbox.checked;
+                materialRow.classList.toggle("is-removed", deleteCheckbox.checked);
+
+                // Отключаем/включаем поля в удаленной строке
+                $(materialRow)
+                    .find("select, input:not([type='hidden'])")
+                    .not('[name$="-DELETE"]')
+                    .prop("disabled", deleteCheckbox.checked)
+                    .trigger("change");
             });
         }
 
         // =====================================================
-        // LOCATION → WORKSTATION
+        // ЗАВИСИМОСТЬ МЕЖДУ ЛОКАЦИЕЙ И ОБОРУДОВАНИЕМ
         // =====================================================
-        const $location = $("#id_location");
-        const $workstation = $("#id_workstation");
+        const locationSelect = $("#id_location");
+        const workstationSelect = $("#id_workstation");
 
-        if ($location.length && $workstation.length) {
-            $location.select2({width: "100%"});
-            $workstation.select2({
+        if (locationSelect.length && workstationSelect.length) {
+            // Инициализация Select2 для локаций
+            locationSelect.select2({ width: "100%" });
+
+            // Инициализация Select2 для оборудования
+            workstationSelect.select2({
                 width: "100%",
                 allowClear: true,
                 placeholder: "Выберите оборудование"
             });
 
-            const WS_URL = "{% url 'maintenance:ajax_workstations_by_location' %}";
-            const initialWorkstation = $workstation.val();
+            const initialWorkstationValue = workstationSelect.val();
 
-            function lockWorkstations(clear = true) {
-                if (clear) {
-                    $workstation.val(null).trigger("change");
-                }
-                $workstation.prop("disabled", true);
-            }
-
-            function unlockWorkstations() {
-                $workstation.prop("disabled", false);
-            }
-
+            /**
+             * Загружает оборудование для выбранной локации
+             */
             function loadWorkstations(locationId, restoreValue = null) {
-                lockWorkstations(true);
+                disableWorkstationSelect(true);
+
                 if (!locationId) return;
 
                 fetch(`${WS_URL}?location_id=${locationId}`, {
-                    headers: {"X-Requested-With": "XMLHttpRequest"}
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
                 })
-                    .then(r => r.json())
+                    .then(response => response.json())
                     .then(data => {
                         if (!data.ok || !data.items.length) {
-                            lockWorkstations(true);
+                            disableWorkstationSelect(true);
                             return;
                         }
 
-                        $workstation.empty().append(new Option("", "", false, false));
+                        // Очищаем и заполняем список оборудования
+                        workstationSelect.empty().append(new Option("", "", false, false));
 
                         data.items.forEach(item => {
-                            const selected = restoreValue && item.id == restoreValue;
-                            $workstation.append(
-                                new Option(item.text, item.id, selected, selected)
+                            const isSelected = restoreValue && item.id == restoreValue;
+                            workstationSelect.append(
+                                new Option(item.text, item.id, isSelected, isSelected)
                             );
                         });
 
-                        unlockWorkstations();
-                        $workstation.trigger("change");
+                        disableWorkstationSelect(false);
+                        workstationSelect.trigger("change");
                     })
-                    .catch(() => lockWorkstations(true));
+                    .catch(error => {
+                        console.error("Ошибка загрузки оборудования:", error);
+                        disableWorkstationSelect(true);
+                    });
             }
 
-            $location.on("change", function () {
-                loadWorkstations(this.value, null);
+            /**
+             * Включает/отключает выбор оборудования
+             */
+            function disableWorkstationSelect(disable = true) {
+                workstationSelect.prop("disabled", disable);
+                if (disable) {
+                    workstationSelect.val(null).trigger("change");
+                }
+            }
+
+            // Обработчик изменения локации
+            locationSelect.on("change", function () {
+                loadWorkstations(this.value);
             });
 
-            if ($location.val()) {
-                loadWorkstations($location.val(), initialWorkstation);
+            // Загрузка начального оборудования если локация выбрана
+            if (locationSelect.val()) {
+                loadWorkstations(locationSelect.val(), initialWorkstationValue);
             } else {
-                lockWorkstations(true);
+                disableWorkstationSelect(true);
             }
         }
 
         // =====================================================
-        // Модальное окно для предпросмотра изображений
+        // МОДАЛЬНОЕ ОКНО ДЛЯ ПРЕДПРОСМОТРА ИЗОБРАЖЕНИЙ
         // =====================================================
         const filePreviewModal = document.getElementById('filePreviewModal');
         if (filePreviewModal) {
             filePreviewModal.addEventListener('show.bs.modal', function (event) {
-                const button = event.relatedTarget;
-                const fullSrc = button.getAttribute('data-full-src');
+                const triggerElement = event.relatedTarget;
+                const imageSource = triggerElement.getAttribute('data-full-src');
                 const modalImage = document.getElementById('modalPreviewImage');
-                modalImage.src = fullSrc;
+                modalImage.src = imageSource;
             });
 
             filePreviewModal.addEventListener('hidden.bs.modal', function () {
@@ -859,21 +995,26 @@
             });
         }
 
-        // Освобождаем Blob URL при закрытии страницы
-        window.addEventListener('beforeunload', function () {
+        // =====================================================
+        // ОЧИСТКА РЕСУРСОВ ПРИ ЗАКРЫТИИ СТРАНИЦЫ
+        // =====================================================
+
+        /**
+         * Освобождает все Blob URL
+         */
+        function revokeAllBlobUrls() {
             document.querySelectorAll('img[data-blob="true"]').forEach(img => {
                 URL.revokeObjectURL(img.src);
             });
-        });
+        }
 
-        // Также освобождаем Blob URL при отправке формы
-        const form = document.getElementById('wo-form');
-        if (form) {
-            form.addEventListener('submit', function () {
-                document.querySelectorAll('img[data-blob="true"]').forEach(img => {
-                    URL.revokeObjectURL(img.src);
-                });
-            });
+        // Освобождаем ресурсы при закрытии страницы
+        window.addEventListener('beforeunload', revokeAllBlobUrls);
+
+        // Освобождаем ресурсы при отправке формы
+        const woForm = document.getElementById('wo-form');
+        if (woForm) {
+            woForm.addEventListener('submit', revokeAllBlobUrls);
         }
     });
 </script>

@@ -7,63 +7,124 @@
 </div>
 
 <form class="row g-2 mb-3" method="get">
-  <div class="col-md-4"><input class="form-control" type="search" name="q" placeholder="Поиск по названию/описанию" value="{{ q }}"></div>
+  <div class="col-md-4">
+    <input class="form-control" type="search" name="q" placeholder="Поиск по названию/описанию" value="{{ request.GET.q|default:'' }}">
+  </div>
+
   <div class="col-md-2">
     <select class="form-select" name="status">
       <option value="">Статус: все</option>
-      {% for v, label in status_choices %}<option value="{{ v }}" {% if current.status == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      {% for status in status_choices %}
+        <option value="{{ status.0 }}"
+                {% if request.GET.status == status.0 %}selected{% endif %}>
+          {{ status.1 }}
+        </option>
+      {% endfor %}
     </select>
   </div>
+
   <div class="col-md-2">
     <select class="form-select" name="priority">
       <option value="">Приоритет: все</option>
-      {% for v, label in priority_choices %}<option value="{{ v }}" {% if current.priority == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      {% for priority in priority_choices %}
+        <option value="{{ priority.0 }}"
+                {% if request.GET.priority == priority.0 %}selected{% endif %}>
+          {{ priority.1 }}
+        </option>
+      {% endfor %}
     </select>
   </div>
+
   <div class="col-md-2">
     <select class="form-select" name="category">
       <option value="">Категория: все</option>
-      {% for v, label in category_choices %}<option value="{{ v }}" {% if current.category == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      {% for category in category_choices %}
+        <option value="{{ category.0 }}"
+                {% if request.GET.category == category.0 %}selected{% endif %}>
+          {{ category.1 }}
+        </option>
+      {% endfor %}
     </select>
   </div>
-  <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Фильтр</button></div>
+
+  <div class="col-md-2">
+    <button class="btn btn-primary w-100" type="submit">Фильтр</button>
+  </div>
 </form>
 
+{% if object_list %}
 <table class="table table-hover align-middle">
-  <thead class="table-light"><tr>
-    <th>#</th><th>Название</th><th>Статус</th><th>Приоритет</th><th>Категория</th><th>Оборудование/Локация</th><th>Ответственный</th>
-  </tr></thead>
+  <thead class="table-light">
+    <tr>
+      <th>#</th>
+      <th>Название</th>
+      <th>Статус</th>
+      <th>Приоритет</th>
+      <th>Категория</th>
+      <th>Оборудование/Локация</th>
+      <th>Ответственный</th>
+    </tr>
+  </thead>
   <tbody>
-  {% for wo in object_list %}
+    {% for wo in object_list %}
     <tr onclick="window.location.href='{% url 'maintenance:wo_detail' wo.pk %}'" style="cursor:pointer">
       <td class="text-muted">#{{ wo.pk }}</td>
-      <td class="fw-semibold">{{ wo.name }}</td>
+      <td class="fw-semibold">{{ wo.name|truncatechars:50 }}</td>
       <td>
-        {% if wo.status == 'new' %}<span class="badge text-bg-primary badge-pill">Новое</span>
-        {% elif wo.status == 'in_progress' %}<span class="badge text-bg-warning badge-pill">В работе</span>
-        {% elif wo.status == 'done' %}<span class="badge text-bg-success badge-pill">Выполнено</span>
-        {% elif wo.status == 'failed' %}<span class="badge text-bg-danger badge-pill">Не выполнено</span>
-        {% elif wo.status == 'canceled' %}<span class="badge text-bg-secondary badge-pill">Отмена</span>
-        {% else %}—{% endif %}
+        {% if wo.status == 'new' %}
+          <span class="badge bg-primary">Новое</span>
+        {% elif wo.status == 'in_progress' %}
+          <span class="badge bg-warning text-dark">В работе</span>
+        {% elif wo.status == 'done' %}
+          <span class="badge bg-success">Выполнено</span>
+        {% elif wo.status == 'failed' %}
+          <span class="badge bg-danger">Не выполнено</span>
+        {% elif wo.status == 'canceled' %}
+          <span class="badge bg-secondary">Отмена</span>
+        {% else %}
+          <span class="badge bg-light text-dark">—</span>
+        {% endif %}
       </td>
       <td>
-        {% if wo.priority == 'high' %}<span class="badge text-bg-danger badge-pill">Высокий</span>
-        {% elif wo.priority == 'med' %}<span class="badge text-bg-warning badge-pill">Средний</span>
-        {% else %}<span class="badge text-bg-secondary badge-pill">Низкий</span>{% endif %}
+        {% if wo.priority == 'high' %}
+          <span class="badge bg-danger">Высокий</span>
+        {% elif wo.priority == 'med' %}
+          <span class="badge bg-warning text-dark">Средний</span>
+        {% elif wo.priority == 'low' %}
+          <span class="badge bg-secondary">Низкий</span>
+        {% else %}
+          <span class="badge bg-light text-dark">—</span>
+        {% endif %}
       </td>
-      <td>{{ wo.get_category_display }}</td>
+      <td>{{ wo.get_category_display|default:"—" }}</td>
       <td>
-        {% if wo.workstation %}{{ wo.workstation.name }}{% endif %}
-        {% if wo.location %}<div class="text-muted small">{{ wo.location.name }}</div>{% endif %}
+        {% if wo.workstation %}
+          <div>{{ wo.workstation.name|default:"—" }}</div>
+        {% endif %}
+        {% if wo.location %}
+          <div class="text-muted small">{{ wo.location.name|default:"" }}</div>
+        {% endif %}
+        {% if not wo.workstation and not wo.location %}
+          —
+        {% endif %}
       </td>
-      <td>{{ wo.responsible }}</td>
+      <td>{{ wo.responsible|default:"—" }}</td>
     </tr>
-  {% empty %}
-    <tr><td colspan="7"><div class="alert alert-secondary mb-0">Пока задач нет</div></td></tr>
-  {% endfor %}
+    {% endfor %}
   </tbody>
 </table>
 
 {% include "includes/pagination.html" %}
+
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-2"></i>
+  {% if request.GET %}
+    По вашему запросу ничего не найдено. <a href="{% url 'maintenance:wo_list' %}">Сбросить фильтры</a>
+  {% else %}
+    Пока задач нет. <a href="{% url 'maintenance:wo_new' %}">Создайте первую</a>
+  {% endif %}
+</div>
+{% endif %}
 
 {% endblock %}

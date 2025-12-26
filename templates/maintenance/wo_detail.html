@@ -6,27 +6,28 @@
 <div class="row justify-content-center">
     <div class="col-xl-8 col-lg-9">
 
+        <!-- Основная карточка -->
         <div class="card shadow-sm border-0">
             <div class="card-body">
 
                 <!-- =====================================================
-                     Header + actions + STATUS BADGE
+                     ШАПКА: Название, статус и кнопки действий
                      ===================================================== -->
                 <div class="d-flex justify-content-between align-items-start mb-4">
                     <div>
                         <h1 class="h4 mb-1 d-flex align-items-center gap-2">
                             {{ object.name }}
 
-                            {# ===== Status badge ===== #}
+                            <!-- Бейдж статуса -->
                             <span class="badge
-                {% if object.status == 'new' %}bg-secondary{% endif %}
-                {% if object.status == 'in_progress' %}bg-primary{% endif %}
-                {% if object.status == 'done' %}bg-success{% endif %}
-                {% if object.status == 'failed' %}bg-warning text-dark{% endif %}
-                {% if object.status == 'canceled' %}bg-danger{% endif %}
-              ">
-                {{ object.get_status_display }}
-              </span>
+                                {% if object.status == 'new' %}bg-secondary{% endif %}
+                                {% if object.status == 'in_progress' %}bg-primary{% endif %}
+                                {% if object.status == 'done' %}bg-success{% endif %}
+                                {% if object.status == 'failed' %}bg-warning text-dark{% endif %}
+                                {% if object.status == 'canceled' %}bg-danger{% endif %}
+                            ">
+                                {{ object.get_status_display }}
+                            </span>
                         </h1>
 
                         <div class="text-muted small">
@@ -34,39 +35,35 @@
                         </div>
                     </div>
 
+                    <!-- Кнопки действий -->
                     <div class="btn-group">
                         <a class="btn btn-outline-secondary"
                            href="{% url 'maintenance:wo_list' %}">
                             ← К списку
                         </a>
-
                         <a class="btn btn-outline-primary"
                            href="{% url 'maintenance:wo_edit' object.pk %}">
                             Редактировать
                         </a>
-
-                        <button
-                                type="button"
+                        <button type="button"
                                 class="btn btn-outline-danger"
                                 data-confirm-delete
                                 data-delete-url="{% url 'maintenance:wo_delete' object.pk %}"
                                 data-delete-name="«{{ object.name }}»"
-                                data-redirect-url="{% url 'maintenance:wo_list' %}"
-                        >
+                                data-redirect-url="{% url 'maintenance:wo_list' %}">
                             Удалить
                         </button>
                     </div>
                 </div>
 
                 <!-- =====================================================
-                     A. Статус и управление
+                     A. УПРАВЛЕНИЕ СТАТУСОМ (если есть доступные переходы)
                      ===================================================== -->
                 {% if allowed_transitions %}
-                <div class="form-section">
+                <div class="form-section mb-4">
                     <div class="form-section-header">
                         Управление статусом
                     </div>
-
                     <div class="d-flex gap-2 flex-wrap">
                         {% for next_status, label in allowed_transitions.items %}
                         <form method="post"
@@ -74,11 +71,11 @@
                             {% csrf_token %}
                             <button type="submit"
                                     class="btn btn-sm
-                        {% if next_status == 'in_progress' %}btn-outline-primary{% endif %}
-                        {% if next_status == 'done' %}btn-outline-success{% endif %}
-                        {% if next_status == 'failed' %}btn-outline-warning{% endif %}
-                        {% if next_status == 'canceled' %}btn-outline-danger{% endif %}
-                      ">
+                                        {% if next_status == 'in_progress' %}btn-outline-primary{% endif %}
+                                        {% if next_status == 'done' %}btn-outline-success{% endif %}
+                                        {% if next_status == 'failed' %}btn-outline-warning{% endif %}
+                                        {% if next_status == 'canceled' %}btn-outline-danger{% endif %}
+                                    ">
                                 {{ label }}
                             </button>
                         </form>
@@ -88,16 +85,15 @@
                 {% endif %}
 
                 <!-- =====================================================
-     B. Контекст выполнения
-     ===================================================== -->
-                <div class="form-section">
+                     B. КОНТЕКСТ ВЫПОЛНЕНИЯ
+                     ===================================================== -->
+                <div class="form-section mb-4">
                     <div class="form-section-header">
                         Контекст выполнения
                     </div>
 
                     <div class="row g-3">
-
-                        <!-- ===== Локация ===== -->
+                        <!-- Локация -->
                         <div class="col-md-4">
                             <div class="text-muted small">Локация</div>
                             <div class="fw-semibold">
@@ -111,47 +107,37 @@
                             </div>
                         </div>
 
-                        <!-- ===== Оборудование + статус ===== -->
+                        <!-- Оборудование -->
                         <div class="col-md-4">
                             <div class="text-muted small">Оборудование</div>
-
                             {% if object.workstation %}
                             <div class="fw-semibold mb-1">
                                 <a href="{% url 'assets:asset_detail' object.workstation.pk %}">
                                     {{ object.workstation }}
                                 </a>
                             </div>
-
                             <div class="d-flex align-items-center gap-2 flex-wrap">
-
-    <span class="badge bg-secondary"
-          id="ws-status-label">
-        {{ object.workstation.get_status_display }}
-    </span>
-
+                                <span class="badge bg-secondary" id="ws-status-label">
+                                    {{ object.workstation.get_status_display }}
+                                </span>
                                 {% if request.user.is_staff %}
-                                <button
-                                        type="button"
+                                <button type="button"
                                         class="btn btn-sm btn-outline-secondary"
                                         id="ws-status-open-btn"
                                         title="Изменить статус оборудования">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-
                                 {% endif %}
                             </div>
-
-                            <div class="small text-muted mt-1 d-none"
-                                 id="ws-status-hint">
+                            <div class="small text-muted mt-1 d-none" id="ws-status-hint">
                                 Статус оборудования обновлён
                             </div>
-
                             {% else %}
                             —
                             {% endif %}
                         </div>
 
-                        <!-- ===== Ответственный ===== -->
+                        <!-- Ответственный -->
                         <div class="col-md-4">
                             <div class="text-muted small">Ответственный</div>
                             <div class="fw-semibold">
@@ -164,53 +150,47 @@
                                 {% endif %}
                             </div>
                         </div>
-
                     </div>
                 </div>
 
                 <!-- =====================================================
-                     C. Параметры задачи (with styling)
+                     C. ПАРАМЕТРЫ ЗАДАЧИ
                      ===================================================== -->
-                <div class="form-section">
+                <div class="form-section mb-4">
                     <div class="form-section-header">
                         Параметры задачи
                     </div>
 
                     <div class="row g-3">
-
-                        <!-- Priority -->
+                        <!-- Приоритет -->
                         <div class="col-md-4">
                             <div class="text-muted small">Приоритет</div>
                             <span class="badge
-                {% if object.priority == 'low' %}bg-success{% endif %}
-                {% if object.priority == 'medium' %}bg-warning text-dark{% endif %}
-                {% if object.priority == 'high' %}bg-danger{% endif %}
-              ">
-                {{ object.get_priority_display }}
-              </span>
+                                {% if object.priority == 'low' %}bg-success{% endif %}
+                                {% if object.priority == 'medium' %}bg-warning text-dark{% endif %}
+                                {% if object.priority == 'high' %}bg-danger{% endif %}
+                            ">
+                                {{ object.get_priority_display }}
+                            </span>
                         </div>
 
-                        <!-- Category -->
+                        <!-- Категория -->
                         <div class="col-md-4">
                             <div class="text-muted small">Категория</div>
-
                             <span class="badge
-    {% if object.category == 'inspection' %}bg-secondary{% endif %}
-    {% if object.category == 'pm' %}bg-info text-dark{% endif %}
-    {% if object.category == 'repair_minor' %}bg-warning text-dark{% endif %}
-    {% if object.category == 'repair_major' %}bg-primary{% endif %}
-    {% if object.category == 'emergency' %}bg-danger{% endif %}
-  ">
-    {{ object.get_category_display }}
-  </span>
+                                {% if object.category == 'inspection' %}bg-secondary{% endif %}
+                                {% if object.category == 'pm' %}bg-info text-dark{% endif %}
+                                {% if object.category == 'repair_minor' %}bg-warning text-dark{% endif %}
+                                {% if object.category == 'repair_major' %}bg-primary{% endif %}
+                                {% if object.category == 'emergency' %}bg-danger{% endif %}
+                            ">
+                                {{ object.get_category_display }}
+                            </span>
                         </div>
 
-                        <!-- Labor -->
+                        <!-- Трудоёмкость -->
                         <div class="col-md-4">
-                            <div class="text-muted small">
-                                Трудоёмкость (план / факт), ч
-                            </div>
-
+                            <div class="text-muted small">Трудоёмкость (план / факт), ч</div>
                             {% if object.labor_fact_hours > object.labor_plan_hours %}
                             <div class="fw-semibold text-danger">
                                 {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}
@@ -223,6 +203,7 @@
                             {% endif %}
                         </div>
 
+                        <!-- Дата начала -->
                         <div class="col-md-6">
                             <div class="text-muted small">Дата начала</div>
                             <div class="fw-semibold">
@@ -230,6 +211,7 @@
                             </div>
                         </div>
 
+                        <!-- Дата окончания -->
                         <div class="col-md-6">
                             <div class="text-muted small">Дата окончания</div>
                             <div class="fw-semibold">
@@ -239,179 +221,167 @@
                     </div>
                 </div>
 
-               <!-- =====================================================
-     D. Описание и вложения
-     ===================================================== -->
-{% if object.description or object.attachments.exists %}
-<div class="form-section">
-    <div class="form-section-header">
-        Описание и вложения
-    </div>
+                <!-- =====================================================
+                     D. ОПИСАНИЕ И ВЛОЖЕНИЯ
+                     ===================================================== -->
+                {% if object.description or object.attachments.exists %}
+                <div class="form-section mb-4">
+                    <div class="form-section-header">
+                        Описание и вложения
+                    </div>
 
-    {% if object.description %}
-    <div class="mb-4">
-        {{ object.description|linebreaks }}
-    </div>
-    {% endif %}
-
-    {% if object.attachments.exists %}
-    <div class="table-responsive">
-        <table class="table table-sm align-middle attachments-table">
-            <thead class="table-light">
-            <tr>
-                <th style="width:56px;"></th>
-                <th>Файл</th>
-                <th style="width:120px;" class="text-end"></th>
-            </tr>
-            </thead>
-
-            <tbody>
-            {% for att in object.attachments.all %}
-            {% with fname=att.file.file.name|lower %}
-            <tr>
-
-                <!-- Preview / Icon -->
-                <td>
-                    {% if ".jpg" in fname or ".jpeg" in fname or ".png" in fname or ".webp" in fname or ".gif" in fname %}
-                    <img
-                        src="{{ att.file.file.url }}"
-                        alt="{{ att.file.file.name|cut:'workorders/' }}"
-                        class="attachment-table-thumb attachment-thumb-zoom"
-                        loading="lazy"
-                        data-bs-toggle="modal"
-                        data-bs-target="#attachmentImageModal"
-                        data-image="{{ att.file.file.url }}"
-                        data-title="{{ att.file.file.name|cut:'workorders/' }}"
-                    >
-                    {% else %}
-                    <div class="attachment-icon">
-                        {% if ".pdf" in fname %}
-                        <i class="bi bi-file-earmark-pdf"></i>
-                        {% elif ".xls" in fname or ".xlsx" in fname %}
-                        <i class="bi bi-file-earmark-excel"></i>
-                        {% elif ".doc" in fname or ".docx" in fname %}
-                        <i class="bi bi-file-earmark-word"></i>
-                        {% else %}
-                        <i class="bi bi-file-earmark"></i>
-                        {% endif %}
+                    {% if object.description %}
+                    <div class="mb-4">
+                        {{ object.description|linebreaks }}
                     </div>
                     {% endif %}
-                </td>
 
-                <!-- Name -->
-                <td>
-                    {{ att.file.file.name|cut:"workorders/" }}
-                </td>
+                    {% if object.attachments.exists %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle attachments-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:56px;"></th>
+                                    <th>Файл</th>
+                                    <th style="width:120px;" class="text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for att in object.attachments.all %}
+                                {% with fname=att.file.file.name|lower %}
+                                <tr>
+                                    <!-- Иконка/превью -->
+                                    <td>
+                                        {% if ".jpg" in fname or ".jpeg" in fname or ".png" in fname or ".webp" in fname or ".gif" in fname %}
+                                        <img src="{{ att.file.file.url }}"
+                                             alt="{{ att.file.file.name|cut:'workorders/' }}"
+                                             class="attachment-table-thumb attachment-thumb-zoom"
+                                             loading="lazy"
+                                             data-bs-toggle="modal"
+                                             data-bs-target="#attachmentImageModal"
+                                             data-image="{{ att.file.file.url }}"
+                                             data-title="{{ att.file.file.name|cut:'workorders/' }}">
+                                        {% else %}
+                                        <div class="attachment-icon">
+                                            {% if ".pdf" in fname %}
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            {% elif ".xls" in fname or ".xlsx" in fname %}
+                                            <i class="bi bi-file-earmark-excel"></i>
+                                            {% elif ".doc" in fname or ".docx" in fname %}
+                                            <i class="bi bi-file-earmark-word"></i>
+                                            {% else %}
+                                            <i class="bi bi-file-earmark"></i>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </td>
 
-                <!-- Download -->
-                <td class="text-end">
-                    <a href="{{ att.file.file.url }}"
-                       download
-                       class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-download"></i>
-                        Скачать
-                    </a>
-                </td>
+                                    <!-- Имя файла -->
+                                    <td>
+                                        {{ att.file.file.name|cut:"workorders/" }}
+                                    </td>
 
-            </tr>
-            {% endwith %}
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-
-<!-- =====================================================
-     E. Материалы
-     ===================================================== -->
-<div class="form-section">
-    <div class="form-section-header">
-        Материалы
-    </div>
-
-    {% if object.materials.exists %}
-    <div class="table-responsive">
-        <table class="table table-sm align-middle materials-table">
-            <thead class="table-light">
-            <tr>
-                <th style="width:56px;"></th>
-                <th>Материал</th>
-                <th class="text-end">План</th>
-                <th class="text-end">Факт</th>
-                <th style="width:40px;"></th>
-            </tr>
-            </thead>
-
-            <tbody>
-            {% for m in object.materials.all %}
-            <tr class="{% if m.qty_used > m.qty_planned %}table-danger-subtle{% endif %}">
-
-                <!-- Preview -->
-                <td>
-                    {% if m.material.image %}
-                    <img
-                        src="{{ m.material.image.url }}"
-                        alt="{{ m.material.name }}"
-                        class="material-table-thumb material-thumb-img"
-                        loading="lazy"
-                        data-bs-toggle="modal"
-                        data-bs-target="#materialImageModal"
-                        data-image="{{ m.material.image.url }}"
-                        data-title="{{ m.material.name }}"
-                    >
-                    {% else %}
-                    <div class="material-thumb-placeholder">
-                        <i class="bi bi-box-seam"></i>
+                                    <!-- Кнопка скачивания -->
+                                    <td class="text-end">
+                                        <a href="{{ att.file.file.url }}"
+                                           download
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-download"></i>
+                                            Скачать
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                     {% endif %}
-                </td>
+                </div>
+                {% endif %}
 
-                <!-- Name -->
-                <td>
-                    <a href="{% url 'inventory:material_detail' m.material.pk %}"
-                       class="fw-semibold text-decoration-none">
-                        {{ m.material.name }}
-                    </a>
-                </td>
+                <!-- =====================================================
+                     E. МАТЕРИАЛЫ
+                     ===================================================== -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        Материалы
+                    </div>
 
-                <!-- Planned -->
-                <td class="text-end">
-                    {{ m.qty_planned }}
-                </td>
+                    {% if object.materials.exists %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle materials-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:56px;"></th>
+                                    <th>Материал</th>
+                                    <th class="text-end">План</th>
+                                    <th class="text-end">Факт</th>
+                                    <th style="width:40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in object.materials.all %}
+                                <tr class="{% if m.qty_used > m.qty_planned %}table-danger-subtle{% endif %}">
+                                    <!-- Превью материала -->
+                                    <td>
+                                        {% if m.material.image %}
+                                        <img src="{{ m.material.image.url }}"
+                                             alt="{{ m.material.name }}"
+                                             class="material-table-thumb material-thumb-img"
+                                             loading="lazy"
+                                             data-bs-toggle="modal"
+                                             data-bs-target="#materialImageModal"
+                                             data-image="{{ m.material.image.url }}"
+                                             data-title="{{ m.material.name }}">
+                                        {% else %}
+                                        <div class="material-thumb-placeholder">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+                                        {% endif %}
+                                    </td>
 
-                <!-- Used -->
-                <td class="text-end {% if m.qty_used > m.qty_planned %}text-danger fw-semibold{% endif %}">
-                    {{ m.qty_used }}
-                </td>
+                                    <!-- Название материала -->
+                                    <td>
+                                        <a href="{% url 'inventory:material_detail' m.material.pk %}"
+                                           class="fw-semibold text-decoration-none">
+                                            {{ m.material.name }}
+                                        </a>
+                                    </td>
 
-                <!-- Warning -->
-                <td class="text-center">
-                    {% if m.qty_used > m.qty_planned %}
-                    <i class="bi bi-exclamation-triangle-fill text-danger"
-                       title="Превышение плана"></i>
+                                    <!-- Запланированное количество -->
+                                    <td class="text-end">
+                                        {{ m.qty_planned }}
+                                    </td>
+
+                                    <!-- Использованное количество -->
+                                    <td class="text-end {% if m.qty_used > m.qty_planned %}text-danger fw-semibold{% endif %}">
+                                        {{ m.qty_used }}
+                                    </td>
+
+                                    <!-- Предупреждение о превышении -->
+                                    <td class="text-center">
+                                        {% if m.qty_used > m.qty_planned %}
+                                        <i class="bi bi-exclamation-triangle-fill text-danger"
+                                           title="Превышение плана"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">
+                        Материалы не добавлены
+                    </div>
                     {% endif %}
-                </td>
-
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="text-muted">
-        Материалы не добавлены
-    </div>
-    {% endif %}
-</div>
-
+                </div>
 
             </div>
         </div>
 
-        <!-- Attachment image modal -->
+        <!-- Модальное окно для просмотра изображений вложений -->
         <div class="modal fade" id="attachmentImageModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content bg-transparent border-0 shadow-none">
@@ -423,7 +393,7 @@
             </div>
         </div>
 
-        <!-- Material image modal -->
+        <!-- Модальное окно для просмотра изображений материалов -->
         <div class="modal fade" id="materialImageModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content bg-transparent border-0 shadow-none">
@@ -434,210 +404,193 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
+
+<!-- Стили для улучшения отображения -->
 <style>
-/* =====================================================
-   Tables: common
-   ===================================================== */
+    /* Общие стили для таблиц */
+    .attachments-table,
+    .materials-table {
+        font-size: .9rem;
+    }
 
-.attachments-table,
-.materials-table {
-    font-size: .9rem;
-}
+    .attachments-table tbody tr:hover,
+    .materials-table tbody tr:hover {
+        background-color: var(--bs-tertiary-bg);
+    }
 
-.attachments-table tbody tr:hover,
-.materials-table tbody tr:hover {
-    background-color: var(--bs-tertiary-bg);
-}
+    /* Миниатюры изображений */
+    .attachment-table-thumb,
+    .material-table-thumb {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: .4rem;
+        border: 1px solid var(--bs-border-color);
+        cursor: zoom-in;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
 
-/* =====================================================
-   Image thumbnails (attachments + materials)
-   ===================================================== */
+    .attachment-table-thumb:hover,
+    .material-table-thumb:hover {
+        transform: scale(1.15);
+        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .25);
+    }
 
-.attachment-table-thumb,
-.material-table-thumb {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: .4rem;
-    border: 1px solid var(--bs-border-color);
-    cursor: zoom-in;
-    transition: transform .15s ease, box-shadow .15s ease;
-}
+    /* Заглушки для файлов без изображений */
+    .attachment-icon,
+    .material-thumb-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: .4rem;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-secondary-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: var(--bs-primary);
+    }
 
-.attachment-table-thumb:hover,
-.material-table-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .25);
-}
-
-/* =====================================================
-   Placeholder / icons (no image)
-   ===================================================== */
-
-.attachment-icon,
-.material-thumb-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: .4rem;
-    border: 1px solid var(--bs-border-color);
-    background: var(--bs-secondary-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: var(--bs-primary);
-}
-
-/* =====================================================
-   Materials table specifics
-   ===================================================== */
-
-.materials-table td.text-danger {
-    font-weight: 600;
-}
+    /* Специфичные стили для таблицы материалов */
+    .materials-table td.text-danger {
+        font-weight: 600;
+    }
 </style>
 
-
+<!-- JavaScript для интерактивных элементов -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // =====================================================
+        // 1. УПРАВЛЕНИЕ СТАТУСОМ ОБОРУДОВАНИЯ
+        // =====================================================
+        const wsOpenBtn = document.getElementById("ws-status-open-btn");
+        const wsSaveBtn = document.getElementById("ws-status-modal-save");
+        const wsSelect = document.getElementById("ws-status-modal-select");
+        const wsLabel = document.getElementById("ws-status-label");
+        const wsHint = document.getElementById("ws-status-hint");
+        const wsModalEl = document.getElementById("wsStatusModal");
 
-        const openBtn = document.getElementById("ws-status-open-btn");
-        const saveBtn = document.getElementById("ws-status-modal-save");
-        const select = document.getElementById("ws-status-modal-select");
-        const label = document.getElementById("ws-status-label");
-        const hint = document.getElementById("ws-status-hint");
-        const modalEl = document.getElementById("wsStatusModal");
+        if (wsOpenBtn && wsSaveBtn && wsSelect && wsModalEl) {
+            // Функция для получения CSRF-токена
+            function getCSRFToken() {
+                const el = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
+                if (el?.value) return el.value;
 
-        if (!openBtn || !saveBtn || !select || !modalEl) return;
-
-        // =========================
-        // CSRF
-        // =========================
-        function getCSRFToken() {
-            const el = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
-            if (el?.value) return el.value;
-
-            const m = document.cookie.match(/csrftoken=([^;]+)/);
-            return m ? decodeURIComponent(m[1]) : null;
-        }
-
-        // =========================
-        // Badge styles
-        // =========================
-        function badgeClass(status) {
-            return {
-                ok: "bg-success",
-                problem: "bg-danger",
-                maintenance: "bg-warning text-dark",
-                disabled: "bg-secondary",
-            }[status] || "bg-secondary";
-        }
-
-        // =========================
-        // ONE modal instance
-        // =========================
-        const modal = new bootstrap.Modal(modalEl, {
-            backdrop: true,
-            keyboard: true,
-            focus: true,
-        });
-
-        // =========================
-        // Open modal (ONLY via JS)
-        // =========================
-        openBtn.addEventListener("click", () => {
-            modal.show();
-        });
-
-        // =========================
-        // Save handler
-        // =========================
-        saveBtn.addEventListener("click", function () {
-            const status = select.value;
-            const token = getCSRFToken();
-
-            if (!token) {
-                alert("CSRF token не найден. Обновите страницу.");
-                return;
+                const m = document.cookie.match(/csrftoken=([^;]+)/);
+                return m ? decodeURIComponent(m[1]) : null;
             }
 
-            saveBtn.disabled = true;
+            // Стили для бейджей статусов
+            function getBadgeClass(status) {
+                const statusClasses = {
+                    'ok': "bg-success",
+                    'problem': "bg-danger",
+                    'maintenance': "bg-warning text-dark",
+                    'disabled': "bg-secondary",
+                };
+                return statusClasses[status] || "bg-secondary";
+            }
 
-            fetch("{% url 'maintenance:ajax_workstation_status_update' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": token,
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                },
-                body:
-                    "id={{ object.workstation.pk }}&status=" +
-                    encodeURIComponent(status),
-            })
-                .then(async r => {
-                    const data = await r.json().catch(() => ({}));
-                    if (!r.ok || !data.ok) throw data;
+            // Инициализация модального окна
+            const wsModal = new bootstrap.Modal(wsModalEl, {
+                backdrop: true,
+                keyboard: true,
+                focus: true,
+            });
+
+            // Открытие модального окна
+            wsOpenBtn.addEventListener("click", () => {
+                wsModal.show();
+            });
+
+            // Сохранение статуса
+            wsSaveBtn.addEventListener("click", function () {
+                const status = wsSelect.value;
+                const token = getCSRFToken();
+
+                if (!token) {
+                    alert("CSRF token не найден. Обновите страницу.");
+                    return;
+                }
+
+                wsSaveBtn.disabled = true;
+
+                fetch("{% url 'maintenance:ajax_workstation_status_update' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": token,
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    },
+                    body: "id={{ object.workstation.pk }}&status=" + encodeURIComponent(status),
+                })
+                .then(async response => {
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data.ok) throw data;
                     return data;
                 })
                 .then(() => {
-                    // UI update
-                    label.textContent =
-                        select.options[select.selectedIndex].text;
-                    label.className =
-                        "badge " + badgeClass(status);
+                    // Обновление UI
+                    wsLabel.textContent = wsSelect.options[wsSelect.selectedIndex].text;
+                    wsLabel.className = "badge " + getBadgeClass(status);
 
-                    hint.classList.remove("d-none");
-                    setTimeout(() => hint.classList.add("d-none"), 2000);
+                    // Показ подсказки
+                    wsHint.classList.remove("d-none");
+                    setTimeout(() => wsHint.classList.add("d-none"), 2000);
 
-                    modal.hide();
+                    // Закрытие модального окна
+                    wsModal.hide();
                 })
-                .catch(err => {
-                    console.error(err);
-                    alert(err?.error || "Ошибка обновления статуса");
+                .catch(error => {
+                    console.error("Ошибка обновления статуса:", error);
+                    alert(error?.error || "Ошибка обновления статуса оборудования");
                 })
                 .finally(() => {
-                    saveBtn.disabled = false;
+                    wsSaveBtn.disabled = false;
                 });
-        });
-
-
-function bindImageModal(imgSelector, modalImgId, modalTitleId) {
-        const modalImg = document.getElementById(modalImgId);
-        const modalTitle = document.getElementById(modalTitleId);
-
-        document.querySelectorAll(imgSelector).forEach(img => {
-            img.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                modalImg.src = this.dataset.image;
-                modalImg.alt = this.dataset.title || "";
-                modalTitle.textContent = this.dataset.title || "";
             });
-        });
-    }
+        }
 
-    // Attachments
-    bindImageModal(
-        ".attachment-thumb-zoom",
-        "attachmentImageModalImg",
-        "attachmentImageModalTitle"
-    );
+        // =====================================================
+        // 2. ПРОСМОТР ИЗОБРАЖЕНИЙ В МОДАЛЬНЫХ ОКНАХ
+        // =====================================================
+        function initImageModal(imageSelector, modalImageId, modalTitleId) {
+            const modalImage = document.getElementById(modalImageId);
+            const modalTitle = document.getElementById(modalTitleId);
 
-    // Materials
-    bindImageModal(
-        ".material-thumb-img",
-        "materialImageModalImg",
-        "materialImageModalTitle"
-    );
+            document.querySelectorAll(imageSelector).forEach(image => {
+                image.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-});
+                    modalImage.src = this.dataset.image;
+                    modalImage.alt = this.dataset.title || "";
+                    modalTitle.textContent = this.dataset.title || "";
+                });
+            });
+        }
+
+        // Инициализация модальных окон для изображений
+        initImageModal(
+            ".attachment-thumb-zoom",
+            "attachmentImageModalImg",
+            "attachmentImageModalTitle"
+        );
+
+        initImageModal(
+            ".material-thumb-img",
+            "materialImageModalImg",
+            "materialImageModalTitle"
+        );
+    });
 </script>
 
-{% if object.workstation and request.user.is_staff %}
+<!-- Включение модального окна статуса оборудования (только для администраторов) -->
+
 {% include "includes/workstation_status_modal.html" %}
-{% endif %}
+
 
 {% endblock %}

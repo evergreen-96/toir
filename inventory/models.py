@@ -48,6 +48,7 @@ class Material(models.Model):
         related_name="compatible_materials",
         verbose_name="Подходит для оборудования",
     )
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
     image = models.ImageField(
         "Фото",
         upload_to="materials/",
