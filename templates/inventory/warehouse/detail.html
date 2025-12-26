@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10 col-lg-11">
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <!-- ===== Header ===== -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1 class="h4 mb-1">{{ object.name }}</h1>
+                        <div class="text-muted small">
+                            Склад · карточка объекта
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-secondary"
+                           href="{% url 'inventory:warehouse_list' %}">
+                            Назад
+                        </a>
+                        <a class="btn btn-primary"
+                           href="{% url 'inventory:warehouse_edit' object.pk %}">
+                            Редактировать
+                        </a>
+                        <button
+                                class="btn btn-outline-danger"
+                                type="button"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===== Main info ===== -->
+                <div class="mb-4">
+                    <div class="section-header">Основная информация</div>
+
+                    <div class="detail-grid">
+
+                        <div class="detail-item">
+                            <div class="detail-label">Название</div>
+                            <div class="detail-value">
+                                {{ object.name }}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Локация</div>
+                            <div class="detail-value">
+                                {{ object.location|default:"—" }}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Ответственный</div>
+                            <div class="detail-value">
+                                {{ object.responsible|default:"—" }}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Всего материалов</div>
+                            <div class="detail-value">
+                                <span class="fw-semibold">{{ materials.count }}</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">Общее количество</div>
+                            <div class="detail-value">
+                                {{ total_qty_available|floatformat:2 }} ед.
+                            </div>
+                        </div>
+
+                        <!-- Добавляем дату последнего изменения из истории -->
+                        <div class="detail-item">
+                            <div class="detail-label">Последнее изменение</div>
+                            <div class="detail-value">
+                                {% with history=object.history.first %}
+                                    {% if history %}
+                                        {{ history.history_date|date:"d.m.Y H:i" }}
+                                        {% if history.history_user %}
+                                            <br><small class="text-muted">пользователем {{ history.history_user }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ===== Materials Section ===== -->
+                <div class="mt-5">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="section-header">Материалы на складе</div>
+                        <a href="{% url 'inventory:material_new' %}?warehouse={{ object.pk }}"
+                           class="btn btn-sm btn-primary">
+                            + Добавить материал
+                        </a>
+                    </div>
+
+                    {% if materials %}
+                        <!-- Summary Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-primary fs-4 fw-bold">{{ active_materials_count }}</div>
+                                        <div class="text-muted small">Активных</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-success fs-4 fw-bold">{{ in_stock_count }}</div>
+                                        <div class="text-muted small">В наличии</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-warning fs-4 fw-bold">{{ low_stock_count }}</div>
+                                        <div class="text-muted small">Низкий запас</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-danger fs-4 fw-bold">{{ out_of_stock_count }}</div>
+                                        <div class="text-muted small">Отсутствуют</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Materials Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Артикул</th>
+                                        <th>Ед. изм.</th>
+                                        <th class="text-end">Доступно</th>
+                                        <th class="text-end">Резерв</th>
+                                        <th class="text-end">Всего</th>
+                                        <th>Статус</th>
+                                        <th class="text-end">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in materials %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'inventory:material_detail' material.pk %}"
+                                               class="text-decoration-none">
+                                                {{ material.name }}
+                                            </a>
+                                            {% if material.group %}
+                                                <br><small class="text-muted">{{ material.group }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if material.article %}
+                                                <code>{{ material.article }}</code>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                {{ material.get_uom_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end fw-semibold">
+                                            {{ material.qty_available|floatformat:2 }}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if material.qty_reserved > 0 %}
+                                                <span class="text-warning">{{ material.qty_reserved|floatformat:2 }}</span>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <strong>{{ material.qty_total|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if material.is_active %}
+                                                {% if material.qty_available > 0 %}
+                                                    {% if material.qty_available <= material.qty_reserved %}
+                                                        <span class="badge bg-warning">Низкий запас</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">В наличии</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-danger">Отсутствует</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">Неактивен</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'inventory:material_detail' material.pk %}"
+                                                   class="btn btn-outline-secondary" title="Просмотреть">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'inventory:material_edit' material.pk %}"
+                                                   class="btn btn-outline-primary" title="Редактировать">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <td colspan="3" class="fw-semibold">Итого:</td>
+                                        <td class="text-end fw-semibold">{{ total_qty_available|floatformat:2 }}</td>
+                                        <td class="text-end fw-semibold">{{ total_qty_reserved|floatformat:2 }}</td>
+                                        <td class="text-end fw-semibold">{{ total_qty_all|floatformat:2 }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <!-- Empty State -->
+                        <div class="text-center py-5 border rounded">
+                            <i class="bi bi-box text-muted fs-1 mb-3"></i>
+                            <h5 class="text-muted">На складе нет материалов</h5>
+                            <p class="text-muted mb-4">Добавьте материалы для начала учета</p>
+                            <a href="{% url 'inventory:material_new' %}?warehouse={{ object.pk }}"
+                               class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Добавить первый материал
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- ===== Quick Actions ===== -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="section-header">Быстрые действия</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'inventory:material_new' %}?warehouse={{ object.pk }}"
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Добавить материал
+                        </a>
+                        <a href="{% url 'inventory:material_list' %}?warehouse={{ object.pk }}"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-list-ul me-1"></i>Все материалы склада
+                        </a>
+                        <button class="btn btn-outline-success">
+                            <i class="bi bi-printer me-1"></i>Печать описи
+                        </button>
+                        <button class="btn btn-outline-info">
+                            <i class="bi bi-download me-1"></i>Экспорт в Excel
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== Delete Modal ===== -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить склад <strong>«{{ object.name }}»</strong>?</p>
+
+                {% if materials.count > 0 %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <strong>Внимание!</strong> На этом складе находится {{ materials.count }} материалов.
+                        При удалении склада материалы останутся без привязки.
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="{% url 'inventory:warehouse_delete' object.pk %}"
+                      id="deleteForm" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // AJAX удаление склада
+        const deleteForm = document.getElementById('deleteForm');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Показываем индикатор загрузки
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Удаление...';
+                submitBtn.disabled = true;
+
+                fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Accept': 'application/json',
+                    },
+                    body: new FormData(this)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        // Перенаправляем на список складов
+                        window.location.href = "{% url 'inventory:warehouse_list' %}";
+                    } else {
+                        // Показываем ошибку
+                        alert('Ошибка: ' + data.error);
+                        if (data.related && data.related.length > 0) {
+                            alert('Связанные объекты:\n\n' + data.related.join('\n'));
+                        }
+                        // Восстанавливаем кнопку
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        // Закрываем модальное окно
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                        if (modal) modal.hide();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при удалении');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

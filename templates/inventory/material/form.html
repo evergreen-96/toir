@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}
+  {% if create %}Новый материал{% else %}Редактирование материала{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-8 col-lg-9">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="mb-3">
+          <h1 class="h4 mb-1">
+            {% if create %}Новый материал{% else %}Редактирование материала{% endif %}
+          </h1>
+          <div class="text-muted small">
+            Основные параметры материала
+          </div>
+        </div>
+
+        <!-- ===== Legend ===== -->
+        <div class="text-muted small mb-4">
+          <span class="text-danger fw-semibold">*</span> — обязательные поля
+        </div>
+
+        <form method="post" novalidate enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="row g-3">
+
+            {% for field in form %}
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  {{ field.label }}
+                  {% if field.field.required %}
+                    <span class="text-danger">*</span>
+                  {% endif %}
+                </label>
+
+                {% if field.field.widget.input_type == "select" or field.name == "suitable_for" %}
+                  {{ field|add_class:"form-select js-select2" }}
+                {% elif field.field.widget.input_type == "checkbox" %}
+                  <div class="form-check">
+                    {{ field|add_class:"form-check-input" }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                {% elif field.field.widget.input_type == "file" %}
+                  {{ field|add_class:"form-control" }}
+                {% else %}
+                  {{ field|add_class:"form-control" }}
+                {% endif %}
+
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+
+                {% if field.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ field.errors }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+          </div>
+
+          <!-- ===== Actions ===== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'inventory:material_list' %}">
+              Отмена
+            </a>
+            <button class="btn btn-primary px-4" type="submit">
+              Сохранить
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== Select2 init ===== -->
+<script>
+  $(document).ready(function () {
+    $('.js-select2').select2({
+      width: '100%',
+      placeholder: 'Выберите',
+      allowClear: true
+    });
+  });
+</script>
+{% endblock %}

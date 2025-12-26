@@ -1,23 +1,21 @@
 {% extends "base.html" %}
 {% load form_extras %}
 {% block title %}
-  {% if create %}Новый склад{% else %}Редактирование склада{% endif %}
+  {% if create %}Новый {{ model_name }}{% else %}Редактирование {{ model_name }}{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-xl-8 col-lg-9">
-
     <div class="card shadow-sm border-0">
       <div class="card-body">
-
         <!-- ===== Header ===== -->
         <div class="mb-3">
           <h1 class="h4 mb-1">
-            {% if create %}Новый склад{% else %}Редактирование склада{% endif %}
+            {% if create %}Новый {{ model_name }}{% else %}Редактирование {{ model_name }}{% endif %}
           </h1>
           <div class="text-muted small">
-            Основные параметры склада
+            Основные параметры {{ model_name|lower }}
           </div>
         </div>
 
@@ -26,11 +24,10 @@
           <span class="text-danger fw-semibold">*</span> — обязательные поля
         </div>
 
-        <form method="post" novalidate>
+        <form method="post" novalidate enctype="multipart/form-data">
           {% csrf_token %}
 
           <div class="row g-3">
-
             {% for field in form %}
               <div class="col-md-6">
                 <label class="form-label fw-semibold">
@@ -40,10 +37,23 @@
                   {% endif %}
                 </label>
 
-                {% if field.field.widget.input_type == "select" %}
+                {% if field.field.widget.input_type == "select" or field.field.widget.input_type == "selectmultiple" %}
                   {{ field|add_class:"form-select js-select2" }}
+                {% elif field.field.widget.input_type == "checkbox" %}
+                  <div class="form-check">
+                    {{ field|add_class:"form-check-input" }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                {% elif field.field.widget.input_type == "file" %}
+                  {{ field|add_class:"form-control" }}
                 {% else %}
                   {{ field|add_class:"form-control" }}
+                {% endif %}
+
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
                 {% endif %}
 
                 {% if field.errors %}
@@ -53,7 +63,6 @@
                 {% endif %}
               </div>
             {% endfor %}
-
           </div>
 
           <!-- ===== Actions ===== -->
@@ -66,12 +75,9 @@
               Сохранить
             </button>
           </div>
-
         </form>
-
       </div>
     </div>
-
   </div>
 </div>
 

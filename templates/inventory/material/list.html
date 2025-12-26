@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Материалы{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-10 col-lg-11">
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <!-- ===== Header ===== -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="h4 mb-1">Материалы</h1>
+            <div class="text-muted small">
+              Справочник номенклатуры
+            </div>
+          </div>
+          <a class="btn btn-primary" href="{% url 'inventory:material_new' %}">
+            + Материал
+          </a>
+        </div>
+
+        <!-- ===== Search ===== -->
+        <form method="get" class="mb-3">
+          <div class="input-group">
+            <input
+              type="text"
+              name="q"
+              value="{{ search_query }}"
+              class="form-control"
+              placeholder="Поиск по названию, артикулу, номеру детали..."
+            >
+            <button class="btn btn-outline-secondary" type="submit">
+              Найти
+            </button>
+          </div>
+        </form>
+
+        <!-- ===== List ===== -->
+        {% if object_list %}
+          <div class="list-group list-group-flush">
+            {% for material in object_list %}
+              <a
+                href="{% url 'inventory:material_detail' material.pk %}"
+                class="list-group-item list-group-item-action"
+              >
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold">{{ material.name }}</div>
+                    <div class="text-muted small mt-1">
+                      {% if material.article %}
+                        Арт: {{ material.article }} ·
+                      {% endif %}
+                      {% if material.part_number %}
+                        № детали: {{ material.part_number }} ·
+                      {% endif %}
+                      {% if material.warehouse %}
+                        Склад: {{ material.warehouse }}
+                      {% else %}
+                        <span class="fst-italic">Склад не указан</span>
+                      {% endif %}
+                      ·
+                      {{ material.get_uom_display }}: {{ material.qty_available|floatformat:2 }}
+                      {% if material.qty_reserved > 0 %}
+                        (резерв: {{ material.qty_reserved|floatformat:0 }})
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="text-muted small">
+                    Подробнее →
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted text-center py-5">
+            <div class="fw-semibold mb-1">
+              {% if search_query %}
+                Ничего не найдено
+              {% else %}
+                Материалы не созданы
+              {% endif %}
+            </div>
+            <div class="small">
+              {% if search_query %}
+                Попробуйте изменить поисковый запрос
+              {% else %}
+                Добавьте первый материал
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}
