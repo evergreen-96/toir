@@ -312,14 +312,17 @@ class WorkstationDetailView(LoginRequiredMixin, WorkstationContextMixin, DetailV
 
     def get_queryset(self):
         """Оптимизация запросов для детального просмотра"""
+        # УБИРАЕМ prefetch_related('history') - это вызывает ошибку
         return super().get_queryset().select_related(
-            'location', 'responsible', 'created_by'  # Убираем responsible__user
-        ).prefetch_related('history')
+            'location', 'responsible', 'created_by'
+        )
 
     def get_context_data(self, **kwargs):
         """Добавление истории изменений"""
         context = super().get_context_data(**kwargs)
-        context['history'] = self.object.history.all()[:10]  # Последние 10 изменений
+        # Получаем историю через запрос, а не через prefetch
+        if self.object:
+            context['history'] = self.object.history.all()[:10]  # Последние 10 изменений
         return context
 
 
