@@ -2,7 +2,6 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models.deletion import ProtectedError
@@ -12,6 +11,10 @@ from django.views.decorators.http import require_POST
 
 class BaseInventoryView(LoginRequiredMixin):
     """Базовый класс для всех вьюх инвентаря"""
+    permission_required = None
+
+    def get_permission_required(self):
+        return self.permission_required
 
     def get_context_data(self, **kwargs):
         """Добавляем модель в контекст"""
@@ -24,6 +27,7 @@ class BaseInventoryView(LoginRequiredMixin):
 class BaseListView(BaseInventoryView, ListView):
     """Базовый класс для списков с поиском"""
     paginate_by = 20
+    filter_form_class = None
 
     def get_search_query(self):
         """Возвращает поисковый запрос"""
@@ -49,6 +53,11 @@ class BaseListView(BaseInventoryView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.get_search_query()
+
+        # Добавляем форму фильтрации если указана
+        if self.filter_form_class:
+            context['filter_form'] = self.filter_form_class(self.request.GET)
+
         return context
 
 

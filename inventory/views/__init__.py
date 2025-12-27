@@ -1,4 +1,4 @@
-from .warehouse import (
+from .warehouse.views import (
     WarehouseListView,
     WarehouseDetailView,
     WarehouseCreateView,
@@ -6,7 +6,7 @@ from .warehouse import (
     WarehouseDeleteView,
 )
 
-from .material import (
+from .material.views import (
     MaterialListView,
     MaterialDetailView,
     MaterialCreateView,
