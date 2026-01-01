@@ -6,447 +6,586 @@
 {% endblock %}
 
 {% block content %}
-<style>
-    /* Стили для превью файлов */
-    .file-thumb-container {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .file-thumb {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 6px;
-        cursor: zoom-in;
-        border: 1px solid var(--bs-border-color);
-        transition: transform .15s ease, box-shadow .15s ease;
-    }
-
-    .file-thumb:hover {
-        transform: scale(1.02);
-        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
-    }
-
-    .file-thumb-icon {
-        width: 80px;
-        height: 80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--bs-secondary-color);
-        font-size: 32px;
-        border-radius: 6px;
-        border: 1px solid var(--bs-border-color);
-    }
-
-    .file-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    /* Модальное окно для увеличенного изображения */
-    .modal-content.bg-transparent {
-        background: transparent;
-    }
-
-    /* Стили для строк материалов */
-    .material-row {
-        border: 1px solid var(--bs-border-color);
-    }
-
-    .material-row.is-removed {
-        opacity: 0.5;
-        background-color: var(--bs-secondary-bg);
-    }
-
-    .file-row.is-removed {
-        opacity: 0.5;
-        text-decoration: line-through;
-    }
-</style>
-
-<div class="row justify-content-center">
-    <div class="col-xl-8 col-lg-9">
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-
-                <!-- =====================================================
-                     ЗАГОЛОВОК СТРАНИЦЫ
-                     ===================================================== -->
-                <div class="mb-4">
-                    <h1 class="h4 mb-1">
-                        {% if create %}Новая задача{% else %}Редактирование задачи #{{ wo.pk }}{% endif %}
-                    </h1>
-                    <div class="text-muted small">
-                        Работы · параметры и используемые материалы
-                    </div>
-                </div>
-
-                <!-- =====================================================
-                     ОСНОВНАЯ ФОРМА
-                     ===================================================== -->
-                <form id="wo-form" method="post" enctype="multipart/form-data" novalidate>
-                    {% csrf_token %}
-                    {{ form.non_field_errors }}
-
-                    <!-- =====================================================
-                         1. ОСНОВНАЯ ИНФОРМАЦИЯ
-                         ===================================================== -->
-                    <div class="mb-4">
-                        <div class="section-header mb-3">1. Основная информация</div>
-
-                        <!-- Название задачи -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold required">
-                                {{ form.name.label }}
-                            </label>
-                            {{ form.name|add_class:"form-control" }}
-                            {% for error in form.name.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Категория работ -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold required">
-                                {{ form.category.label }}
-                            </label>
-                            {{ form.category|add_class:"form-select" }}
-                            {% for error in form.category.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Локация -->
-                        {% if form.location %}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold {% if form.location.field.required %}required{% endif %}">
-                                {{ form.location.label }}
-                            </label>
-                            {{ form.location|add_class:"form-select" }}
-                            {% for error in form.location.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        <!-- Оборудование -->
-                        {% if form.workstation %}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold {% if form.workstation.field.required %}required{% endif %}">
-                                {{ form.workstation.label }}
-                            </label>
-                            {{ form.workstation|add_class:"form-select" }}
-                            {% for error in form.workstation.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        <!-- Описание -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ form.description.label }}
-                            </label>
-                            {{ form.description|add_class:"form-control" }}
-                        </div>
-
-                        <!-- Приоритет -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold required">
-                                {{ form.priority.label }}
-                            </label>
-                            {{ form.priority|add_class:"form-select" }}
-                            {% for error in form.priority.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Ответственный -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold required">
-                                {{ form.responsible.label }}
-                            </label>
-                            {{ form.responsible|add_class:"form-select" }}
-                            {% for error in form.responsible.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Даты начала и окончания -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">
-                                        {{ form.date_start.label }}
-                                    </label>
-                                    {{ form.date_start|add_class:"form-control" }}
-                                    {% for error in form.date_start.errors %}
-                                        <div class="text-danger small mt-1">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">
-                                        {{ form.date_finish.label }}
-                                    </label>
-                                    {{ form.date_finish|add_class:"form-control" }}
-                                    {% for error in form.date_finish.errors %}
-                                        <div class="text-danger small mt-1">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Трудоёмкость -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">
-                                        {{ form.labor_plan_hours.label }}
-                                    </label>
-                                    {{ form.labor_plan_hours|add_class:"form-control" }}
-                                    {% for error in form.labor_plan_hours.errors %}
-                                        <div class="text-danger small mt-1">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">
-                                        {{ form.labor_fact_hours.label }}
-                                    </label>
-                                    {{ form.labor_fact_hours|add_class:"form-control" }}
-                                    {% for error in form.labor_fact_hours.errors %}
-                                        <div class="text-danger small mt-1">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- =====================================================
-                         ФАЙЛЫ
-                         ===================================================== -->
-                    <div class="mb-4">
-                        <div class="section-header mb-3">Файлы</div>
-
-                        <!-- Кнопки загрузки файлов -->
-                        <div class="d-flex flex-wrap gap-2 mb-3">
-                            <!-- Загрузка с устройства -->
-                            <label class="btn btn-outline-primary mb-0">
-                                <i class="bi bi-upload"></i>
-                                Загрузить с устройства
-                                <input type="file"
-                                       id="id_files"
-                                       name="files"
-                                       multiple
-                                       hidden>
-                            </label>
-
-                            <!-- Выбор из библиотеки -->
-                            <button type="button"
-                                    class="btn btn-outline-secondary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#filesLibraryModal">
-                                <i class="bi bi-folder2-open"></i>
-                                Выбрать из библиотеки
-                            </button>
-                        </div>
-
-                        <!-- Список новых файлов -->
-                        <ul class="list-group list-group-flush mb-2" id="new-files-list">
-                            <!-- Заполняется JavaScript -->
-                        </ul>
-
-                        <!-- Список файлов из библиотеки -->
-                        <ul class="list-group list-group-flush mb-2" id="library-selected-list">
-                            <!-- Заполняется JavaScript -->
-                        </ul>
-
-                        <!-- Существующие вложения -->
-                        <ul class="list-group list-group-flush mt-2" id="existing-files-list">
-                            {% if wo.attachments.exists %}
-                                {% for attachment in wo.attachments.all %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center file-row">
-                                        <div class="file-thumb-container">
-                                            {% with attachment.file.file.url as file_url %}
-                                            {% with attachment.file.file.name|cut:"workorders/" as file_name %}
-                                            {% if file_url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg' %}
-                                                <img src="{{ file_url }}"
-                                                     class="file-thumb"
-                                                     alt="Превью"
-                                                     data-bs-toggle="modal"
-                                                     data-bs-target="#filePreviewModal"
-                                                     data-full-src="{{ file_url }}">
-                                            {% else %}
-                                                <div class="file-thumb-icon">
-                                                    <i class="bi bi-file-earmark"></i>
-                                                </div>
-                                            {% endif %}
-
-                                            <div class="file-info">
-                                                <a href="{{ file_url }}"
-                                                   target="_blank"
-                                                   class="d-block text-truncate text-decoration-none"
-                                                   title="{{ file_name }}">
-                                                    {{ file_name }}
-                                                </a>
-                                                <div class="small text-muted">
-                                                    {{ attachment.file.file.size|filesizeformat }}
-                                                </div>
-                                            </div>
-                                            {% endwith %}
-                                            {% endwith %}
-                                        </div>
-
-                                        <!-- Скрытое поле для существующих файлов -->
-                                        <input type="hidden"
-                                               name="existing_files"
-                                               value="{{ attachment.file.id }}">
-
-                                        <!-- Кнопка удаления -->
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger file-remove-btn ms-2"
-                                                title="Открепить файл">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </li>
-                                {% endfor %}
-                            {% else %}
-                                <li class="list-group-item text-muted small">
-                                    Файлы пока не прикреплены
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </div>
-
-                    <!-- =====================================================
-                         2. МАТЕРИАЛЫ
-                         ===================================================== -->
-                    <div class="mb-4">
-                        <div class="section-header mb-3">2. Материалы</div>
-
-                        {{ formset.management_form }}
-
-                        <!-- Контейнер для строк материалов -->
-                        <div id="materials-container">
-                            {% for form_material in formset %}
-                                <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-                                    {% for hidden_field in form_material.hidden_fields %}
-                                        {{ hidden_field }}
-                                    {% endfor %}
-
-                                    <!-- Кнопка удаления материала -->
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                    <!-- Скрытое поле DELETE -->
-                                    <div class="d-none">{{ form_material.DELETE }}</div>
-
-                                    <!-- Выбор материала -->
-                                    <div class="mb-2">
-                                        <label class="form-label fw-semibold">{{ form_material.material.label }}</label>
-                                        {{ form_material.material|add_class:"form-select js-select2-material" }}
-                                        {% for error in form_material.material.errors %}
-                                            <div class="text-danger small mt-1">{{ error }}</div>
-                                        {% endfor %}
-                                    </div>
-
-                                    <!-- Количества -->
-                                    <div class="row g-2">
-                                        <div class="col">
-                                            <label class="form-label fw-semibold">{{ form_material.qty_planned.label }}</label>
-                                            {{ form_material.qty_planned|add_class:"form-control" }}
-                                            {% for error in form_material.qty_planned.errors %}
-                                                <div class="text-danger small mt-1">{{ error }}</div>
-                                            {% endfor %}
-                                        </div>
-                                        <div class="col">
-                                            <label class="form-label fw-semibold">{{ form_material.qty_used.label }}</label>
-                                            {{ form_material.qty_used|add_class:"form-control" }}
-                                            {% for error in form_material.qty_used.errors %}
-                                                <div class="text-danger small mt-1">{{ error }}</div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Кнопка добавления материала -->
-                        <button type="button" class="btn btn-outline-primary" id="add-material-btn">
-                            <i class="bi bi-plus-lg"></i> Добавить материал
-                        </button>
-
-                        <!-- Шаблон для новой строки материала -->
-                        <template id="material-template">
-                            <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
-                                {% for hidden_field in formset.empty_form.hidden_fields %}
-                                    {{ hidden_field }}
-                                {% endfor %}
-
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-
-                                <div class="d-none">{{ formset.empty_form.DELETE }}</div>
-
-                                <div class="mb-2">
-                                    <label class="form-label fw-semibold">
-                                        {{ formset.empty_form.material.label }}
-                                    </label>
-                                    {{ formset.empty_form.material|add_class:"form-select js-select2-material" }}
-                                </div>
-
-                                <div class="row g-2">
-                                    <div class="col">
-                                        <label class="form-label fw-semibold">
-                                            {{ formset.empty_form.qty_planned.label }}
-                                        </label>
-                                        {{ formset.empty_form.qty_planned|add_class:"form-control" }}
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label fw-semibold">
-                                            {{ formset.empty_form.qty_used.label }}
-                                        </label>
-                                        {{ formset.empty_form.qty_used|add_class:"form-control" }}
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- =====================================================
-                         КНОПКИ ДЕЙСТВИЙ
-                         ===================================================== -->
-                    <div class="d-flex justify-content-between mt-4">
-                        <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
-                            Отмена
+<div class="container-fluid py-3">
+    <!-- =====================================================
+         1. HEADER
+         ===================================================== -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb small">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'maintenance:wo_list' %}" class="text-decoration-none">
+                            Текущие задачи
                         </a>
-                        <button class="btn btn-primary px-4" type="submit">
-                            Сохранить
-                        </button>
-                    </div>
-                </form>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if create %}Новая задача{% else %}Редактирование{% endif %}
+                    </li>
+                </ol>
+            </nav>
 
-                <!-- Модальное окно библиотеки файлов -->
-                {% include "includes/_files_library_modal.html" %}
+            <h1 class="h2 mb-1">
+                {% if create %}
+                <i class="bi bi-clipboard-plus me-2 text-success"></i>
+                Новая задача
+                {% else %}
+                <i class="bi bi-pencil-square me-2 text-primary"></i>
+                Редактирование задачи #{{ wo.pk }}
+                {% endif %}
+            </h1>
+
+            <div class="text-muted small">
+                {% if create %}
+                Создание новой задачи на техническое обслуживание
+                {% else %}
+                Последнее изменение: {{ wo.updated_at|date:"d.m.Y H:i" }}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
+                <i class="bi bi-arrow-left me-1"></i>Назад
+            </a>
+
+            {% if not create %}
+            <a class="btn btn-outline-info" href="{% url 'maintenance:wo_detail' wo.pk %}">
+                <i class="bi bi-eye me-1"></i>Просмотр
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Информационная подсказка -->
+    <div class="alert alert-light border mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle text-primary me-2"></i>
+            <div class="small">
+                Поля, отмеченные <span class="text-danger fw-semibold">*</span>, обязательны для заполнения.
             </div>
         </div>
     </div>
+
+    <!-- Основная форма -->
+    <form id="wo-form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <div>{{ form.non_field_errors }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- Левая колонка: Основные данные -->
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    <!-- =====================================================
+                         2. ОСНОВНАЯ ИНФОРМАЦИЯ
+                         ===================================================== -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-dark border-0">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-info-circle me-2 text-primary"></i>
+                                    Основная информация
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Название задачи -->
+                                <div class="mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold required">
+                                        <i class="bi bi-card-heading me-1"></i>
+                                        {{ form.name.label }}
+                                    </label>
+                                    {{ form.name|add_class:"form-control" }}
+                                    {% for error in form.name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Категория работ -->
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold required">
+                                        <i class="bi bi-tag me-1"></i>
+                                        {{ form.category.label }}
+                                    </label>
+                                    {{ form.category|add_class:"form-select" }}
+                                    {% for error in form.category.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Локация и оборудование -->
+                                <div class="row g-3">
+                                    {% if form.location %}
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.location.id_for_label }}" class="form-label fw-semibold {% if form.location.field.required %}required{% endif %}">
+                                                <i class="bi bi-geo-alt me-1"></i>
+                                                {{ form.location.label }}
+                                            </label>
+                                            {{ form.location|add_class:"form-select" }}
+                                            {% for error in form.location.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if form.workstation %}
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.workstation.id_for_label }}" class="form-label fw-semibold {% if form.workstation.field.required %}required{% endif %}">
+                                                <i class="bi bi-cpu me-1"></i>
+                                                {{ form.workstation.label }}
+                                            </label>
+                                            {{ form.workstation|add_class:"form-select" }}
+                                            {% for error in form.workstation.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Описание -->
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                        <i class="bi bi-card-text me-1"></i>
+                                        {{ form.description.label }}
+                                    </label>
+                                    {{ form.description|add_class:"form-control" }}
+                                    {% for error in form.description.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Приоритет и ответственный -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.priority.id_for_label }}" class="form-label fw-semibold required">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                {{ form.priority.label }}
+                                            </label>
+                                            {{ form.priority|add_class:"form-select" }}
+                                            {% for error in form.priority.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.responsible.id_for_label }}" class="form-label fw-semibold required">
+                                                <i class="bi bi-person me-1"></i>
+                                                {{ form.responsible.label }}
+                                            </label>
+                                            {{ form.responsible|add_class:"form-select" }}
+                                            {% for error in form.responsible.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Даты начала и окончания -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.date_start.id_for_label }}" class="form-label fw-semibold">
+                                                <i class="bi bi-calendar-plus me-1"></i>
+                                                {{ form.date_start.label }}
+                                            </label>
+                                            {{ form.date_start|add_class:"form-control" }}
+                                            {% for error in form.date_start.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.date_finish.id_for_label }}" class="form-label fw-semibold">
+                                                <i class="bi bi-calendar-check me-1"></i>
+                                                {{ form.date_finish.label }}
+                                            </label>
+                                            {{ form.date_finish|add_class:"form-control" }}
+                                            {% for error in form.date_finish.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Трудоёмкость -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.labor_plan_hours.id_for_label }}" class="form-label fw-semibold">
+                                                <i class="bi bi-clock-history me-1"></i>
+                                                {{ form.labor_plan_hours.label }}
+                                            </label>
+                                            {{ form.labor_plan_hours|add_class:"form-control" }}
+                                            {% for error in form.labor_plan_hours.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.labor_fact_hours.id_for_label }}" class="form-label fw-semibold">
+                                                <i class="bi bi-clock me-1"></i>
+                                                {{ form.labor_fact_hours.label }}
+                                            </label>
+                                            {{ form.labor_fact_hours|add_class:"form-control" }}
+                                            {% for error in form.labor_fact_hours.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ error }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =====================================================
+                         3. ФАЙЛЫ
+                         ===================================================== -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-dark border-0">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-paperclip me-2 text-primary"></i>
+                                    Файлы и вложения
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Кнопки загрузки файлов -->
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <label class="btn btn-outline-primary mb-0">
+                                        <i class="bi bi-upload me-1"></i>
+                                        Загрузить с устройства
+                                        <input type="file"
+                                               id="id_files"
+                                               name="files"
+                                               multiple
+                                               hidden>
+                                    </label>
+
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#filesLibraryModal">
+                                        <i class="bi bi-folder2-open me-1"></i>
+                                        Выбрать из библиотеки
+                                    </button>
+                                </div>
+
+                                <!-- Список новых файлов -->
+                                <div class="mb-3">
+                                    <div class="small text-muted mb-2">Новые файлы:</div>
+                                    <ul class="list-group list-group-flush" id="new-files-list">
+                                        <!-- Заполняется JavaScript -->
+                                    </ul>
+                                </div>
+
+                                <!-- Список файлов из библиотеки -->
+                                <div class="mb-3">
+                                    <div class="small text-muted mb-2">Выбранные из библиотеки:</div>
+                                    <ul class="list-group list-group-flush" id="library-selected-list">
+                                        <!-- Заполняется JavaScript -->
+                                    </ul>
+                                </div>
+
+                                <!-- Существующие вложения -->
+                                {% if wo.attachments.exists %}
+                                <div class="mb-3">
+                                    <div class="small text-muted mb-2">Существующие вложения:</div>
+                                    <ul class="list-group list-group-flush" id="existing-files-list">
+                                        {% for attachment in wo.attachments.all %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center file-row">
+                                                <div class="file-thumb-container">
+                                                    {% with attachment.file.file.url as file_url %}
+                                                    {% with attachment.file.file.name|cut:"workorders/" as file_name %}
+                                                    {% if file_url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg' %}
+                                                        <img src="{{ file_url }}"
+                                                             class="file-thumb"
+                                                             alt="Превью"
+                                                             data-bs-toggle="modal"
+                                                             data-bs-target="#filePreviewModal"
+                                                             data-full-src="{{ file_url }}">
+                                                    {% else %}
+                                                        <div class="file-thumb-icon">
+                                                            <i class="bi bi-file-earmark"></i>
+                                                        </div>
+                                                    {% endif %}
+
+                                                    <div class="file-info">
+                                                        <a href="{{ file_url }}"
+                                                           target="_blank"
+                                                           class="d-block text-truncate text-decoration-none"
+                                                           title="{{ file_name }}">
+                                                            {{ file_name }}
+                                                        </a>
+                                                        <div class="small text-muted">
+                                                            {{ attachment.file.file.size|filesizeformat }}
+                                                        </div>
+                                                    </div>
+                                                    {% endwith %}
+                                                    {% endwith %}
+                                                </div>
+
+                                                <input type="hidden"
+                                                       name="existing_files"
+                                                       value="{{ attachment.file.id }}">
+
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger file-remove-btn ms-2"
+                                                        title="Открепить файл">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-light border text-center py-3">
+                                    <i class="bi bi-inbox text-muted me-2"></i>
+                                    <span class="text-muted">Файлы пока не прикреплены</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =====================================================
+                         4. МАТЕРИАЛЫ
+                         ===================================================== -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-dark border-0">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-box-seam me-2 text-primary"></i>
+                                    Используемые материалы
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                {{ formset.management_form }}
+
+                                <!-- Контейнер для строк материалов -->
+                                <div id="materials-container">
+                                    {% for form_material in formset %}
+                                        <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+                                            {% for hidden_field in form_material.hidden_fields %}
+                                                {{ hidden_field }}
+                                            {% endfor %}
+
+                                            <!-- Кнопка удаления материала -->
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+
+                                            <!-- Скрытое поле DELETE -->
+                                            <div class="d-none">{{ form_material.DELETE }}</div>
+
+                                            <!-- Выбор материала -->
+                                            <div class="mb-3">
+                                                <label for="{{ form_material.material.id_for_label }}" class="form-label fw-semibold">
+                                                    <i class="bi bi-box me-1"></i>
+                                                    {{ form_material.material.label }}
+                                                </label>
+                                                {{ form_material.material|add_class:"form-select js-select2-material" }}
+                                                {% for error in form_material.material.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ error }}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+
+                                            <!-- Количества -->
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="{{ form_material.qty_planned.id_for_label }}" class="form-label fw-semibold">
+                                                        <i class="bi bi-clipboard-check me-1"></i>
+                                                        {{ form_material.qty_planned.label }}
+                                                    </label>
+                                                    {{ form_material.qty_planned|add_class:"form-control" }}
+                                                    {% for error in form_material.qty_planned.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ error }}
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="{{ form_material.qty_used.id_for_label }}" class="form-label fw-semibold">
+                                                        <i class="bi bi-clipboard-data me-1"></i>
+                                                        {{ form_material.qty_used.label }}
+                                                    </label>
+                                                    {{ form_material.qty_used|add_class:"form-control" }}
+                                                    {% for error in form_material.qty_used.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ error }}
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Кнопка добавления материала -->
+                                <button type="button" class="btn btn-outline-primary" id="add-material-btn">
+                                    <i class="bi bi-plus-lg me-1"></i> Добавить материал
+                                </button>
+
+                                <!-- Шаблон для новой строки материала -->
+                                <template id="material-template">
+                                    <div class="material-row rounded-3 p-3 mb-3 bg-body-tertiary position-relative">
+                                        {% for hidden_field in formset.empty_form.hidden_fields %}
+                                            {{ hidden_field }}
+                                        {% endfor %}
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 material-remove-btn">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+
+                                        <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-box me-1"></i>
+                                                {{ formset.empty_form.material.label }}
+                                            </label>
+                                            {{ formset.empty_form.material|add_class:"form-select js-select2-material" }}
+                                        </div>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-clipboard-check me-1"></i>
+                                                    {{ formset.empty_form.qty_planned.label }}
+                                                </label>
+                                                {{ formset.empty_form.qty_planned|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-clipboard-data me-1"></i>
+                                                    {{ formset.empty_form.qty_used.label }}
+                                                </label>
+                                                {{ formset.empty_form.qty_used|add_class:"form-control" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая колонка: Действия -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- =====================================================
+                         5. ДЕЙСТВИЯ
+                         ===================================================== -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark border-0">
+                            <h5 class="mb-0">
+                                <i class="bi bi-lightning me-2 text-primary"></i>
+                                Действия
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <!-- Основная кнопка сохранения -->
+                                <button type="submit"
+                                        class="btn btn-primary btn-lg d-flex align-items-center justify-content-center"
+                                        id="saveBtn">
+                                    <i class="bi bi-save me-2"></i>
+                                    {% if create %}Создать задачу{% else %}Сохранить изменения{% endif %}
+                                </button>
+
+                                <!-- Кнопка "Сохранить и добавить еще" -->
+                                {% if create %}
+                                <button type="button"
+                                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                                        id="saveAndAddAnotherBtn">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Сохранить и добавить еще
+                                </button>
+                                {% endif %}
+
+                                <!-- Кнопка отмены -->
+                                <a href="{% url 'maintenance:wo_list' %}"
+                                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    Отмена
+                                </a>
+
+                                <!-- Ссылка на просмотр (при редактировании) -->
+                                {% if not create %}
+                                <a href="{% url 'maintenance:wo_detail' wo.pk %}"
+                                   class="btn btn-outline-info d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-eye me-2"></i>
+                                    Просмотр задачи
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Индикатор прогресса -->
+                    <div class="mt-3" id="progressIndicator" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <span class="small text-muted">Сохранение данных...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- =====================================================
-     МОДАЛЬНОЕ ОКНО ДЛЯ ПРЕДПРОСМОТРА ИЗОБРАЖЕНИЙ
+     МОДАЛЬНЫЕ ОКНА
      ===================================================== -->
+
+<!-- Модальное окно библиотеки файлов -->
+{% include "includes/_files_library_modal.html" %}
+
+<!-- Модальное окно для предпросмотра изображений -->
 <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-transparent border-0 shadow-none">
@@ -457,9 +596,115 @@
     </div>
 </div>
 
-<!-- =====================================================
-     JAVASCRIPT
-     ===================================================== -->
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Стили для превью файлов */
+.file-thumb-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: zoom-in;
+    border: 1px solid var(--bs-border-color);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.file-thumb:hover {
+    transform: scale(1.02);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
+}
+
+.file-thumb-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-secondary-color);
+    font-size: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--bs-border-color);
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Стили для карточек */
+.card {
+    border: 1px solid var(--bs-border-color);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.card-header.bg-dark {
+    background-color: var(--bs-light-bg-subtle) !important;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Стили для обязательных полей */
+.form-label.required::after {
+    content: " *";
+    color: var(--bs-danger);
+    font-weight: 600;
+}
+
+/* Стили для строк материалов */
+.material-row {
+    border: 1px solid var(--bs-border-color);
+}
+
+.material-row.is-removed {
+    opacity: 0.5;
+    background-color: var(--bs-secondary-bg);
+}
+
+.file-row.is-removed {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sticky-top {
+        position: static !important;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+
+/* Темная тема */
+[data-bs-theme="dark"] .card-header.bg-dark {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .file-thumb {
+    border-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .file-thumb-icon {
+    border-color: var(--bs-border-color-translucent);
+    color: var(--bs-secondary-color);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // =====================================================
@@ -996,6 +1241,120 @@
         }
 
         // =====================================================
+        // ВАЛИДАЦИЯ ФОРМЫ
+        // =====================================================
+
+        /**
+         * Проверяет обязательные поля
+         */
+        function validateRequiredFields() {
+            const requiredFields = [
+                '{{ form.name.id_for_label }}',
+                '{{ form.category.id_for_label }}',
+                '{{ form.priority.id_for_label }}',
+                '{{ form.responsible.id_for_label }}'
+            ];
+
+            let isValid = true;
+
+            requiredFields.forEach(function(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field && !field.value && field.offsetParent !== null) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else if (field) {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            return isValid;
+        }
+
+        /**
+         * Показать/скрыть индикатор загрузки
+         */
+        function toggleLoading(show) {
+            const progressIndicator = document.getElementById('progressIndicator');
+            const saveBtn = document.getElementById('saveBtn');
+            const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
+
+            if (progressIndicator && saveBtn) {
+                if (show) {
+                    progressIndicator.style.display = 'flex';
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Сохранение...';
+                    if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = true;
+                } else {
+                    progressIndicator.style.display = 'none';
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>' +
+                        ({{ create|yesno:"true,false" }} ? 'Создать задачу' : 'Сохранить изменения');
+                    if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = false;
+                }
+            }
+        }
+
+        // Обработка отправки формы
+        const form = document.getElementById('wo-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateRequiredFields()) {
+                    e.preventDefault();
+
+                    // Прокрутка к первой ошибке
+                    const firstError = document.querySelector('.is-invalid');
+                    if (firstError) {
+                        firstError.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        firstError.focus();
+                    }
+
+                    return false;
+                }
+
+                toggleLoading(true);
+            });
+        }
+
+        // Кнопка "Сохранить и добавить еще"
+        const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
+        if (saveAndAddAnotherBtn) {
+            saveAndAddAnotherBtn.addEventListener('click', function() {
+                if (validateRequiredFields()) {
+                    // Добавляем скрытое поле для редиректа
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'save_and_add';
+                    hiddenInput.value = '1';
+                    form.appendChild(hiddenInput);
+
+                    toggleLoading(true);
+                    form.submit();
+                }
+            });
+        }
+
+        // Очистка ошибок при вводе данных
+        document.querySelectorAll('input, select, textarea').forEach(field => {
+            field.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+
+            field.addEventListener('change', function() {
+                this.classList.remove('is-invalid');
+            });
+        });
+
+        // Сброс индикатора загрузки при ошибке валидации на сервере
+        window.addEventListener('pageshow', function() {
+            toggleLoading(false);
+        });
+
+        // =====================================================
         // ОЧИСТКА РЕСУРСОВ ПРИ ЗАКРЫТИИ СТРАНИЦЫ
         // =====================================================
 
@@ -1012,9 +1371,14 @@
         window.addEventListener('beforeunload', revokeAllBlobUrls);
 
         // Освобождаем ресурсы при отправке формы
-        const woForm = document.getElementById('wo-form');
-        if (woForm) {
-            woForm.addEventListener('submit', revokeAllBlobUrls);
+        if (form) {
+            form.addEventListener('submit', revokeAllBlobUrls);
+        }
+
+        // Инициализация тултипов
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        if (tooltipTriggerList.length > 0) {
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
         }
     });
 </script>
