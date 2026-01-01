@@ -1,130 +1,492 @@
 {% extends "base.html" %}
 {% block title %}Задачи{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="mb-0">Задачи</h1>
-  <a class="btn btn-success" href="{% url 'maintenance:wo_new' %}">+ Новая задача</a>
+<div class="container-fluid py-3">
+    <!-- =====================================================
+         1. HEADER
+         ===================================================== -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <h1 class="h2 mb-1">
+                <i class="bi bi-clipboard-check me-2 text-primary"></i>
+                Задачи
+            </h1>
+            <div class="text-muted small">
+                Управление задачами на техническое обслуживание
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <!-- Добавление новой задачи -->
+            <a class="btn btn-primary" href="{% url 'maintenance:wo_new' %}">
+                <i class="bi bi-plus-lg me-1"></i>
+                Новая задача
+            </a>
+
+            <!-- Кнопка просмотра плановых задач -->
+            <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">
+                <i class="bi bi-calendar2-week me-1"></i>
+                Плановые задачи
+            </a>
+        </div>
+    </div>
+
+    <!-- Информационная подсказка -->
+    <div class="alert alert-light border mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle text-primary me-2"></i>
+            <div class="small">
+                Быстрый поиск задач также доступен в боковой панели слева
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         2. ФИЛЬТРЫ
+         ===================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark border-0">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel me-2 text-primary"></i>
+                Фильтры
+            </h5>
+        </div>
+        <div class="card-body">
+            <form class="row g-3" method="get" id="filterForm">
+                <!-- Поиск -->
+                <div class="col-xl-3 col-md-6">
+                    <label for="searchInput" class="form-label small mb-1">
+                        <i class="bi bi-search me-1"></i>
+                        Поиск
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input id="searchInput"
+                               class="form-control"
+                               type="search"
+                               name="q"
+                               placeholder="Название, описание..."
+                               value="{{ request.GET.q|default:'' }}">
+                    </div>
+                </div>
+
+                <!-- Статус -->
+                <div class="col-xl-2 col-md-4">
+                    <label class="form-label small mb-1">
+                        <i class="bi bi-activity me-1"></i>
+                        Статус
+                    </label>
+                    <select class="form-select" name="status">
+                        <option value="">Все статусы</option>
+                        {% for status in status_choices %}
+                            <option value="{{ status.0 }}"
+                                    {% if request.GET.status == status.0 %}selected{% endif %}>
+                                {{ status.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Приоритет -->
+                <div class="col-xl-2 col-md-4">
+                    <label class="form-label small mb-1">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Приоритет
+                    </label>
+                    <select class="form-select" name="priority">
+                        <option value="">Все приоритеты</option>
+                        {% for priority in priority_choices %}
+                            <option value="{{ priority.0 }}"
+                                    {% if request.GET.priority == priority.0 %}selected{% endif %}>
+                                {{ priority.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Категория -->
+                <div class="col-xl-2 col-md-4">
+                    <label class="form-label small mb-1">
+                        <i class="bi bi-tag me-1"></i>
+                        Категория
+                    </label>
+                    <select class="form-select" name="category">
+                        <option value="">Все категории</option>
+                        {% for category in category_choices %}
+                            <option value="{{ category.0 }}"
+                                    {% if request.GET.category == category.0 %}selected{% endif %}>
+                                {{ category.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Кнопки -->
+                <div class="col-xl-3 col-md-6 d-flex align-items-end gap-2">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-funnel me-1"></i>
+                        Применить
+                    </button>
+
+                    {% if request.GET %}
+                    <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}">
+                        <i class="bi bi-x-lg me-1"></i>
+                        Сбросить
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         3. ТАБЛИЦА ЗАДАЧ
+         ===================================================== -->
+    {% if object_list %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-list-check me-2 text-primary"></i>
+                Список задач
+            </h5>
+            <div class="text-muted small">
+                Всего: <span class="fw-semibold">{{ paginator.count }}</span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">ID</th>
+                            <th>Название</th>
+                            <th style="width: 120px;">Статус</th>
+                            <th style="width: 120px;">Приоритет</th>
+                            <th style="width: 150px;">Категория</th>
+                            <th>Оборудование / Локация</th>
+                            <th style="width: 150px;">Ответственный</th>
+                            <th style="width: 100px;" class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for wo in object_list %}
+                        <tr class="table-row-link" data-href="{% url 'maintenance:wo_detail' wo.pk %}">
+                            <!-- ID -->
+                            <td class="text-muted">#{{ wo.pk }}</td>
+
+                            <!-- Название -->
+                            <td>
+                                <div class="fw-semibold">{{ wo.name|truncatechars:60 }}</div>
+                                {% if wo.description %}
+                                <div class="text-muted small text-truncate" style="max-width: 300px;">
+                                    {{ wo.description|truncatechars:80 }}
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Статус -->
+                            <td>
+                                {% if wo.status == 'new' %}
+                                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                                        <i class="bi bi-clock me-1"></i>
+                                        Новое
+                                    </span>
+                                {% elif wo.status == 'in_progress' %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                        <i class="bi bi-arrow-repeat me-1"></i>
+                                        В работе
+                                    </span>
+                                {% elif wo.status == 'done' %}
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Выполнено
+                                    </span>
+                                {% elif wo.status == 'failed' %}
+                                    <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Не выполнено
+                                    </span>
+                                {% elif wo.status == 'canceled' %}
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                                        <i class="bi bi-ban me-1"></i>
+                                        Отмена
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">
+                                        —
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Приоритет -->
+                            <td>
+                                {% if wo.priority == 'high' %}
+                                    <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Высокий
+                                    </span>
+                                {% elif wo.priority == 'med' %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                        Средний
+                                    </span>
+                                {% elif wo.priority == 'low' %}
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                                        Низкий
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">
+                                        —
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Категория -->
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ wo.get_category_display|default:"—" }}
+                                </span>
+                            </td>
+
+                            <!-- Оборудование / Локация -->
+                            <td>
+                                {% if wo.workstation %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-cpu me-2 text-muted small"></i>
+                                    <span class="truncate">{{ wo.workstation.name|default:"—" }}</span>
+                                </div>
+                                {% endif %}
+                                {% if wo.location %}
+                                <div class="d-flex align-items-center text-muted small mt-1">
+                                    <i class="bi bi-geo-alt me-2"></i>
+                                    <span class="truncate">{{ wo.location.name|default:"" }}</span>
+                                </div>
+                                {% endif %}
+                                {% if not wo.workstation and not wo.location %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Ответственный -->
+                            <td>
+                                {% if wo.responsible %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person me-2 text-muted small"></i>
+                                    <span class="truncate">{{ wo.responsible }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Действия -->
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'maintenance:wo_detail' wo.pk %}"
+                                       class="btn btn-outline-secondary"
+                                       data-bs-toggle="tooltip"
+                                       title="Просмотр">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if perms.maintenance.change_workorder %}
+                                    <a href="{% url 'maintenance:wo_edit' wo.pk %}"
+                                       class="btn btn-outline-secondary"
+                                       data-bs-toggle="tooltip"
+                                       title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         4. ПАГИНАЦИЯ
+         ===================================================== -->
+    {% include "includes/pagination.html" %}
+
+    {% else %}
+    <!-- =====================================================
+         5. СООБЩЕНИЕ ПРИ ОТСУТСТВИИ ДАННЫХ
+         ===================================================== -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+            <h5 class="text-muted mb-3">Задачи не найдены</h5>
+
+            {% if request.GET %}
+            <p class="text-muted small mb-3">
+                По вашему запросу ничего не найдено
+            </p>
+            <a href="{% url 'maintenance:wo_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-lg me-1"></i>
+                Сбросить фильтры
+            </a>
+            {% else %}
+            <p class="text-muted small mb-3">
+                Создайте первую задачу на техническое обслуживание
+            </p>
+            <a href="{% url 'maintenance:wo_new' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                Создать задачу
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
+{% endblock %}
 
-<form class="row g-2 mb-3" method="get">
-  <div class="col-md-4">
-    <input class="form-control" type="search" name="q" placeholder="Поиск по названию/описанию" value="{{ request.GET.q|default:'' }}">
-  </div>
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Клик по строке таблицы для перехода к деталям
+    document.querySelectorAll('.table-row-link').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Игнорируем клики по кнопкам и ссылкам
+            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                return;
+            }
 
-  <div class="col-md-2">
-    <select class="form-select" name="status">
-      <option value="">Статус: все</option>
-      {% for status in status_choices %}
-        <option value="{{ status.0 }}"
-                {% if request.GET.status == status.0 %}selected{% endif %}>
-          {{ status.1 }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+            const href = this.getAttribute('data-href');
+            if (href) {
+                window.location.href = href;
+            }
+        });
+    });
 
-  <div class="col-md-2">
-    <select class="form-select" name="priority">
-      <option value="">Приоритет: все</option>
-      {% for priority in priority_choices %}
-        <option value="{{ priority.0 }}"
-                {% if request.GET.priority == priority.0 %}selected{% endif %}>
-          {{ priority.1 }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+    // Инициализация тултипов
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    if (tooltipTriggerList.length > 0) {
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    }
 
-  <div class="col-md-2">
-    <select class="form-select" name="category">
-      <option value="">Категория: все</option>
-      {% for category in category_choices %}
-        <option value="{{ category.0 }}"
-                {% if request.GET.category == category.0 %}selected{% endif %}>
-          {{ category.1 }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+    // Счетчик активных фильтров
+    function updateFilterCount() {
+        const form = document.getElementById('filterForm');
+        const inputs = form.querySelectorAll('select[name], input[name]');
+        let activeFilters = 0;
+        const excludeFields = ['page', 'q']; // Исключаем поиск из счетчика
 
-  <div class="col-md-2">
-    <button class="btn btn-primary w-100" type="submit">Фильтр</button>
-  </div>
-</form>
+        inputs.forEach(input => {
+            if (input.value && input.name && !excludeFields.includes(input.name)) {
+                activeFilters++;
+            }
+        });
 
-{% if object_list %}
-<table class="table table-hover align-middle">
-  <thead class="table-light">
-    <tr>
-      <th>#</th>
-      <th>Название</th>
-      <th>Статус</th>
-      <th>Приоритет</th>
-      <th>Категория</th>
-      <th>Оборудование/Локация</th>
-      <th>Ответственный</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for wo in object_list %}
-    <tr onclick="window.location.href='{% url 'maintenance:wo_detail' wo.pk %}'" style="cursor:pointer">
-      <td class="text-muted">#{{ wo.pk }}</td>
-      <td class="fw-semibold">{{ wo.name|truncatechars:50 }}</td>
-      <td>
-        {% if wo.status == 'new' %}
-          <span class="badge bg-primary">Новое</span>
-        {% elif wo.status == 'in_progress' %}
-          <span class="badge bg-warning text-dark">В работе</span>
-        {% elif wo.status == 'done' %}
-          <span class="badge bg-success">Выполнено</span>
-        {% elif wo.status == 'failed' %}
-          <span class="badge bg-danger">Не выполнено</span>
-        {% elif wo.status == 'canceled' %}
-          <span class="badge bg-secondary">Отмена</span>
-        {% else %}
-          <span class="badge bg-light text-dark">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if wo.priority == 'high' %}
-          <span class="badge bg-danger">Высокий</span>
-        {% elif wo.priority == 'med' %}
-          <span class="badge bg-warning text-dark">Средний</span>
-        {% elif wo.priority == 'low' %}
-          <span class="badge bg-secondary">Низкий</span>
-        {% else %}
-          <span class="badge bg-light text-dark">—</span>
-        {% endif %}
-      </td>
-      <td>{{ wo.get_category_display|default:"—" }}</td>
-      <td>
-        {% if wo.workstation %}
-          <div>{{ wo.workstation.name|default:"—" }}</div>
-        {% endif %}
-        {% if wo.location %}
-          <div class="text-muted small">{{ wo.location.name|default:"" }}</div>
-        {% endif %}
-        {% if not wo.workstation and not wo.location %}
-          —
-        {% endif %}
-      </td>
-      <td>{{ wo.responsible|default:"—" }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        // Обновляем текст кнопки
+        const filterBtn = form.querySelector('button[type="submit"]');
+        if (filterBtn) {
+            if (activeFilters > 0) {
+                filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить (${activeFilters})`;
+                filterBtn.classList.add('btn-primary');
+                filterBtn.classList.remove('btn-outline-primary');
+            } else {
+                filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить`;
+                filterBtn.classList.add('btn-primary');
+                filterBtn.classList.remove('btn-outline-primary');
+            }
+        }
+    }
 
-{% include "includes/pagination.html" %}
+    // Инициализация и обновление счетчика
+    updateFilterCount();
+    document.querySelectorAll('#filterForm select, #filterForm input').forEach(input => {
+        input.addEventListener('change', updateFilterCount);
+    });
 
-{% else %}
-<div class="alert alert-info">
-  <i class="bi bi-info-circle me-2"></i>
-  {% if request.GET %}
-    По вашему запросу ничего не найдено. <a href="{% url 'maintenance:wo_list' %}">Сбросить фильтры</a>
-  {% else %}
-    Пока задач нет. <a href="{% url 'maintenance:wo_new' %}">Создайте первую</a>
-  {% endif %}
-</div>
-{% endif %}
+    // Автоотправка формы при изменении некоторых фильтров (опционально)
+    const autoSubmitSelects = document.querySelectorAll('#filterForm select[name="status"], #filterForm select[name="priority"], #filterForm select[name="category"]');
+    autoSubmitSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            // Ждем небольшое время для обновления счетчика
+            setTimeout(() => {
+                document.getElementById('filterForm').submit();
+            }, 300);
+        });
+    });
+});
+</script>
 
+<style>
+/* Дополнительные стили */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Стили для карточек */
+.card {
+    border: 1px solid var(--bs-border-color);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.card-header.bg-dark {
+    background-color: var(--bs-light-bg-subtle) !important;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Стили для строк таблицы с кликом */
+.table-row-link {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.table-row-link:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Улучшенные состояния для ссылок в таблице */
+.table a {
+    transition: color 0.2s;
+}
+
+.table a:hover {
+    color: var(--bs-primary) !important;
+}
+
+/* Темная тема */
+[data-bs-theme="dark"] .card-header.bg-dark {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .table-light {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: var(--bs-secondary-color) !important;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+</style>
 {% endblock %}
