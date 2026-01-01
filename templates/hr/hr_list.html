@@ -3,740 +3,852 @@
 {% block title %}Персонал{% endblock %}
 
 {% block content %}
-<!-- ===== Header ===== -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h1 class="mb-0">Персонал</h1>
-    <div class="text-muted small">Сотрудники и организационная структура</div>
-  </div>
-
-  <div class="d-flex gap-2 align-items-center">
-    <!-- Вид отображения -->
-    <div class="btn-group me-2">
-      <button id="view-cards" type="button" class="btn btn-outline-secondary active">
-        <i class="fas fa-th-large me-1"></i>
-        Карточки
-      </button>
-      <button id="view-table" type="button" class="btn btn-outline-secondary">
-        <i class="fas fa-table me-1"></i>
-        Таблица
-      </button>
-    </div>
-
-    <!-- Экспорт -->
-    {% if perms.hr.view_humanresource %}
-    <a class="btn btn-outline-info me-2" href="{% url 'hr:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
-      <i class="fas fa-download me-1"></i>
-      Экспорт
-    </a>
-    {% endif %}
-
-    <!-- Добавление нового -->
-    {% if perms.hr.add_humanresource %}
-    <a class="btn btn-success" href="{% url 'hr:hr_new' %}">
-      <i class="fas fa-plus me-1"></i>
-      Сотрудник
-    </a>
-    {% endif %}
-  </div>
-</div>
-
-<!-- ================= СТАТИСТИКА ================= -->
-{% if stats %}
-<div class="row g-3 mb-4">
-  <div class="col-md-3">
-    <div class="card bg-primary bg-opacity-10 border-primary">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="card-title text-primary">Всего сотрудников</h6>
-            <h2 class="mb-0">{{ stats.total }}</h2>
-          </div>
-          <div class="display-4 text-primary opacity-25">
-            <i class="fas fa-users"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3">
-    <div class="card bg-success bg-opacity-10 border-success">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="card-title text-success">Активные</h6>
-            <h2 class="mb-0">{{ stats.active }}</h2>
-          </div>
-          <div class="display-4 text-success opacity-25">
-            <i class="fas fa-user-check"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3">
-    <div class="card bg-warning bg-opacity-10 border-warning">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="card-title text-warning">Руководители</h6>
-            <h2 class="mb-0">{{ stats.managers }}</h2>
-          </div>
-          <div class="display-4 text-warning opacity-25">
-            <i class="fas fa-user-tie"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3">
-    <div class="card bg-info bg-opacity-10 border-info">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="card-title text-info">Должности</h6>
-            <h2 class="mb-0">{{ stats.job_titles }}</h2>
-          </div>
-          <div class="display-4 text-info opacity-25">
-            <i class="fas fa-briefcase"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ================= ФИЛЬТРЫ ================= -->
-<div class="card mb-4">
-  <div class="card-header">
-    <i class="fas fa-filter me-2"></i>
-    Фильтры
-    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
-      <i class="fas fa-chevron-down"></i>
-    </button>
-  </div>
-
-  <div class="collapse show" id="filterCollapse">
-    <div class="card-body">
-      <form class="row g-2" method="get" id="filterForm">
-
-        <!-- Поиск -->
-        <div class="col-md-3">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-search"></i>
-            </span>
-            <input
-              class="form-control"
-              type="search"
-              name="q"
-              placeholder="ФИО, должность..."
-              value="{{ filter_params.q }}"
-            >
-          </div>
+<div class="container-fluid py-3">
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <h1 class="h2 mb-1">Персонал</h1>
+            <div class="text-muted small">Сотрудники и организационная структура</div>
         </div>
 
-        <!-- Руководитель -->
-        <div class="col-md-2">
-          <select name="manager" class="form-select" id="filter-manager">
-            <option value="">Руководитель: все</option>
-            {% for manager in managers %}
-              <option value="{{ manager.pk }}"
-                {% if filter_params.manager == manager.pk|stringformat:"s" %}selected{% endif %}
-              >
-                {{ manager.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <!-- Должность -->
-        <div class="col-md-2">
-          <select name="job_title" class="form-select" id="filter-job-title">
-            <option value="">Должность: все</option>
-            {% for title in job_titles %}
-              <option value="{{ title }}"
-                {% if filter_params.job_title == title %}selected{% endif %}
-              >
-                {{ title }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <!-- Статус -->
-        <div class="col-md-2">
-          <select name="is_active" class="form-select">
-            <option value="">Статус: все</option>
-            <option value="true" {% if filter_params.is_active == 'true' %}selected{% endif %}>Активен</option>
-            <option value="false" {% if filter_params.is_active == 'false' %}selected{% endif %}>Неактивен</option>
-          </select>
-        </div>
-
-        <!-- Кнопки -->
-        <div class="col-md-1 d-flex gap-2">
-          <button class="btn btn-primary w-100" type="submit">
-            <i class="fas fa-filter me-1"></i>
-            Применить
-          </button>
-        </div>
-
-        <!-- Дополнительные фильтры (скрытые по умолчанию) -->
-        <div class="col-12 mt-2 additional-filters" style="display: none;">
-          <div class="row g-2">
-            <!-- Только руководители -->
-            <div class="col-md-3">
-              <div class="form-check mt-2">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  name="only_managers"
-                  id="only-managers"
-                  value="1"
-                  {% if filter_params.only_managers %}checked{% endif %}
-                >
-                <label class="form-check-label fw-semibold" for="only-managers">
-                  Только руководители
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <!-- Вид отображения -->
+            <div class="btn-group me-2" role="group">
+                <input type="radio" class="btn-check" name="viewMode" id="view-cards" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary" for="view-cards">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>
+                    Карточки
                 </label>
-              </div>
+                <input type="radio" class="btn-check" name="viewMode" id="view-table" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="view-table">
+                    <i class="bi bi-table me-1"></i>
+                    Таблица
+                </label>
             </div>
 
-            <!-- Сортировка -->
-            <div class="col-md-3">
-              <select name="sort" class="form-select">
-                <option value="name" {% if filter_params.sort == 'name' %}selected{% endif %}>Сортировка: по ФИО</option>
-                <option value="job_title" {% if filter_params.sort == 'job_title' %}selected{% endif %}>Сортировка: по должности</option>
-              </select>
-            </div>
-
-            <!-- Порядок сортировки -->
-            <div class="col-md-2">
-              <select name="order" class="form-select">
-                <option value="asc" {% if filter_params.order == 'asc' %}selected{% endif %}>По возрастанию</option>
-                <option value="desc" {% if filter_params.order == 'desc' %}selected{% endif %}>По убыванию</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Кнопки управления фильтрами -->
-        <div class="col-12 mt-2">
-          <div class="d-flex justify-content-between">
-            <div>
-              <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFilters">
-                <i class="fas fa-sliders-h me-1"></i>
-                Дополнительные фильтры
-              </button>
-              <a class="btn btn-sm btn-outline-secondary ms-2" href="{% url 'hr:hr_list' %}">
-                <i class="fas fa-times me-1"></i>
-                Сброс
-              </a>
-            </div>
-
-            <div class="text-muted small">
-              Найдено: {{ paginator.count|default:"0" }} записей
-            </div>
-          </div>
-        </div>
-
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- ================= ВИД 1: Карточки ================= -->
-<div id="cards-view" class="row g-3">
-  {% for employee in employees %}
-    <div class="col-md-6 col-lg-4 col-xl-3">
-      <div class="card h-100 shadow-sm border-0 hover-shadow">
-        <div class="card-body">
-          <!-- Заголовок -->
-          <h5 class="card-title mb-1">
-            <a href="{% url 'hr:hr_detail' employee.pk %}" class="text-decoration-none text-dark">
-              {{ employee.name }}
+            <!-- Экспорт -->
+            {% if perms.hr.view_humanresource %}
+            <a class="btn btn-outline-secondary"
+               href="{% url 'hr:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+                <i class="bi bi-download me-1"></i>
+                Экспорт
             </a>
-          </h5>
-
-          <!-- Должность -->
-          <div class="text-muted small mb-2">
-            <i class="fas fa-briefcase me-1"></i>
-            {{ employee.job_title|default:"Должность не указана" }}
-          </div>
-
-          <!-- Статус и руководитель -->
-          <div class="mb-2">
-            {% if employee.is_active %}
-              <span class="badge text-bg-success mb-2">
-                <i class="fas fa-check-circle me-1"></i>
-                Активен
-              </span>
-            {% else %}
-              <span class="badge text-bg-secondary mb-2">
-                <i class="fas fa-user-slash me-1"></i>
-                Неактивен
-              </span>
             {% endif %}
 
-            <div class="mt-2 small">
-              <i class="fas fa-user-tie me-1 text-muted"></i>
-              {% if employee.manager %}
-                Руководитель:
-                <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">
-                  {{ employee.manager.name }}
-                </a>
-              {% else %}
-                Руководитель не назначен
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Подчиненные -->
-          <div class="mt-3 pt-2 border-top small">
-            <div class="row g-1">
-              <div class="col-12">
-                <i class="fas fa-users me-1 text-muted"></i>
-                Подчинённые:
-                <span class="badge {% if employee.sub_count %}bg-primary{% else %}bg-light text-dark{% endif %}">
-                  {{ employee.sub_count|default:"0" }}
-                </span>
-              </div>
-
-              {% if employee.created_at %}
-              <div class="col-12">
-                <i class="fas fa-calendar-plus me-1 text-muted"></i>
-                Создан: {{ employee.created_at|date:"d.m.Y" }}
-              </div>
-              {% endif %}
-
-              {% if employee.updated_at %}
-              <div class="col-12">
-                <i class="fas fa-edit me-1 text-muted"></i>
-                Обновлён: {{ employee.updated_at|date:"d.m.Y" }}
-              </div>
-              {% endif %}
-            </div>
-          </div>
+            <!-- Добавление нового -->
+            {% if perms.hr.add_humanresource %}
+            <a class="btn btn-primary" href="{% url 'hr:hr_new' %}">
+                <i class="bi bi-plus-lg me-1"></i>
+                Добавить сотрудника
+            </a>
+            {% endif %}
         </div>
-
-        <!-- Футер карточки -->
-        <div class="card-footer bg-transparent border-top-0 pt-0">
-          <div class="d-flex justify-content-between align-items-center">
-            <small class="text-muted">
-              ID: {{ employee.id }}
-            </small>
-
-            <div class="btn-group btn-group-sm">
-              <a href="{% url 'hr:hr_detail' employee.pk %}" class="btn btn-outline-info">
-                <i class="fas fa-eye"></i>
-              </a>
-              {% if perms.hr.change_humanresource %}
-              <a href="{% url 'hr:hr_edit' employee.pk %}" class="btn btn-outline-primary">
-                <i class="fas fa-edit"></i>
-              </a>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
-  {% empty %}
-    <div class="col-12">
-      <div class="alert alert-secondary mb-0">
-        <i class="fas fa-info-circle me-2"></i>
-        Сотрудники не найдены
-        {% if request.GET %}
-        <div class="mt-2">
-          <a href="{% url 'hr:hr_list' %}" class="btn btn-sm btn-outline-secondary">
-            Очистить фильтры
-          </a>
+    <!-- ================= СТАТИСТИКА ================= -->
+    {% if stats %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-start border-start-4 border-start-primary">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-muted">Всего сотрудников</div>
+                            <div class="h4 mb-0">{{ stats.total }}</div>
+                        </div>
+                        <div class="text-primary opacity-25">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
-      </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-start border-start-4 border-start-success">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-muted">Активные</div>
+                            <div class="h4 mb-0">{{ stats.active }}</div>
+                        </div>
+                        <div class="text-success opacity-25">
+                            <i class="bi bi-person-check fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-start border-start-4 border-start-warning">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-muted">Руководители</div>
+                            <div class="h4 mb-0">{{ stats.managers }}</div>
+                        </div>
+                        <div class="text-warning opacity-25">
+                            <i class="bi bi-person-badge fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-start border-start-4 border-start-info">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-muted">Должности</div>
+                            <div class="h4 mb-0">{{ stats.job_titles }}</div>
+                        </div>
+                        <div class="text-info opacity-25">
+                            <i class="bi bi-briefcase fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  {% endfor %}
-</div>
-
-<!-- ================= ВИД 2: Таблица ================= -->
-<div id="table-view" class="table-responsive d-none">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
-      <tr>
-        <th>ФИО</th>
-        <th>Должность</th>
-        <th>Руководитель</th>
-        <th>Подчинённые</th>
-        <th>Статус</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for employee in employees %}
-        <tr class="table-row-link">
-          <!-- ФИО -->
-          <td>
-            <a href="{% url 'hr:hr_detail' employee.pk %}" class="fw-semibold text-decoration-none">
-              {{ employee.name }}
-            </a>
-            <div class="text-muted small">
-              ID: {{ employee.id }}
-            </div>
-          </td>
-
-          <!-- Должность -->
-          <td>
-            {{ employee.job_title|default:"—" }}
-          </td>
-
-          <!-- Руководитель -->
-          <td>
-            {% if employee.manager %}
-            <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">
-              {{ employee.manager.name }}
-            </a>
-            {% else %}
-            <span class="text-muted">—</span>
-            {% endif %}
-          </td>
-
-          <!-- Подчиненные -->
-          <td>
-            {% if employee.sub_count %}
-            <span class="badge bg-primary rounded-pill">
-              {{ employee.sub_count }}
-            </span>
-            {% else %}
-            <span class="text-muted">—</span>
-            {% endif %}
-          </td>
-
-          <!-- Статус -->
-          <td>
-            {% if employee.is_active %}
-            <span class="badge text-bg-success">
-              <i class="fas fa-check-circle me-1"></i>
-              Активен
-            </span>
-            {% else %}
-            <span class="badge text-bg-secondary">
-              <i class="fas fa-user-slash me-1"></i>
-              Неактивен
-            </span>
-            {% endif %}
-          </td>
-
-          <!-- Действия -->
-          <td>
-            <div class="btn-group btn-group-sm">
-              <a href="{% url 'hr:hr_detail' employee.pk %}"
-                 class="btn btn-outline-info"
-                 data-bs-toggle="tooltip"
-                 title="Просмотр">
-                <i class="fas fa-eye"></i>
-              </a>
-              {% if perms.hr.change_humanresource %}
-              <a href="{% url 'hr:hr_edit' employee.pk %}"
-                 class="btn btn-outline-primary"
-                 data-bs-toggle="tooltip"
-                 title="Редактировать">
-                <i class="fas fa-edit"></i>
-              </a>
-              {% endif %}
-              {% if perms.hr.delete_humanresource %}
-              <button class="btn btn-outline-danger"
-                      data-bs-toggle="tooltip"
-                      title="Удалить"
-                      onclick="confirmDelete('{{ employee.name|escapejs }}', '{% url 'hr:hr_delete' employee.pk %}')">
-                <i class="fas fa-trash"></i>
-              </button>
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-
-      {% empty %}
-        <tr>
-          <td colspan="6">
-            <div class="alert alert-secondary mb-0 text-center">
-              <i class="fas fa-info-circle me-2"></i>
-              Сотрудники не найдены
-              {% if request.GET %}
-              <div class="mt-2">
-                <a href="{% url 'hr:hr_list' %}" class="btn btn-sm btn-outline-secondary">
-                  Очистить фильтры
-                </a>
-              </div>
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- Пагинация -->
-{% if is_paginated %}
-<nav aria-label="Навигация по страницам" class="mt-4">
-  <ul class="pagination justify-content-center">
-    {% if page_obj.has_previous %}
-    <li class="page-item">
-      <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-double-left"></i>
-      </a>
-    </li>
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-left"></i>
-      </a>
-    </li>
     {% endif %}
 
-    {% for num in page_obj.paginator.page_range %}
-      {% if page_obj.number == num %}
-      <li class="page-item active">
-        <span class="page-link">{{ num }}</span>
-      </li>
-      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-          {{ num }}
-        </a>
-      </li>
-      {% endif %}
-    {% endfor %}
+    <!-- ================= ФИЛЬТРЫ ================= -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-funnel me-2"></i>
+                <span class="fw-semibold">Фильтры</span>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
 
-    {% if page_obj.has_next %}
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-right"></i>
-      </a>
-    </li>
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-double-right"></i>
-      </a>
-    </li>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body pt-0">
+                <form class="row g-2" method="get" id="filterForm">
+                    <!-- Основные фильтры -->
+                    <div class="col-xl-3 col-md-6">
+                        <label class="form-label small mb-1">Поиск</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-transparent">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input class="form-control" type="search" name="q"
+                                   placeholder="ФИО, должность..."
+                                   value="{{ filter_params.q }}">
+                        </div>
+                    </div>
+
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label small mb-1">Руководитель</label>
+                        <select name="manager" class="form-select form-select-sm select2-field" id="filter-manager">
+                            <option value="">Все руководители</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.pk }}"
+                                {% if filter_params.manager == manager.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ manager.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label small mb-1">Должность</label>
+                        <select name="job_title" class="form-select form-select-sm select2-field" id="filter-job-title">
+                            <option value="">Все должности</option>
+                            {% for title in job_titles %}
+                            <option value="{{ title }}"
+                                {% if filter_params.job_title == title %}selected{% endif %}>
+                                {{ title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label small mb-1">Статус</label>
+                        <select name="is_active" class="form-select form-select-sm">
+                            <option value="">Все статусы</option>
+                            <option value="true" {% if filter_params.is_active == 'true' %}selected{% endif %}>Активен</option>
+                            <option value="false" {% if filter_params.is_active == 'false' %}selected{% endif %}>Неактивен</option>
+                        </select>
+                    </div>
+
+                    <div class="col-xl-1 col-md-4 d-flex align-items-end">
+                        <button class="btn btn-primary btn-sm w-100" type="submit">
+                            <i class="bi bi-funnel me-1"></i>
+                            Применить
+                        </button>
+                    </div>
+
+                    <!-- Дополнительные фильтры -->
+                    <div class="col-12 mt-2">
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#additionalFiltersCollapse">
+                                <i class="bi bi-sliders me-1"></i>
+                                Дополнительные фильтры
+                            </button>
+
+                            <div class="text-muted small">
+                                Найдено: <span class="fw-semibold">{{ paginator.count|default:"0" }}</span> записей
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="collapse" id="additionalFiltersCollapse">
+                            <div class="row g-2 pt-3 border-top">
+                                <!-- Только руководители -->
+                                <div class="col-md-3">
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="only_managers" id="only-managers" value="1"
+                                               {% if filter_params.only_managers %}checked{% endif %}>
+                                        <label class="form-check-label" for="only-managers">
+                                            <i class="bi bi-person-badge me-1"></i>
+                                            Только руководители
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Сортировка -->
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Сортировка</label>
+                                    <select name="sort" class="form-select form-select-sm">
+                                        <option value="name" {% if filter_params.sort == 'name' %}selected{% endif %}>По ФИО</option>
+                                        <option value="job_title" {% if filter_params.sort == 'job_title' %}selected{% endif %}>По должности</option>
+                                    </select>
+                                </div>
+
+                                <!-- Порядок сортировки -->
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Порядок</label>
+                                    <select name="order" class="form-select form-select-sm">
+                                        <option value="asc" {% if filter_params.order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                                        <option value="desc" {% if filter_params.order == 'desc' %}selected{% endif %}>По убыванию</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <a class="btn btn-outline-secondary btn-sm w-100" href="{% url 'hr:hr_list' %}">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ВИД 1: Карточки ================= -->
+    <div id="cards-view">
+        <div class="row g-3">
+            {% for employee in employees %}
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="card h-100 border hover-shadow">
+                    <div class="card-body d-flex flex-column">
+                        <!-- Заголовок -->
+                        <div class="mb-3">
+                            <h6 class="card-title mb-1">
+                                <a href="{% url 'hr:hr_detail' employee.pk %}"
+                                   class="text-decoration-none text-body">
+                                    {{ employee.name }}
+                                </a>
+                            </h6>
+
+                            <div class="text-muted small">
+                                <i class="bi bi-briefcase me-1"></i>
+                                {{ employee.job_title|default:"Должность не указана" }}
+                            </div>
+                        </div>
+
+                        <!-- Статус -->
+                        <div class="mb-3">
+                            {% if employee.is_active %}
+                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                                <i class="bi bi-person-check me-1"></i>
+                                Активен
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
+                                <i class="bi bi-person-x me-1"></i>
+                                Неактивен
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Руководитель -->
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-person-badge me-1"></i>
+                                Руководитель
+                            </div>
+                            {% if employee.manager %}
+                            <div class="d-flex align-items-center">
+                                <a href="{% url 'hr:hr_detail' employee.manager.pk %}"
+                                   class="text-decoration-none text-truncate">
+                                    {{ employee.manager.name }}
+                                </a>
+                            </div>
+                            {% else %}
+                            <span class="text-muted small">Не назначен</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Детали -->
+                        <div class="mt-auto pt-2 border-top">
+                            <div class="row g-2 small">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">
+                                            <i class="bi bi-people me-1"></i>
+                                            Подчинённые
+                                        </span>
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">
+                                            {{ employee.sub_count|default:"0" }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {% if employee.created_at %}
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center text-muted">
+                                        <i class="bi bi-calendar-plus me-2"></i>
+                                        <span>Создан: {{ employee.created_at|date:"d.m.Y" }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Футер -->
+                    <div class="card-footer bg-transparent border-top-0 pt-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                ID: {{ employee.id }}
+                            </small>
+
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hr:hr_detail' employee.pk %}"
+                                   class="btn btn-outline-secondary"
+                                   data-bs-toggle="tooltip"
+                                   title="Просмотр">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if perms.hr.change_humanresource %}
+                                <a href="{% url 'hr:hr_edit' employee.pk %}"
+                                   class="btn btn-outline-secondary"
+                                   data-bs-toggle="tooltip"
+                                   title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-light border text-center py-5">
+                    <i class="bi bi-person-x fs-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">Сотрудники не найдены</h5>
+                    {% if request.GET %}
+                    <p class="small mb-0">Попробуйте изменить параметры фильтрации</p>
+                    <a href="{% url 'hr:hr_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                        Сбросить фильтры
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ================= ВИД 2: Таблица ================= -->
+    <div id="table-view" class="d-none">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr class="table-light">
+                        <th>ФИО</th>
+                        <th>Должность</th>
+                        <th>Руководитель</th>
+                        <th>Подчинённые</th>
+                        <th>Статус</th>
+                        <th style="width: 100px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr>
+                        <!-- ФИО -->
+                        <td>
+                            <div class="fw-semibold">
+                                <a href="{% url 'hr:hr_detail' employee.pk %}" class="text-decoration-none">
+                                    {{ employee.name }}
+                                </a>
+                            </div>
+                            <div class="small text-muted">
+                                ID: {{ employee.id }}
+                            </div>
+                        </td>
+
+                        <!-- Должность -->
+                        <td>
+                            {{ employee.job_title|default:"—" }}
+                        </td>
+
+                        <!-- Руководитель -->
+                        <td>
+                            {% if employee.manager %}
+                            <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">
+                                {{ employee.manager.name }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Подчиненные -->
+                        <td>
+                            {% if employee.sub_count %}
+                            <span class="badge bg-primary-subtle text-primary-emphasis">
+                                {{ employee.sub_count }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Статус -->
+                        <td>
+                            {% if employee.is_active %}
+                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                                <i class="bi bi-person-check me-1"></i>
+                                Активен
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
+                                <i class="bi bi-person-x me-1"></i>
+                                Неактивен
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Действия -->
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'hr:hr_detail' employee.pk %}"
+                                   class="btn btn-outline-secondary"
+                                   data-bs-toggle="tooltip"
+                                   title="Просмотр">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if perms.hr.change_humanresource %}
+                                <a href="{% url 'hr:hr_edit' employee.pk %}"
+                                   class="btn btn-outline-secondary"
+                                   data-bs-toggle="tooltip"
+                                   title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="alert alert-light border text-center py-4">
+                                <i class="bi bi-person-x fs-1 text-muted mb-2"></i>
+                                <h5 class="text-muted">Сотрудники не найдены</h5>
+                                {% if request.GET %}
+                                <a href="{% url 'hr:hr_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                                    Сбросить фильтры
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Пагинация -->
+    {% if is_paginated %}
+    <nav aria-label="Навигация по страницам" class="mt-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+            <div class="text-muted small">
+                Показано <span class="fw-semibold">{{ page_obj.start_index }}-{{ page_obj.end_index }}</span>
+                из <span class="fw-semibold">{{ paginator.count }}</span>
+            </div>
+
+            <ul class="pagination mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Первая">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Предыдущая">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Следующая">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Последняя">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
     {% endif %}
-  </ul>
+</div>
+{% endblock %}
 
-  <div class="text-center text-muted small mt-2">
-    Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-    <span class="mx-2">•</span>
-    Всего записей: {{ paginator.count|default:"0" }}
-  </div>
-</nav>
-{% endif %}
-
-<!-- ================= JS ================= -->
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const KEY = 'hr_view_mode';
-  const cardsBtn = document.getElementById('view-cards');
-  const tableBtn = document.getElementById('view-table');
-  const cardsView = document.getElementById('cards-view');
-  const tableView = document.getElementById('table-view');
-  const toggleFiltersBtn = document.getElementById('toggleFilters');
-  const additionalFilters = document.querySelector('.additional-filters');
+document.addEventListener('DOMContentLoaded', function() {
+    const KEY = 'hr_view_mode';
+    const cardsView = document.getElementById('cards-view');
+    const tableView = document.getElementById('table-view');
+    const cardsRadio = document.getElementById('view-cards');
+    const tableRadio = document.getElementById('view-table');
 
-  // Переключение вида
-  function applyViewMode(mode) {
-    const isTable = mode === 'table';
-    cardsView.classList.toggle('d-none', isTable);
-    tableView.classList.toggle('d-none', !isTable);
-    tableBtn.classList.toggle('active', isTable);
-    cardsBtn.classList.toggle('active', !isTable);
-    try { localStorage.setItem(KEY, mode); } catch(e) {}
-  }
+    // Переключение вида
+    function applyViewMode(mode) {
+        const isTable = mode === 'table';
+        cardsView.classList.toggle('d-none', isTable);
+        tableView.classList.toggle('d-none', !isTable);
+        tableRadio.checked = isTable;
+        cardsRadio.checked = !isTable;
 
-  cardsBtn.addEventListener('click', () => applyViewMode('cards'));
-  tableBtn.addEventListener('click', () => applyViewMode('table'));
-  applyViewMode(localStorage.getItem(KEY) || 'cards');
-
-  // Переключение дополнительных фильтров
-  if (toggleFiltersBtn) {
-    toggleFiltersBtn.addEventListener('click', function() {
-      if (additionalFilters.style.display === 'none') {
-        additionalFilters.style.display = 'block';
-        this.innerHTML = '<i class="fas fa-sliders-h me-1"></i>Скрыть фильтры';
-      } else {
-        additionalFilters.style.display = 'none';
-        this.innerHTML = '<i class="fas fa-sliders-h me-1"></i>Дополнительные фильтры';
-      }
-    });
-  }
-
-  // Инициализация Select2 для фильтров
-  if (typeof $ !== 'undefined') {
-    $('#filter-manager').select2({
-      width: '100%',
-      allowClear: true,
-      placeholder: 'Все руководители',
-      ajax: {
-        url: "{% url 'hr:hr_manager_autocomplete' %}",
-        dataType: 'json',
-        delay: 250,
-        data: params => ({ q: params.term }),
-        processResults: data => data
-      }
-    });
-
-    $('#filter-job-title').select2({
-      width: '100%',
-      allowClear: true,
-      placeholder: 'Все должности',
-      ajax: {
-        url: "{% url 'hr:hr_job_title_autocomplete' %}",
-        dataType: 'json',
-        delay: 250,
-        data: params => ({ q: params.term }),
-        processResults: data => data
-      }
-    });
-  }
-
-  // Автоотправка формы при изменении сортировки
-  const sortSelect = document.querySelector('select[name="sort"]');
-  const orderSelect = document.querySelector('select[name="order"]');
-
-  if (sortSelect) {
-    sortSelect.addEventListener('change', function() {
-      document.getElementById('filterForm').submit();
-    });
-  }
-
-  if (orderSelect) {
-    orderSelect.addEventListener('change', function() {
-      document.getElementById('filterForm').submit();
-    });
-  }
-
-  // Подсказки
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
-
-  // Функция подтверждения удаления
-  window.confirmDelete = function(name, url) {
-    if (confirm(`Вы уверены, что хотите удалить сотрудника «${name}»?`)) {
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': '{{ csrf_token }}',
-          'Accept': 'application/json',
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.ok) {
-          window.location.reload();
-        } else {
-          alert('Ошибка при удалении: ' + (data.error || 'Неизвестная ошибка'));
+        try {
+            localStorage.setItem(KEY, mode);
+        } catch(e) {
+            console.warn('LocalStorage недоступен');
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Произошла ошибка при удалении');
-      });
     }
-  };
 
-  // Автозаполнение фильтров из URL
-  function updateFilterCount() {
-    const form = document.getElementById('filterForm');
-    const inputs = form.querySelectorAll('select, input');
-    let activeFilters = 0;
+    // Обработчики переключения вида
+    cardsRadio.addEventListener('change', () => applyViewMode('cards'));
+    tableRadio.addEventListener('change', () => applyViewMode('table'));
 
-    inputs.forEach(input => {
-      if (input.value && input.name !== 'page' &&
-          (input.type !== 'checkbox' || input.checked)) {
-        activeFilters++;
-      }
+    // Восстановление вида
+    applyViewMode(localStorage.getItem(KEY) || 'cards');
+
+    // Инициализация collapse для фильтров
+    function initializeCollapse() {
+        const filterCollapse = document.getElementById('filterCollapse');
+        const additionalFiltersCollapse = document.getElementById('additionalFiltersCollapse');
+
+        // Обновляем иконки при показе/скрытии основных фильтров
+        if (filterCollapse) {
+            filterCollapse.addEventListener('show.bs.collapse', function () {
+                const toggleBtn = document.querySelector('[data-bs-target="#filterCollapse"]');
+                if (toggleBtn) {
+                    const icon = toggleBtn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'bi bi-chevron-up';
+                    }
+                }
+            });
+
+            filterCollapse.addEventListener('hide.bs.collapse', function () {
+                const toggleBtn = document.querySelector('[data-bs-target="#filterCollapse"]');
+                if (toggleBtn) {
+                    const icon = toggleBtn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'bi bi-chevron-down';
+                    }
+                }
+            });
+        }
+
+        // Обновляем текст кнопки дополнительных фильтров
+        if (additionalFiltersCollapse) {
+            additionalFiltersCollapse.addEventListener('show.bs.collapse', function () {
+                const toggleBtn = document.querySelector('[data-bs-target="#additionalFiltersCollapse"]');
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="bi bi-sliders me-1"></i>Скрыть фильтры';
+                }
+            });
+
+            additionalFiltersCollapse.addEventListener('hide.bs.collapse', function () {
+                const toggleBtn = document.querySelector('[data-bs-target="#additionalFiltersCollapse"]');
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="bi bi-sliders me-1"></i>Дополнительные фильтры';
+                }
+            });
+        }
+    }
+
+    // Инициализируем collapse
+    initializeCollapse();
+
+    // Инициализация Select2 для полей выбора
+    const select2Fields = document.querySelectorAll('.select2-field');
+    select2Fields.forEach(field => {
+        $(field).select2({
+            width: '100%',
+            placeholder: 'Выберите...',
+            allowClear: true,
+            theme: 'bootstrap-5',
+            dropdownParent: field.closest('.modal') || document.body
+        });
     });
 
-    // Обновляем текст кнопки фильтра
-    const filterBtn = form.querySelector('button[type="submit"]');
-    if (activeFilters > 0) {
-      filterBtn.innerHTML = `<i class="fas fa-filter me-1"></i>Применить (${activeFilters})`;
+    // Автоотправка при изменении сортировки
+    document.querySelectorAll('select[name="sort"], select[name="order"]').forEach(select => {
+        select.addEventListener('change', () => {
+            document.getElementById('filterForm').submit();
+        });
+    });
+
+    // Инициализация подсказок
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+
+    // Счетчик активных фильтров
+    function updateFilterCount() {
+        const form = document.getElementById('filterForm');
+        const inputs = form.querySelectorAll('select[name], input[name]');
+        let activeFilters = 0;
+        const excludeFields = ['page', 'sort', 'order']; // Исключаем технические поля
+
+        inputs.forEach(input => {
+            if (input.name && !excludeFields.includes(input.name)) {
+                if (input.type === 'checkbox') {
+                    if (input.checked) activeFilters++;
+                } else if (input.value && input.value.trim() !== '') {
+                    activeFilters++;
+                }
+            }
+        });
+
+        // Обновляем текст кнопки
+        const filterBtn = form.querySelector('button[type="submit"]');
+        if (filterBtn) {
+            if (activeFilters > 0) {
+                filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить (${activeFilters})`;
+                filterBtn.classList.add('btn-primary');
+                filterBtn.classList.remove('btn-outline-primary');
+            } else {
+                filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить`;
+                filterBtn.classList.add('btn-outline-primary');
+                filterBtn.classList.remove('btn-primary');
+            }
+        }
+    }
+
+    // Инициализация и обновление счетчика
+    updateFilterCount();
+    document.querySelectorAll('#filterForm select, #filterForm input').forEach(input => {
+        input.addEventListener('change', updateFilterCount);
+    });
+
+    // Удаление через модальное окно (используем уже существующее)
+    window.confirmDelete = function(name, url) {
+        // Используем существующее модальное окно подтверждения удаления
+        const deleteModal = document.querySelector('[data-confirm-delete]');
+        if (deleteModal) {
+            deleteModal.dataset.deleteUrl = url;
+            deleteModal.dataset.deleteName = name;
+            deleteModal.click();
+        } else {
+            // Fallback на стандартное подтверждение
+            if (confirm(`Удалить сотрудника «${name}»?`)) {
+                window.location.href = url;
+            }
+        }
+    };
+
+    // Автокомплит для руководителей и должностей
+    function initializeAutocomplete() {
+        // Инициализация автокомплита для руководителей
+        const managerSelect = document.getElementById('filter-manager');
+        if (managerSelect && typeof $.fn.select2 !== 'undefined') {
+            $(managerSelect).select2({
+                ajax: {
+                    url: "{% url 'hr:hr_manager_autocomplete' %}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({ q: params.term }),
+                    processResults: data => ({
+                        results: data.map(item => ({ id: item.id, text: item.name }))
+                    }),
+                    cache: true
+                },
+                minimumInputLength: 1,
+                placeholder: 'Поиск руководителя...',
+                allowClear: true,
+                theme: 'bootstrap-5'
+            });
+        }
+
+        // Инициализация автокомплита для должностей
+        const jobTitleSelect = document.getElementById('filter-job-title');
+        if (jobTitleSelect && typeof $.fn.select2 !== 'undefined') {
+            $(jobTitleSelect).select2({
+                ajax: {
+                    url: "{% url 'hr:hr_job_title_autocomplete' %}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({ q: params.term }),
+                    processResults: data => ({
+                        results: data.map(item => ({ id: item, text: item }))
+                    }),
+                    cache: true
+                },
+                minimumInputLength: 1,
+                placeholder: 'Поиск должности...',
+                allowClear: true,
+                theme: 'bootstrap-5'
+            });
+        }
+    }
+
+    // Инициализируем автокомплит после загрузки DOM
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        initializeAutocomplete();
     } else {
-      filterBtn.innerHTML = `<i class="fas fa-filter me-1"></i>Применить`;
+        // Ждем загрузки jQuery и Select2
+        const checkInterval = setInterval(() => {
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                clearInterval(checkInterval);
+                initializeAutocomplete();
+            }
+        }, 100);
     }
-  }
 
-  updateFilterCount();
-
-  // Следим за изменениями в фильтрах
-  document.querySelectorAll('#filterForm select, #filterForm input').forEach(input => {
-    input.addEventListener('change', updateFilterCount);
-  });
-
-  // Клик по строке таблицы
-  document.querySelectorAll('.table-row-link').forEach(row => {
-    row.addEventListener('click', function(e) {
-      // Не переходить если кликнули на ссылку, кнопку или input
-      if (e.target.tagName === 'A' ||
-          e.target.tagName === 'BUTTON' ||
-          e.target.tagName === 'INPUT' ||
-          e.target.closest('a, button, input, select, label')) {
-        return;
-      }
-      const link = this.querySelector('a[href*="/hr/"]');
-      if (link) {
-        window.location.href = link.href;
-      }
+    // Инициализация всех collapse элементов (важно!)
+    const collapseElements = document.querySelectorAll('.collapse');
+    collapseElements.forEach(collapseEl => {
+        new bootstrap.Collapse(collapseEl, {
+            toggle: false
+        });
     });
-  });
 });
 </script>
 
 <style>
-.table-row-link td:not(:last-child) { cursor: pointer; }
-.table-row-link:hover { background-color: rgba(0,0,0,.03); }
-
-.hover-shadow {
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.hover-shadow:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+/* Специфичные стили для страницы персонала */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.badge {
-  font-size: 0.75em;
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
+/* Стили для бейджей статусов */
+.badge-status {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
 }
 
-.form-select:focus, .form-control:focus {
-  border-color: var(--bs-primary);
-  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+/* Обрезание длинного текста */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.input-group-text {
-  background-color: var(--bs-light);
-  border-color: var(--bs-border-color);
+/* Адаптивность */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem !important;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
 }
 
-.additional-filters {
-  animation: fadeIn 0.3s ease;
+/* Стили для пустых состояний */
+.empty-state {
+    opacity: 0.7;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.empty-state:hover {
+    opacity: 1;
 }
 
-.select2-container {
-  width: 100% !important;
+/* Стили для ссылок в таблице */
+.table a {
+    transition: color 0.2s;
+}
+
+.table a:hover {
+    color: var(--bs-primary) !important;
+}
+
+/* Стили для collapse элементов */
+.collapsing {
+    transition: height 0.3s ease;
+}
+
+/* Кастомизация иконок collapse */
+[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}
+
+[aria-expanded="false"] .bi-chevron-down {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+}
+
+/* Темная тема */
+[data-bs-theme="dark"] .card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .table-light {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .alert-light {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--bs-border-color);
 }
 </style>
 {% endblock %}

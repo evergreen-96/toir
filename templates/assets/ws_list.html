@@ -4,38 +4,42 @@
 
 {% block content %}
 <!-- ===== Header ===== -->
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
   <div>
-    <h1 class="mb-0">Оборудование</h1>
+    <h1 class="mb-1">Оборудование</h1>
     <div class="text-muted small">Список и состояние оборудования</div>
   </div>
 
-  <div class="d-flex gap-2 align-items-center">
+  <div class="d-flex flex-wrap gap-2 align-items-center">
     <!-- Вид отображения -->
-    <div class="btn-group me-2">
-      <button id="view-cards" type="button" class="btn btn-outline-secondary active">
-        <i class="fas fa-th-large me-1"></i>
+    <div class="btn-group me-2" role="group">
+      <input type="radio" class="btn-check" name="viewMode" id="view-cards" autocomplete="off" checked>
+      <label class="btn btn-outline-secondary" for="view-cards">
+        <i class="bi bi-grid-3x3-gap me-1"></i>
         Карточки
-      </button>
-      <button id="view-table" type="button" class="btn btn-outline-secondary">
-        <i class="fas fa-table me-1"></i>
+      </label>
+
+      <input type="radio" class="btn-check" name="viewMode" id="view-table" autocomplete="off">
+      <label class="btn btn-outline-secondary" for="view-table">
+        <i class="bi bi-table me-1"></i>
         Таблица
-      </button>
+      </label>
     </div>
 
     <!-- Экспорт -->
     {% if perms.assets.view_workstation %}
-    <a class="btn btn-outline-info me-2" href="{% url 'assets:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
-      <i class="fas fa-download me-1"></i>
+    <a class="btn btn-outline-secondary"
+       href="{% url 'assets:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+      <i class="bi bi-download me-1"></i>
       Экспорт
     </a>
     {% endif %}
 
     <!-- Добавление нового -->
     {% if perms.assets.add_workstation %}
-    <a class="btn btn-success" href="{% url 'assets:asset_new' %}">
-      <i class="fas fa-plus me-1"></i>
-      Оборудование
+    <a class="btn btn-primary" href="{% url 'assets:asset_new' %}">
+      <i class="bi bi-plus-lg me-1"></i>
+      Добавить
     </a>
     {% endif %}
   </div>
@@ -44,64 +48,64 @@
 <!-- ================= СТАТИСТИКА ================= -->
 {% if stats %}
 <div class="row g-3 mb-4">
-  <div class="col-md-3">
-    <div class="card bg-primary bg-opacity-10 border-primary">
-      <div class="card-body">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-start border-start-4 border-start-primary">
+      <div class="card-body p-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h6 class="card-title text-primary">Всего</h6>
-            <h2 class="mb-0">{{ stats.total }}</h2>
+            <div class="small text-muted">Всего</div>
+            <div class="h4 mb-0">{{ stats.total }}</div>
           </div>
-          <div class="display-4 text-primary opacity-25">
-            <i class="fas fa-microchip"></i>
+          <div class="text-primary opacity-25">
+            <i class="bi bi-cpu fs-3"></i>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="col-md-3">
-    <div class="card bg-success bg-opacity-10 border-success">
-      <div class="card-body">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-start border-start-4 border-start-success">
+      <div class="card-body p-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h6 class="card-title text-success">Активные</h6>
-            <h2 class="mb-0">{{ stats.active }}</h2>
+            <div class="small text-muted">Активные</div>
+            <div class="h4 mb-0">{{ stats.active }}</div>
           </div>
-          <div class="display-4 text-success opacity-25">
-            <i class="fas fa-check-circle"></i>
+          <div class="text-success opacity-25">
+            <i class="bi bi-check-circle fs-3"></i>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="col-md-3">
-    <div class="card bg-warning bg-opacity-10 border-warning">
-      <div class="card-body">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-start border-start-4 border-start-warning">
+      <div class="card-body p-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h6 class="card-title text-warning">На гарантии</h6>
-            <h2 class="mb-0">{{ stats.under_warranty }}</h2>
+            <div class="small text-muted">На гарантии</div>
+            <div class="h4 mb-0">{{ stats.under_warranty }}</div>
           </div>
-          <div class="display-4 text-warning opacity-25">
-            <i class="fas fa-shield-alt"></i>
+          <div class="text-warning opacity-25">
+            <i class="bi bi-shield-check fs-3"></i>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="col-md-3">
-    <div class="card bg-danger bg-opacity-10 border-danger">
-      <div class="card-body">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-start border-start-4 border-start-secondary">
+      <div class="card-body p-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h6 class="card-title text-danger">В архиве</h6>
-            <h2 class="mb-0">{{ stats.inactive }}</h2>
+            <div class="small text-muted">В архиве</div>
+            <div class="h4 mb-0">{{ stats.inactive }}</div>
           </div>
-          <div class="display-4 text-danger opacity-25">
-            <i class="fas fa-archive"></i>
+          <div class="text-secondary opacity-25">
+            <i class="bi bi-archive fs-3"></i>
           </div>
         </div>
       </div>
@@ -111,120 +115,120 @@
 {% endif %}
 
 <!-- ================= ФИЛЬТРЫ ================= -->
-<div class="card mb-4">
-  <div class="card-header">
-    <i class="fas fa-filter me-2"></i>
-    Фильтры
-    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
-      <i class="fas fa-chevron-down"></i>
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center py-3">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-funnel me-2"></i>
+      <span class="fw-semibold">Фильтры</span>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="true">
+      <i class="bi bi-chevron-down"></i>
     </button>
   </div>
 
   <div class="collapse show" id="filterCollapse">
-    <div class="card-body">
+    <div class="card-body pt-0">
       <form class="row g-2" method="get" id="filterForm">
-
-        <!-- Поиск -->
-        <div class="col-md-3">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-search"></i>
+        <!-- Основные фильтры -->
+        <div class="col-xl-3 col-md-6">
+          <label class="form-label small mb-1">Поиск</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-transparent">
+              <i class="bi bi-search"></i>
             </span>
-            <input
-              class="form-control"
-              type="search"
-              name="q"
-              placeholder="Название, тип, модель"
-              value="{{ filter_params.q }}"
-            >
+            <input class="form-control" type="search" name="q"
+                   placeholder="Название, модель, серийный номер"
+                   value="{{ filter_params.q }}">
           </div>
         </div>
 
-        <!-- Категория -->
-        <div class="col-md-2">
-          <select name="category" class="form-select">
-            <option value="">Категория: все</option>
+        <div class="col-xl-2 col-md-4">
+          <label class="form-label small mb-1">Категория</label>
+          <select name="category" class="form-select form-select-sm">
+            <option value="">Все категории</option>
             {% for value,label in categories %}
-              <option value="{{ value }}"
-                {% if filter_params.category == value|stringformat:"s" %}selected{% endif %}
-              >
+              <option value="{{ value }}" {% if filter_params.category == value|stringformat:"s" %}selected{% endif %}>
                 {{ label }}
               </option>
             {% endfor %}
           </select>
         </div>
 
-        <!-- Статус -->
-        <div class="col-md-2">
-          <select name="status" class="form-select">
-            <option value="">Статус: все</option>
+        <div class="col-xl-2 col-md-4">
+          <label class="form-label small mb-1">Статус</label>
+          <select name="status" class="form-select form-select-sm">
+            <option value="">Все статусы</option>
             {% for value,label in statuses %}
-              <option value="{{ value }}"
-                {% if filter_params.status == value|stringformat:"s" %}selected{% endif %}
-              >
+              <option value="{{ value }}" {% if filter_params.status == value|stringformat:"s" %}selected{% endif %}>
                 {{ label }}
               </option>
             {% endfor %}
           </select>
         </div>
 
-        <!-- Глобальное состояние -->
-        <div class="col-md-2">
-          <select name="global_state" class="form-select">
-            <option value="">Состояние: все</option>
+        <div class="col-xl-2 col-md-4">
+          <label class="form-label small mb-1">Состояние</label>
+          <select name="global_state" class="form-select form-select-sm">
+            <option value="">Все состояния</option>
             {% for value,label in global_states %}
-              <option value="{{ value }}"
-                {% if filter_params.global_state == value|stringformat:"s" %}selected{% endif %}
-              >
+              <option value="{{ value }}" {% if filter_params.global_state == value|stringformat:"s" %}selected{% endif %}>
                 {{ label }}
               </option>
             {% endfor %}
           </select>
         </div>
 
-        <!-- Локация -->
-        <div class="col-md-2">
-          <select name="location" class="form-select">
-            <option value="">Локация: все</option>
+        <div class="col-xl-2 col-md-4">
+          <label class="form-label small mb-1">Локация</label>
+          <select name="location" class="form-select form-select-sm">
+            <option value="">Все локации</option>
             {% for loc in locations %}
-              <option value="{{ loc.pk }}"
-                {% if filter_params.location == loc.pk|stringformat:"s" %}selected{% endif %}
-              >
+              <option value="{{ loc.pk }}" {% if filter_params.location == loc.pk|stringformat:"s" %}selected{% endif %}>
                 {{ loc.name }}
               </option>
             {% endfor %}
           </select>
         </div>
 
-        <!-- Кнопки -->
-        <div class="col-md-1 d-flex gap-2">
-          <button class="btn btn-primary w-100" type="submit">
-            <i class="fas fa-filter me-1"></i>
+        <div class="col-xl-1 col-md-4 d-flex align-items-end">
+          <button class="btn btn-primary btn-sm w-100" type="submit">
+            <i class="bi bi-funnel me-1"></i>
             Применить
           </button>
         </div>
 
-        <!-- Дополнительные фильтры (скрытые по умолчанию) -->
-        <div class="col-12 mt-2 additional-filters" style="display: none;">
-          <div class="row g-2">
-            <!-- Ответственный -->
+        <!-- Дополнительные фильтры -->
+        <div class="col-12 mt-2">
+          <div class="d-flex justify-content-between align-items-center border-top pt-3">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFilters">
+              <i class="bi bi-sliders me-1"></i>
+              Дополнительные фильтры
+            </button>
+
+            <div class="text-muted small">
+              Найдено: <span class="fw-semibold">{{ paginator.count }}</span> записей
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 additional-filters" style="display: none;">
+          <div class="row g-2 pt-2 border-top">
             <div class="col-md-3">
-              <select name="responsible" class="form-select">
-                <option value="">Ответственный: все</option>
+              <label class="form-label small mb-1">Ответственный</label>
+              <select name="responsible" class="form-select form-select-sm">
+                <option value="">Все</option>
                 {% for resp in responsibles %}
-                  <option value="{{ resp.pk }}"
-                    {% if filter_params.responsible == resp.pk|stringformat:"s" %}selected{% endif %}
-                  >
+                  <option value="{{ resp.pk }}" {% if filter_params.responsible == resp.pk|stringformat:"s" %}selected{% endif %}>
                     {{ resp }}
                   </option>
                 {% endfor %}
               </select>
             </div>
 
-            <!-- Гарантия -->
             <div class="col-md-3">
-              <select name="warranty" class="form-select">
-                <option value="">Гарантия: все</option>
+              <label class="form-label small mb-1">Гарантия</label>
+              <select name="warranty" class="form-select form-select-sm">
+                <option value="">Все</option>
                 <option value="active" {% if filter_params.warranty == 'active' %}selected{% endif %}>
                   Действует
                 </option>
@@ -234,438 +238,414 @@
               </select>
             </div>
 
-            <!-- Сортировка -->
             <div class="col-md-3">
-              <select name="sort" class="form-select">
-                <option value="name" {% if filter_params.sort == 'name' %}selected{% endif %}>Сортировка: по названию</option>
-                <option value="category" {% if filter_params.sort == 'category' %}selected{% endif %}>Сортировка: по категории</option>
-                <option value="status" {% if filter_params.sort == 'status' %}selected{% endif %}>Сортировка: по статусу</option>
-                <option value="location" {% if filter_params.sort == 'location' %}selected{% endif %}>Сортировка: по локации</option>
+              <label class="form-label small mb-1">Сортировка</label>
+              <select name="sort" class="form-select form-select-sm">
+                <option value="name" {% if filter_params.sort == 'name' %}selected{% endif %}>По названию</option>
+                <option value="category" {% if filter_params.sort == 'category' %}selected{% endif %}>По категории</option>
+                <option value="status" {% if filter_params.sort == 'status' %}selected{% endif %}>По статусу</option>
+                <option value="location" {% if filter_params.sort == 'location' %}selected{% endif %}>По локации</option>
               </select>
             </div>
 
-            <!-- Порядок сортировки -->
             <div class="col-md-2">
-              <select name="order" class="form-select">
+              <label class="form-label small mb-1">Порядок</label>
+              <select name="order" class="form-select form-select-sm">
                 <option value="asc" {% if filter_params.order == 'asc' %}selected{% endif %}>По возрастанию</option>
                 <option value="desc" {% if filter_params.order == 'desc' %}selected{% endif %}>По убыванию</option>
               </select>
             </div>
-          </div>
-        </div>
 
-        <!-- Кнопки управления фильтрами -->
-        <div class="col-12 mt-2">
-          <div class="d-flex justify-content-between">
-            <div>
-              <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFilters">
-                <i class="fas fa-sliders-h me-1"></i>
-                Дополнительные фильтры
-              </button>
-              <a class="btn btn-sm btn-outline-secondary ms-2" href="{% url 'assets:asset_list' %}">
-                <i class="fas fa-times me-1"></i>
-                Сброс
+            <div class="col-md-1 d-flex align-items-end">
+              <a class="btn btn-outline-secondary btn-sm w-100" href="{% url 'assets:asset_list' %}">
+                <i class="bi bi-x-lg"></i>
               </a>
             </div>
-
-            <div class="text-muted small">
-              Найдено: {{ paginator.count }} записей
-            </div>
           </div>
         </div>
-
       </form>
     </div>
   </div>
 </div>
 
 <!-- ================= ВИД 1: Карточки ================= -->
-<div id="cards-view" class="row g-3">
-  {% for workstation in workstations %}
-    <div class="col-md-6 col-lg-4 col-xl-3">
-      <div class="card h-100 shadow-sm border-0 hover-shadow">
-        <!-- Фото -->
-        {% if workstation.photo %}
-          <div class="card-img-top position-relative" style="height: 180px; overflow: hidden;">
-            <img
-              src="{{ workstation.photo.url }}"
-              class="w-100 h-100"
-              style="object-fit: cover;"
-              alt="{{ workstation.name }}"
-            >
-            <div class="position-absolute top-0 end-0 m-2">
-              {% if workstation.is_under_warranty %}
-              <span class="badge bg-success">
-                <i class="fas fa-shield-alt me-1"></i>
-                Гарантия
-              </span>
-              {% endif %}
+<div id="cards-view">
+  <div class="row g-3">
+    {% for workstation in workstations %}
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <div class="card h-100 border hover-shadow">
+          <!-- Фото -->
+          {% if workstation.photo %}
+            <div class="position-relative" style="height: 160px; overflow: hidden;">
+              <img src="{{ workstation.photo.url }}"
+                   class="w-100 h-100 object-fit-cover"
+                   alt="{{ workstation.name }}">
+              <div class="position-absolute top-0 end-0 m-2">
+                {% if workstation.is_under_warranty %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Гарантия
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="card-body d-flex flex-column">
+            <!-- Заголовок -->
+            <div class="mb-2">
+              <h6 class="card-title mb-1">
+                <a href="{% url 'assets:asset_detail' workstation.pk %}"
+                   class="text-decoration-none text-body">
+                  {{ workstation.name }}
+                </a>
+              </h6>
+
+              <div class="text-muted small">
+                <i class="bi bi-tag me-1"></i>
+                {{ workstation.get_category_display }}
+                {% if workstation.type_name %}
+                  <span class="mx-1">•</span>
+                  {{ workstation.type_name }}
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Статус -->
+            <div class="mb-3">
+              {% with status=workstation.status %}
+                {% if status == 'prod' %}
+                  <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                    <i class="bi bi-check-circle me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% elif status == 'problem' %}
+                  <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% elif status == 'maint' %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                    <i class="bi bi-tools me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% elif status == 'setup' %}
+                  <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                    <i class="bi bi-gear me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% endif %}
+              {% endwith %}
+            </div>
+
+            <!-- Детали -->
+            <div class="mt-auto pt-2 border-top">
+              <div class="row g-2 small">
+                <div class="col-12">
+                  <div class="d-flex align-items-center text-muted">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    <span class="truncate">{{ workstation.location|truncatechars:20 }}</span>
+                  </div>
+                </div>
+
+                {% if workstation.serial_number %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-center text-muted">
+                      <i class="bi bi-upc-scan me-2"></i>
+                      <span class="truncate">{{ workstation.serial_number|truncatechars:15 }}</span>
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if workstation.responsible %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-center text-muted">
+                      <i class="bi bi-person me-2"></i>
+                      <span class="truncate">{{ workstation.responsible }}</span>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
             </div>
           </div>
-        {% endif %}
 
-        <div class="card-body">
-          <!-- Заголовок -->
-          <h5 class="card-title mb-1">
-            <a href="{% url 'assets:asset_detail' workstation.pk %}" class="text-decoration-none text-dark">
-              {{ workstation.name }}
+          <!-- Футер -->
+          <div class="card-footer bg-transparent border-top-0 pt-0">
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                ID: {{ workstation.id }}
+              </small>
+
+              <div class="btn-group btn-group-sm">
+                <a href="{% url 'assets:asset_detail' workstation.pk %}"
+                   class="btn btn-outline-secondary"
+                   data-bs-toggle="tooltip"
+                   title="Просмотр">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if perms.assets.change_workstation %}
+                  <a href="{% url 'assets:asset_edit' workstation.pk %}"
+                     class="btn btn-outline-secondary"
+                     data-bs-toggle="tooltip"
+                     title="Редактировать">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-light border text-center py-5">
+          <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+          <h5 class="text-muted">Оборудование не найдено</h5>
+          {% if request.GET %}
+            <p class="small mb-0">Попробуйте изменить параметры фильтрации</p>
+            <a href="{% url 'assets:asset_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+              Сбросить фильтры
             </a>
-          </h5>
-
-          <!-- Тип и категория -->
-          <div class="text-muted small mb-2">
-            <i class="fas fa-folder me-1"></i>
-            {{ workstation.get_category_display }}
-            {% if workstation.type_name %}
-            <span class="mx-1">•</span>
-            <i class="fas fa-cog me-1"></i>
-            {{ workstation.type_name }}
-            {% endif %}
-          </div>
-
-          <!-- Статус и локация -->
-          <div class="mb-2">
-            {% if workstation.status == 'prod' %}
-              <span class="badge text-bg-success">
-                <i class="fas fa-check-circle me-1"></i>
-                {{ workstation.get_status_display }}
-              </span>
-            {% elif workstation.status == 'problem' %}
-              <span class="badge text-bg-danger">
-                <i class="fas fa-exclamation-triangle me-1"></i>
-                {{ workstation.get_status_display }}
-              </span>
-            {% elif workstation.status == 'maint' %}
-              <span class="badge text-bg-warning">
-                <i class="fas fa-tools me-1"></i>
-                {{ workstation.get_status_display }}
-              </span>
-            {% elif workstation.status == 'setup' %}
-              <span class="badge text-bg-info">
-                <i class="fas fa-cog me-1"></i>
-                {{ workstation.get_status_display }}
-              </span>
-            {% else %}
-              <span class="badge text-bg-secondary">
-                {{ workstation.get_status_display }}
-              </span>
-            {% endif %}
-
-            <div class="mt-2 small">
-              <i class="fas fa-map-marker-alt me-1 text-muted"></i>
-              {{ workstation.location }}
-
-{% if workstation.responsible.job_title %}
-<br>
-<small class="text-muted">
-    <i class="fas fa-briefcase me-1"></i>
-    {{ workstation.responsible.job_title }}
-</small>
-{% endif %}
-            </div>
-          </div>
-
-          <!-- Дополнительная информация -->
-          <div class="mt-3 pt-2 border-top small">
-            <div class="row g-1">
-              {% if workstation.serial_number %}
-              <div class="col-12">
-                <span class="text-muted">Серийный №:</span>
-                <span class="fw-semibold">{{ workstation.serial_number|truncatechars:15 }}</span>
-              </div>
-              {% endif %}
-
-              {% if workstation.commissioning_date %}
-              <div class="col-12">
-                <span class="text-muted">Ввод:</span>
-                <span>{{ workstation.commissioning_date|date:"Y" }} г.</span>
-              </div>
-              {% endif %}
-
-              {% if workstation.warranty_until %}
-              <div class="col-12">
-                <span class="text-muted">Гарантия:</span>
-                <span class="{% if workstation.is_under_warranty %}text-success{% else %}text-danger{% endif %}">
-                  до {{ workstation.warranty_until|date:"m.Y" }}
-                </span>
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-        <!-- Футер карточки -->
-        <div class="card-footer bg-transparent border-top-0 pt-0">
-          <div class="d-flex justify-content-between align-items-center">
-            <small class="text-muted">
-              ID: {{ workstation.id }}
-            </small>
-
-            <div class="btn-group btn-group-sm">
-              <a href="{% url 'assets:asset_detail' workstation.pk %}" class="btn btn-outline-info">
-                <i class="fas fa-eye"></i>
-              </a>
-              {% if perms.assets.change_workstation %}
-              <a href="{% url 'assets:asset_edit' workstation.pk %}" class="btn btn-outline-primary">
-                <i class="fas fa-edit"></i>
-              </a>
-              {% endif %}
-            </div>
-          </div>
+          {% endif %}
         </div>
       </div>
-    </div>
-
-  {% empty %}
-    <div class="col-12">
-      <div class="alert alert-secondary mb-0">
-        <i class="fas fa-info-circle me-2"></i>
-        Оборудование не найдено
-        {% if request.GET %}
-        <div class="mt-2">
-          <a href="{% url 'assets:asset_list' %}" class="btn btn-sm btn-outline-secondary">
-            Очистить фильтры
-          </a>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  {% endfor %}
+    {% endfor %}
+  </div>
 </div>
 
 <!-- ================= ВИД 2: Таблица ================= -->
-<div id="table-view" class="table-responsive d-none">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
-      <tr>
-        <th style="width:56px;">Фото</th>
-        <th>Название</th>
-        <th>Тип / Категория</th>
-        <th>Статус</th>
-        <th>Состояние</th>
-        <th>Локация</th>
-        <th>Ответственный</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for workstation in workstations %}
-        <tr class="table-row-link">
-          <!-- Фото -->
-          <td>
-            {% if workstation.photo %}
-              <img
-                src="{{ workstation.photo.url }}"
-                style="width:40px;height:40px;object-fit:cover;border-radius:6px;"
-                alt=""
-                data-bs-toggle="tooltip"
-                title="{{ workstation.name }}"
-              >
-            {% else %}
-              <div class="text-muted text-center" style="width:40px;height:40px;line-height:40px;background:#f8f9fa;border-radius:6px;">
-                <i class="fas fa-microchip"></i>
-              </div>
-            {% endif %}
-          </td>
-
-          <!-- Название -->
-          <td>
-            <a href="{% url 'assets:asset_detail' workstation.pk %}" class="fw-semibold text-decoration-none">
-              {{ workstation.name }}
-            </a>
-            <div class="text-muted small">
-              {% if workstation.model %}
-              {{ workstation.model }}
-              {% if workstation.manufacturer %} / {{ workstation.manufacturer }}{% endif %}
-              {% else %}
-              {{ workstation.type_name|default:"—" }}
-              {% endif %}
-            </div>
-          </td>
-
-          <!-- Тип и категория -->
-          <td>
-            <div>{{ workstation.type_name|default:"—" }}</div>
-            <small class="badge bg-light text-dark border">
-              {{ workstation.get_category_display }}
-            </small>
-          </td>
-
-          <!-- Статус -->
-          <td>
-            {% if workstation.status == 'prod' %}
-             <span class="badge text-bg-success">
-               <i class="fas fa-check-circle me-1"></i>
-               {{ workstation.get_status_display }}
-             </span>
-            {% elif workstation.status == 'problem' %}
-              <span class="badge text-bg-danger">
-                <i class="fas fa-exclamation-triangle me-1"></i>
-                {{ workstation.get_status_display }}
-              </span>
-            {% elif workstation.status == 'maint' %}
-             <span class="badge text-bg-warning">
-               <i class="fas fa-tools me-1"></i>
-               {{ workstation.get_status_display }}
-             </span>
-            {% elif workstation.status == 'setup' %}
-              <span class="badge text-bg-info">
-                <i class="fas fa-cog me-1"></i>
-                {{ workstation.get_status_display }}
-              </span>
-            {% else %}
-             <span class="badge text-bg-secondary">
-                {{ workstation.get_status_display }}
-              </span>
-            {% endif %}
-
-            {% if workstation.is_under_warranty %}
-            <div class="mt-1 small">
-              <span class="badge bg-success">
-                <i class="fas fa-shield-alt me-1"></i>
-                На гарантии
-              </span>
-            </div>
-            {% endif %}
-          </td>
-
-          <!-- Глобальное состояние -->
-          <td>
-            {% if workstation.global_state == 'active' %}
-            <span class="badge bg-success">{{ workstation.get_global_state_display }}</span>
-            {% elif workstation.global_state == 'arch' %}
-            <span class="badge bg-secondary">{{ workstation.get_global_state_display }}</span>
-            {% elif workstation.global_state == 'reserve' %}
-            <span class="badge bg-info">{{ workstation.get_global_state_display }}</span>
-            {% elif workstation.global_state == 'decommissioned' %}
-            <span class="badge bg-dark">{{ workstation.get_global_state_display }}</span>
-            {% endif %}
-          </td>
-
-          <!-- Локация -->
-          <td>{{ workstation.location }}</td>
-
-          <!-- Ответственный -->
-          <td>
-{% if workstation.responsible.job_title %}
-<small class="text-muted">
-    {{ workstation.responsible.job_title }}
-</small>
-{% endif %}
-          </td>
-
-          <!-- Действия -->
-          <td>
-            <div class="btn-group btn-group-sm">
-              <a href="{% url 'assets:asset_detail' workstation.pk %}"
-                 class="btn btn-outline-info"
-                 data-bs-toggle="tooltip"
-                 title="Просмотр">
-                <i class="fas fa-eye"></i>
-              </a>
-              {% if perms.assets.change_workstation %}
-              <a href="{% url 'assets:asset_edit' workstation.pk %}"
-                 class="btn btn-outline-primary"
-                 data-bs-toggle="tooltip"
-                 title="Редактировать">
-                <i class="fas fa-edit"></i>
-              </a>
-              {% endif %}
-              {% if perms.assets.delete_workstation %}
-              <button class="btn btn-outline-danger"
-                      data-bs-toggle="tooltip"
-                      title="Удалить"
-                      onclick="confirmDelete('{{ workstation.name|escapejs }}', '{% url 'assets:asset_delete' workstation.pk %}')">
-                <i class="fas fa-trash"></i>
-              </button>
-              {% endif %}
-            </div>
-          </td>
+<div id="table-view" class="d-none">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr class="table-light">
+          <th style="width: 40px;"></th>
+          <th>Название</th>
+          <th>Категория</th>
+          <th>Статус</th>
+          <th>Состояние</th>
+          <th>Локация</th>
+          <th style="width: 100px;">Действия</th>
         </tr>
+      </thead>
+      <tbody>
+        {% for workstation in workstations %}
+          <tr>
+            <!-- Фото/иконка -->
+            <td>
+              {% if workstation.photo %}
+                <img src="{{ workstation.photo.url }}"
+                     class="rounded"
+                     style="width: 32px; height: 32px; object-fit: cover;"
+                     alt="{{ workstation.name }}">
+              {% else %}
+                <div class="text-muted text-center rounded bg-light"
+                     style="width: 32px; height: 32px; line-height: 32px;">
+                  <i class="bi bi-cpu"></i>
+                </div>
+              {% endif %}
+            </td>
 
-      {% empty %}
-        <tr>
-          <td colspan="8">
-            <div class="alert alert-secondary mb-0 text-center">
-              <i class="fas fa-info-circle me-2"></i>
-              Оборудование не найдено
-              {% if request.GET %}
-              <div class="mt-2">
-                <a href="{% url 'assets:asset_list' %}" class="btn btn-sm btn-outline-secondary">
-                  Очистить фильтры
+            <!-- Название -->
+            <td>
+              <div class="fw-semibold">
+                <a href="{% url 'assets:asset_detail' workstation.pk %}" class="text-decoration-none">
+                  {{ workstation.name }}
                 </a>
               </div>
+              <div class="small text-muted">
+                {% if workstation.model %}{{ workstation.model }}{% else %}{{ workstation.type_name|default:"—" }}{% endif %}
+              </div>
+            </td>
+
+            <!-- Категория -->
+            <td>
+              <span class="badge bg-light text-dark border">
+                {{ workstation.get_category_display }}
+              </span>
+            </td>
+
+            <!-- Статус -->
+            <td>
+              {% with status=workstation.status %}
+                {% if status == 'prod' %}
+                  <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                    <i class="bi bi-check-circle me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% elif status == 'problem' %}
+                  <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% elif status == 'maint' %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                    <i class="bi bi-tools me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% elif status == 'setup' %}
+                  <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                    <i class="bi bi-gear me-1"></i>
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                    {{ workstation.get_status_display }}
+                  </span>
+                {% endif %}
+              {% endwith %}
+
+              {% if workstation.is_under_warranty %}
+                <div class="mt-1">
+                  <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Гарантия
+                  </span>
+                </div>
               {% endif %}
-            </div>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+            </td>
+
+            <!-- Состояние -->
+            <td>
+              {% with state=workstation.global_state %}
+                {% if state == 'active' %}
+                  <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                    {{ workstation.get_global_state_display }}
+                  </span>
+                {% elif state == 'arch' %}
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                    {{ workstation.get_global_state_display }}
+                  </span>
+                {% elif state == 'reserve' %}
+                  <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                    {{ workstation.get_global_state_display }}
+                  </span>
+                {% elif state == 'decommissioned' %}
+                  <span class="badge bg-dark-subtle text-dark-emphasis">
+                    {{ workstation.get_global_state_display }}
+                  </span>
+                {% endif %}
+              {% endwith %}
+            </td>
+
+            <!-- Локация -->
+            <td>
+              <div>{{ workstation.location }}</div>
+              {% if workstation.responsible %}
+                <div class="small text-muted">
+                  <i class="bi bi-person me-1"></i>
+                  {{ workstation.responsible }}
+                </div>
+              {% endif %}
+            </td>
+
+            <!-- Действия -->
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="{% url 'assets:asset_detail' workstation.pk %}"
+                   class="btn btn-outline-secondary"
+                   data-bs-toggle="tooltip"
+                   title="Просмотр">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if perms.assets.change_workstation %}
+                  <a href="{% url 'assets:asset_edit' workstation.pk %}"
+                     class="btn btn-outline-secondary"
+                     data-bs-toggle="tooltip"
+                     title="Редактировать">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="alert alert-light border text-center py-4">
+                <i class="bi bi-inbox fs-1 text-muted mb-2"></i>
+                <h5 class="text-muted">Оборудование не найдено</h5>
+                {% if request.GET %}
+                  <a href="{% url 'assets:asset_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                    Сбросить фильтры
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- Пагинация -->
 {% if is_paginated %}
 <nav aria-label="Навигация по страницам" class="mt-4">
-  <ul class="pagination justify-content-center">
-    {% if page_obj.has_previous %}
-    <li class="page-item">
-      <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-double-left"></i>
-      </a>
-    </li>
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-left"></i>
-      </a>
-    </li>
-    {% endif %}
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+    <div class="text-muted small">
+      Показано <span class="fw-semibold">{{ page_obj.start_index }}-{{ page_obj.end_index }}</span>
+      из <span class="fw-semibold">{{ paginator.count }}</span>
+    </div>
 
-    {% for num in page_obj.paginator.page_range %}
-      {% if page_obj.number == num %}
-      <li class="page-item active">
-        <span class="page-link">{{ num }}</span>
-      </li>
-      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-          {{ num }}
-        </a>
-      </li>
+    <ul class="pagination mb-0">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Первая">
+            <i class="bi bi-chevron-double-left"></i>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Предыдущая">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
       {% endif %}
-    {% endfor %}
 
-    {% if page_obj.has_next %}
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-right"></i>
-      </a>
-    </li>
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-        <i class="fas fa-angle-double-right"></i>
-      </a>
-    </li>
-    {% endif %}
-  </ul>
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+          </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+              {{ num }}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
 
-  <div class="text-center text-muted small mt-2">
-    Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-    <span class="mx-2">•</span>
-    Всего записей: {{ paginator.count }}
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Следующая">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Последняя">
+            <i class="bi bi-chevron-double-right"></i>
+          </a>
+        </li>
+      {% endif %}
+    </ul>
   </div>
 </nav>
 {% endif %}
+{% endblock %}
 
-<!-- ================= JS ================= -->
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const KEY = 'assets_view_mode';
-  const cardsBtn = document.getElementById('view-cards');
-  const tableBtn = document.getElementById('view-table');
   const cardsView = document.getElementById('cards-view');
   const tableView = document.getElementById('table-view');
+  const cardsRadio = document.getElementById('view-cards');
+  const tableRadio = document.getElementById('view-table');
   const toggleFiltersBtn = document.getElementById('toggleFilters');
   const additionalFilters = document.querySelector('.additional-filters');
 
@@ -674,148 +654,148 @@ document.addEventListener('DOMContentLoaded', function () {
     const isTable = mode === 'table';
     cardsView.classList.toggle('d-none', isTable);
     tableView.classList.toggle('d-none', !isTable);
-    tableBtn.classList.toggle('active', isTable);
-    cardsBtn.classList.toggle('active', !isTable);
-    try { localStorage.setItem(KEY, mode); } catch(e) {}
+    tableRadio.checked = isTable;
+    cardsRadio.checked = !isTable;
+
+    try {
+      localStorage.setItem(KEY, mode);
+    } catch(e) {
+      console.warn('LocalStorage недоступен');
+    }
   }
 
-  cardsBtn.addEventListener('click', () => applyViewMode('cards'));
-  tableBtn.addEventListener('click', () => applyViewMode('table'));
+  // Обработчики переключения вида
+  cardsRadio.addEventListener('change', () => applyViewMode('cards'));
+  tableRadio.addEventListener('change', () => applyViewMode('table'));
+
+  // Восстановление вида
   applyViewMode(localStorage.getItem(KEY) || 'cards');
 
   // Переключение дополнительных фильтров
   if (toggleFiltersBtn) {
     toggleFiltersBtn.addEventListener('click', function() {
-      if (additionalFilters.style.display === 'none') {
-        additionalFilters.style.display = 'block';
-        this.innerHTML = '<i class="fas fa-sliders-h me-1"></i>Скрыть фильтры';
+      const isHidden = additionalFilters.style.display === 'none';
+      additionalFilters.style.display = isHidden ? 'block' : 'none';
+
+      const icon = this.querySelector('i');
+      if (isHidden) {
+        icon.className = 'bi bi-sliders me-1';
+        this.innerHTML = '<i class="bi bi-sliders me-1"></i>Скрыть фильтры';
       } else {
-        additionalFilters.style.display = 'none';
-        this.innerHTML = '<i class="fas fa-sliders-h me-1"></i>Дополнительные фильтры';
+        icon.className = 'bi bi-sliders me-1';
+        this.innerHTML = '<i class="bi bi-sliders me-1"></i>Дополнительные фильтры';
       }
     });
   }
 
-  // Автоотправка формы при изменении сортировки
-  const sortSelect = document.querySelector('select[name="sort"]');
-  const orderSelect = document.querySelector('select[name="order"]');
-
-  if (sortSelect) {
-    sortSelect.addEventListener('change', function() {
+  // Автоотправка при изменении сортировки
+  document.querySelectorAll('select[name="sort"], select[name="order"]').forEach(select => {
+    select.addEventListener('change', () => {
       document.getElementById('filterForm').submit();
     });
-  }
-
-  if (orderSelect) {
-    orderSelect.addEventListener('change', function() {
-      document.getElementById('filterForm').submit();
-    });
-  }
-
-  // Подсказки
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
   });
 
-  // Функция подтверждения удаления
-  window.confirmDelete = function(name, url) {
-    if (confirm(`Вы уверены, что хотите удалить оборудование «${name}»?`)) {
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': '{{ csrf_token }}',
-          'Accept': 'application/json',
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.ok) {
-          window.location.reload();
-        } else {
-          alert('Ошибка при удалении: ' + data.error);
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Произошла ошибка при удалении');
-      });
-    }
-  };
+  // Инициализация подсказок
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
 
-  // Автозаполнение фильтров из URL
+  // Счетчик активных фильтров
   function updateFilterCount() {
     const form = document.getElementById('filterForm');
-    const inputs = form.querySelectorAll('select, input');
+    const inputs = form.querySelectorAll('select[name], input[name]');
     let activeFilters = 0;
+    const excludeFields = ['page', 'sort', 'order']; // Исключаем технические поля
 
     inputs.forEach(input => {
-      if (input.value && input.name !== 'page') {
+      if (input.value && input.name && !excludeFields.includes(input.name)) {
         activeFilters++;
       }
     });
 
-    // Обновляем текст кнопки фильтра
+    // Обновляем текст кнопки
     const filterBtn = form.querySelector('button[type="submit"]');
-    if (activeFilters > 0) {
-      filterBtn.innerHTML = `<i class="fas fa-filter me-1"></i>Применить (${activeFilters})`;
-    } else {
-      filterBtn.innerHTML = `<i class="fas fa-filter me-1"></i>Применить`;
+    if (filterBtn) {
+      if (activeFilters > 0) {
+        filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить (${activeFilters})`;
+        filterBtn.classList.add('btn-primary');
+        filterBtn.classList.remove('btn-outline-primary');
+      } else {
+        filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить`;
+        filterBtn.classList.add('btn-outline-primary');
+        filterBtn.classList.remove('btn-primary');
+      }
     }
   }
 
+  // Инициализация и обновление счетчика
   updateFilterCount();
-
-  // Следим за изменениями в фильтрах
   document.querySelectorAll('#filterForm select, #filterForm input').forEach(input => {
     input.addEventListener('change', updateFilterCount);
   });
+
+  // Удаление через модальное окно (используем уже существующее)
+  window.confirmDelete = function(name, url) {
+    // Используем существующее модальное окно подтверждения удаления
+    const deleteModal = document.querySelector('[data-confirm-delete]');
+    if (deleteModal) {
+      deleteModal.dataset.deleteUrl = url;
+      deleteModal.dataset.deleteName = name;
+      deleteModal.click();
+    } else {
+      // Fallback на стандартное подтверждение
+      if (confirm(`Удалить оборудование «${name}»?`)) {
+        window.location.href = url;
+      }
+    }
+  };
 });
 </script>
 
 <style>
-.table-row-link td:not(:last-child) { cursor: pointer; }
-.table-row-link:hover { background-color: rgba(0,0,0,.03); }
-
-.hover-shadow {
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.hover-shadow:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+/* Дополнительные стили */
+.object-fit-cover {
+  object-fit: cover;
 }
 
-.card-img-top {
-  border-top-left-radius: 0.375rem;
-  border-top-right-radius: 0.375rem;
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.badge {
-  font-size: 0.75em;
-}
-
-.pagination .page-item.active .page-link {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
-}
-
-.form-select:focus, .form-control:focus {
-  border-color: var(--bs-primary);
-  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
-}
-
-.input-group-text {
-  background-color: var(--bs-light);
-  border-color: var(--bs-border-color);
-}
-
+/* Плавное появление дополнительных фильтров */
 .additional-filters {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
+  from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Адаптивные стили для карточек */
+@media (max-width: 768px) {
+  .card-img-top {
+    height: 140px !important;
+  }
+}
+
+/* Улучшенные состояния для ссылок в таблице */
+.table a {
+  transition: color 0.2s;
+}
+
+.table a:hover {
+  color: var(--bs-primary) !important;
+}
+
+/* Консистентные отступы */
+.card-body {
+  padding: 1rem;
+}
+
+.card-footer {
+  padding: 0.75rem 1rem;
 }
 </style>
 {% endblock %}
