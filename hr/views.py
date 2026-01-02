@@ -74,7 +74,7 @@ class HRListView(LoginRequiredMixin, HRContextMixin, ListView):
         """Фильтрация и оптимизация queryset"""
         queryset = HumanResource.objects.all().select_related('manager')
 
-        # Аннотируем количество подчиненных
+        # Аннотируем количество подчиненных (ДО фильтрации!)
         queryset = queryset.annotate(
             sub_count=Count('subordinates')
         )
@@ -115,18 +115,26 @@ class HRListView(LoginRequiredMixin, HRContextMixin, ListView):
         if job_title:
             filters &= Q(job_title__icontains=job_title)
 
-        # Только руководители
-        only_managers = self.request.GET.get("only_managers")
-        if only_managers:
-            # Используем аннотированное поле sub_count
-            filters &= Q(sub_count__gt=0)
-
         # Активность
         is_active = self.request.GET.get("is_active")
         if is_active:
             filters &= Q(is_active=(is_active == 'true'))
 
-        return queryset.filter(filters)
+        # Применяем все фильтры кроме only_managers
+        if filters:
+            queryset = queryset.filter(filters)
+
+        # Только руководители (отдельно, т.к. используем аннотированное поле)
+        only_managers = self.request.GET.get("only_managers")
+        if only_managers:
+            queryset = queryset.filter(sub_count__gt=0)
+
+        # Добавляем фильтр "Есть подчиненные" если есть такой параметр
+        has_subordinates = self.request.GET.get("has_subordinates")
+        if has_subordinates:
+            queryset = queryset.filter(sub_count__gt=0)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         """Добавление дополнительного контекста"""
@@ -138,6 +146,7 @@ class HRListView(LoginRequiredMixin, HRContextMixin, ListView):
             "manager": self.request.GET.get("manager", ""),
             "job_title": self.request.GET.get("job_title", ""),
             "only_managers": self.request.GET.get("only_managers", ""),
+            "has_subordinates": self.request.GET.get("has_subordinates", ""),
             "is_active": self.request.GET.get("is_active", ""),
             "sort": self.request.GET.get("sort", "name"),
             "order": self.request.GET.get("order", "asc"),
@@ -217,15 +226,51 @@ class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
         """Отображение формы создания"""
         form = HumanResourceForm()
 
+        # Получаем manager из GET параметра
+        manager_id = request.GET.get('manager')
+        manager_instance = None
+        manager_info = None
+
+        # Если передан manager, предзаполняем форму и получаем информацию о руководителе
+        if manager_id:
+            try:
+                manager_instance = HumanResource.objects.get(pk=manager_id)
+                form = HumanResourceForm(initial={'manager': manager_id})
+                manager_info = {
+                    'id': manager_instance.pk,
+                    'name': manager_instance.name,
+                    'job_title': manager_instance.job_title or 'нет должности'
+                }
+            except HumanResource.DoesNotExist:
+                manager_info = {
+                    'id': manager_id,
+                    'name': f'Руководитель #{manager_id} (не найден)',
+                    'job_title': 'не найден'
+                }
+            except HumanResource.MultipleObjectsReturned:
+                # Если несколько объектов, берем первый
+                manager_instance = HumanResource.objects.filter(pk=manager_id).first()
+                if manager_instance:
+                    form = HumanResourceForm(initial={'manager': manager_id})
+                    manager_info = {
+                        'id': manager_instance.pk,
+                        'name': manager_instance.name,
+                        'job_title': manager_instance.job_title or 'нет должности'
+                    }
+
         # Список должностей для автодополнения
         job_titles = HumanResource.objects.exclude(
+            job_title__isnull=True
+        ).exclude(
             job_title=""
-        ).values_list('job_title', flat=True).distinct()
+        ).values_list('job_title', flat=True).distinct().order_by('job_title')
 
         return render(request, self.template_name, {
             'form': form,
             'create': True,
             'job_titles': job_titles,
+            'parent_manager': manager_id,
+            'manager_info': manager_info,  # Передаем информацию о руководителе
         })
 
     def post(self, request):

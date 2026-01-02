@@ -116,34 +116,64 @@
     </div>
     {% endif %}
 
+    <!-- ================= ПОИСК ================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-3">
+            <form method="get" id="searchForm">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input class="form-control border-start-0"
+                           type="search"
+                           name="q"
+                           placeholder="ФИО, должность, email..."
+                           value="{{ filter_params.q }}"
+                           aria-label="Поиск сотрудника">
+                    {% if filter_params.q %}
+                    <a href="{% url 'hr:hr_list' %}{% if request.GET and request.GET|length > 1 %}?{% for key, value in request.GET.items %}{% if key != 'q' %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% endif %}"
+                       class="btn btn-outline-secondary border-start-0"
+                       title="Очистить поиск">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-search me-1"></i>
+                        Найти
+                    </button>
+                </div>
+                {% if filter_params.q %}
+                <div class="mt-2 small text-muted">
+                    Найдено: <span class="fw-semibold">{{ paginator.count }}</span> записей по запросу "{{ filter_params.q }}"
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
     <!-- ================= ФИЛЬТРЫ ================= -->
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center py-3">
             <div class="d-flex align-items-center">
                 <i class="bi bi-funnel me-2"></i>
                 <span class="fw-semibold">Фильтры</span>
             </div>
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+            <button
+                class="btn btn-sm btn-outline-secondary"
+                type="button"
+                id="filterToggleBtn"
+            >
                 <i class="bi bi-chevron-down"></i>
             </button>
         </div>
 
-        <div class="collapse show" id="filterCollapse">
+        <div class="collapse" id="filterCollapse">
             <div class="card-body pt-0">
                 <form class="row g-2" method="get" id="filterForm">
-                    <!-- Основные фильтры -->
-                    <div class="col-xl-3 col-md-6">
-                        <label class="form-label small mb-1">Поиск</label>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-transparent">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input class="form-control" type="search" name="q"
-                                   placeholder="ФИО, должность..."
-                                   value="{{ filter_params.q }}">
-                        </div>
-                    </div>
+                    <!-- Скрытое поле поиска для сохранения поискового запроса -->
+                    <input type="hidden" name="q" value="{{ filter_params.q }}">
 
+                    <!-- Основные фильтры -->
                     <div class="col-xl-2 col-md-4">
                         <label class="form-label small mb-1">Руководитель</label>
                         <select name="manager" class="form-select form-select-sm select2-field" id="filter-manager">
@@ -179,67 +209,76 @@
                         </select>
                     </div>
 
-                    <div class="col-xl-1 col-md-4 d-flex align-items-end">
-                        <button class="btn btn-primary btn-sm w-100" type="submit">
-                            <i class="bi bi-funnel me-1"></i>
-                            Применить
-                        </button>
+                    <!-- Дополнительные параметры -->
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label small mb-1">Сортировка</label>
+                        <select name="sort" class="form-select form-select-sm">
+                            <option value="name" {% if filter_params.sort == 'name' %}selected{% endif %}>По ФИО</option>
+                            <option value="job_title" {% if filter_params.sort == 'job_title' %}selected{% endif %}>По должности</option>
+                            <option value="created_at" {% if filter_params.sort == 'created_at' %}selected{% endif %}>По дате создания</option>
+                        </select>
                     </div>
 
-                    <!-- Дополнительные фильтры -->
-                    <div class="col-12 mt-2">
-                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#additionalFiltersCollapse">
-                                <i class="bi bi-sliders me-1"></i>
-                                Дополнительные фильтры
-                            </button>
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label small mb-1">Порядок</label>
+                        <select name="order" class="form-select form-select-sm">
+                            <option value="asc" {% if filter_params.order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                            <option value="desc" {% if filter_params.order == 'desc' %}selected{% endif %}>По убыванию</option>
+                        </select>
+                    </div>
 
-                            <div class="text-muted small">
-                                Найдено: <span class="fw-semibold">{{ paginator.count|default:"0" }}</span> записей
+                    <!-- Кнопки управления -->
+                    <div class="col-xl-2 col-md-4 d-flex align-items-end gap-2">
+                        <button class="btn btn-primary btn-sm w-100" type="submit">
+                            <i class="bi bi-funnel me-1"></i>
+                            Применить фильтры
+                        </button>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'hr:hr_list' %}{% if filter_params.q %}?q={{ filter_params.q }}{% endif %}">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+
+                    <!-- Checkbox фильтры -->
+                    <div class="col-12 mt-2">
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="only_managers" id="only-managers" value="1"
+                                       {% if filter_params.only_managers %}checked{% endif %}>
+                                <label class="form-check-label small" for="only-managers">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    Только руководители
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="has_subordinates" id="has-subordinates" value="1"
+                                       {% if filter_params.has_subordinates %}checked{% endif %}>
+                                <label class="form-check-label small" for="has-subordinates">
+                                    <i class="bi bi-people me-1"></i>
+                                    Есть подчинённые
+                                </label>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-12">
-                        <div class="collapse" id="additionalFiltersCollapse">
-                            <div class="row g-2 pt-3 border-top">
-                                <!-- Только руководители -->
-                                <div class="col-md-3">
-                                    <div class="form-check mt-2">
-                                        <input class="form-check-input" type="checkbox"
-                                               name="only_managers" id="only-managers" value="1"
-                                               {% if filter_params.only_managers %}checked{% endif %}>
-                                        <label class="form-check-label" for="only-managers">
-                                            <i class="bi bi-person-badge me-1"></i>
-                                            Только руководители
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Сортировка -->
-                                <div class="col-md-3">
-                                    <label class="form-label small mb-1">Сортировка</label>
-                                    <select name="sort" class="form-select form-select-sm">
-                                        <option value="name" {% if filter_params.sort == 'name' %}selected{% endif %}>По ФИО</option>
-                                        <option value="job_title" {% if filter_params.sort == 'job_title' %}selected{% endif %}>По должности</option>
-                                    </select>
-                                </div>
-
-                                <!-- Порядок сортировки -->
-                                <div class="col-md-3">
-                                    <label class="form-label small mb-1">Порядок</label>
-                                    <select name="order" class="form-select form-select-sm">
-                                        <option value="asc" {% if filter_params.order == 'asc' %}selected{% endif %}>По возрастанию</option>
-                                        <option value="desc" {% if filter_params.order == 'desc' %}selected{% endif %}>По убыванию</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <a class="btn btn-outline-secondary btn-sm w-100" href="{% url 'hr:hr_list' %}">
-                                        <i class="bi bi-x-lg"></i>
-                                    </a>
-                                </div>
+                    <!-- Статистика найденных записей -->
+                    <div class="col-12 mt-2 pt-2 border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">
+                                Всего найдено: <span class="fw-semibold">{{ paginator.count }}</span> записей
+                                {% if filter_params.q %}
+                                    по запросу "{{ filter_params.q }}"
+                                {% endif %}
                             </div>
+                            {% if request.GET and not filter_params.q %}
+                            <div>
+                                <a href="{% url 'hr:hr_list' %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-x-lg me-1"></i>
+                                    Сбросить все фильтры
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </form>
@@ -542,14 +581,17 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* =====================================================
+       VIEW MODE (cards / table)
+       ===================================================== */
     const KEY = 'hr_view_mode';
     const cardsView = document.getElementById('cards-view');
     const tableView = document.getElementById('table-view');
     const cardsRadio = document.getElementById('view-cards');
     const tableRadio = document.getElementById('view-table');
 
-    // Переключение вида
     function applyViewMode(mode) {
         const isTable = mode === 'table';
         cardsView.classList.toggle('d-none', isTable);
@@ -559,68 +601,194 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             localStorage.setItem(KEY, mode);
-        } catch(e) {
-            console.warn('LocalStorage недоступен');
-        }
+        } catch (e) {}
     }
 
-    // Обработчики переключения вида
-    cardsRadio.addEventListener('change', () => applyViewMode('cards'));
-    tableRadio.addEventListener('change', () => applyViewMode('table'));
-
-    // Восстановление вида
+    cardsRadio?.addEventListener('change', () => applyViewMode('cards'));
+    tableRadio?.addEventListener('change', () => applyViewMode('table'));
     applyViewMode(localStorage.getItem(KEY) || 'cards');
 
-    // Инициализация collapse для фильтров
-    function initializeCollapse() {
-        const filterCollapse = document.getElementById('filterCollapse');
-        const additionalFiltersCollapse = document.getElementById('additionalFiltersCollapse');
+    /* =====================================================
+       MAIN FILTER COLLAPSE
+       ===================================================== */
+    const filterCollapseEl = document.getElementById('filterCollapse');
+    const filterToggleBtn = document.getElementById('filterToggleBtn');
+    const filterForm = document.getElementById('filterForm');
+    const searchForm = document.getElementById('searchForm');
 
-        // Обновляем иконки при показе/скрытии основных фильтров
-        if (filterCollapse) {
-            filterCollapse.addEventListener('show.bs.collapse', function () {
-                const toggleBtn = document.querySelector('[data-bs-target="#filterCollapse"]');
-                if (toggleBtn) {
-                    const icon = toggleBtn.querySelector('i');
-                    if (icon) {
-                        icon.className = 'bi bi-chevron-up';
+    let filterCollapse;
+
+    if (filterCollapseEl && filterToggleBtn) {
+        filterCollapse = new bootstrap.Collapse(filterCollapseEl, {
+            toggle: false
+        });
+
+        // ручной toggle
+        filterToggleBtn.addEventListener('click', () => {
+            const isOpen = filterCollapseEl.classList.contains('show');
+            isOpen ? filterCollapse.hide() : filterCollapse.show();
+        });
+
+        // иконка
+        filterCollapseEl.addEventListener('show.bs.collapse', () => {
+            filterToggleBtn.innerHTML = '<i class="bi bi-chevron-up"></i>';
+        });
+
+        filterCollapseEl.addEventListener('hide.bs.collapse', () => {
+            filterToggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        });
+    }
+
+    /* =====================================================
+       ACTIVE FILTER DETECTION (правильная логика)
+       ===================================================== */
+    function hasActiveFilters() {
+        if (!filterForm) return false;
+
+        const exclude = ['page', 'sort', 'order', 'q'];
+        const inputs = filterForm.querySelectorAll('input[name], select[name]');
+
+        // Собираем параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // Проверяем, есть ли в URL параметры фильтрации (кроме исключенных и пустых)
+        let hasFilters = false;
+
+        for (const [key, value] of urlParams.entries()) {
+            if (!exclude.includes(key) && value && value.trim() !== '') {
+                // Проверяем, что значение не по умолчанию
+                const input = filterForm.querySelector(`[name="${key}"]`);
+                if (input) {
+                    if (input.type === 'checkbox') {
+                        // Для чекбоксов значение должно быть '1'
+                        if (value === '1') {
+                            hasFilters = true;
+                            break;
+                        }
+                    } else if (input.type === 'select-one') {
+                        // Для селектов значение не должно быть пустым
+                        if (value && value !== '') {
+                            hasFilters = true;
+                            break;
+                        }
+                    } else {
+                        // Для других полей просто проверяем, что не пустое
+                        if (value && value.trim() !== '') {
+                            hasFilters = true;
+                            break;
+                        }
                     }
                 }
-            });
-
-            filterCollapse.addEventListener('hide.bs.collapse', function () {
-                const toggleBtn = document.querySelector('[data-bs-target="#filterCollapse"]');
-                if (toggleBtn) {
-                    const icon = toggleBtn.querySelector('i');
-                    if (icon) {
-                        icon.className = 'bi bi-chevron-down';
-                    }
-                }
-            });
+            }
         }
 
-        // Обновляем текст кнопки дополнительных фильтров
-        if (additionalFiltersCollapse) {
-            additionalFiltersCollapse.addEventListener('show.bs.collapse', function () {
-                const toggleBtn = document.querySelector('[data-bs-target="#additionalFiltersCollapse"]');
-                if (toggleBtn) {
-                    toggleBtn.innerHTML = '<i class="bi bi-sliders me-1"></i>Скрыть фильтры';
-                }
+        return hasFilters;
+    }
+
+    // если есть активные фильтры (кроме поиска) — раскрываем
+    if (filterCollapse && hasActiveFilters()) {
+        filterCollapse.show();
+    }
+
+    /* =====================================================
+       СИНХРОНИЗАЦИЯ ПОИСКА МЕЖДУ ФОРМАМИ
+       ===================================================== */
+    function syncSearchField() {
+        const searchInput = searchForm?.querySelector('input[name="q"]');
+        const hiddenSearchInput = filterForm?.querySelector('input[name="q"]');
+
+        if (searchInput && hiddenSearchInput) {
+            // При изменении в основном поиске
+            searchInput.addEventListener('input', function() {
+                hiddenSearchInput.value = this.value;
             });
 
-            additionalFiltersCollapse.addEventListener('hide.bs.collapse', function () {
-                const toggleBtn = document.querySelector('[data-bs-target="#additionalFiltersCollapse"]');
-                if (toggleBtn) {
-                    toggleBtn.innerHTML = '<i class="bi bi-sliders me-1"></i>Дополнительные фильтры';
-                }
+            // При изменении в скрытом поле (при отправке фильтров)
+            hiddenSearchInput.addEventListener('change', function() {
+                searchInput.value = this.value;
             });
         }
     }
 
-    // Инициализируем collapse
-    initializeCollapse();
+    syncSearchField();
 
-    // Инициализация Select2 для полей выбора
+    /* =====================================================
+       ОТПРАВКА ФОРМЫ ПОИСКА ПРИ НАЖАТИИ ENTER
+       ===================================================== */
+    const searchInput = searchForm?.querySelector('input[name="q"]');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchForm.submit();
+            }
+        });
+    }
+
+    /* =====================================================
+       AUTO SUBMIT (SORT & ORDER)
+       ===================================================== */
+    document.querySelectorAll('#filterForm select[name="sort"], #filterForm select[name="order"]').forEach(select => {
+        select.addEventListener('change', () => {
+            filterForm?.submit();
+        });
+    });
+
+    /* =====================================================
+       TOOLTIPS
+       ===================================================== */
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
+
+    /* =====================================================
+       FILTER COUNTER (исправленный)
+       ===================================================== */
+    function updateFilterCount() {
+        if (!filterForm) return;
+
+        const exclude = ['page', 'sort', 'order', 'q'];
+        const urlParams = new URLSearchParams(window.location.search);
+        let active = 0;
+
+        // Считаем только реально активные фильтры из URL
+        for (const [key, value] of urlParams.entries()) {
+            if (!exclude.includes(key) && value && value.trim() !== '') {
+                const input = filterForm.querySelector(`[name="${key}"]`);
+                if (input) {
+                    if (input.type === 'checkbox') {
+                        // Чекбокс активен только если value === '1'
+                        if (value === '1') active++;
+                    } else if (input.type === 'select-one') {
+                        // Селект активен только если выбрано значение (не пустое)
+                        if (value && value !== '') active++;
+                    } else {
+                        // Другие поля активны если не пустые
+                        if (value && value.trim() !== '') active++;
+                    }
+                }
+            }
+        }
+
+        const btn = filterForm.querySelector('button[type="submit"]');
+        if (!btn) return;
+
+        btn.innerHTML = active > 0
+            ? `<i class="bi bi-funnel me-1"></i>Применить (${active})`
+            : `<i class="bi bi-funnel me-1"></i>Применить`;
+    }
+
+    // Инициализация счетчика при загрузке
+    updateFilterCount();
+
+    // Обновление при изменении полей формы
+    filterForm?.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('change', updateFilterCount);
+    });
+
+    /* =====================================================
+       SELECT2 ИНИЦИАЛИЗАЦИЯ
+       ===================================================== */
     const select2Fields = document.querySelectorAll('.select2-field');
     select2Fields.forEach(field => {
         $(field).select2({
@@ -631,187 +799,22 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdownParent: field.closest('.modal') || document.body
         });
     });
-
-    // Автоотправка при изменении сортировки
-    document.querySelectorAll('select[name="sort"], select[name="order"]').forEach(select => {
-        select.addEventListener('change', () => {
-            document.getElementById('filterForm').submit();
-        });
-    });
-
-    // Инициализация подсказок
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
-
-    // Счетчик активных фильтров
-    function updateFilterCount() {
-        const form = document.getElementById('filterForm');
-        const inputs = form.querySelectorAll('select[name], input[name]');
-        let activeFilters = 0;
-        const excludeFields = ['page', 'sort', 'order']; // Исключаем технические поля
-
-        inputs.forEach(input => {
-            if (input.name && !excludeFields.includes(input.name)) {
-                if (input.type === 'checkbox') {
-                    if (input.checked) activeFilters++;
-                } else if (input.value && input.value.trim() !== '') {
-                    activeFilters++;
-                }
-            }
-        });
-
-        // Обновляем текст кнопки
-        const filterBtn = form.querySelector('button[type="submit"]');
-        if (filterBtn) {
-            if (activeFilters > 0) {
-                filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить (${activeFilters})`;
-                filterBtn.classList.add('btn-primary');
-                filterBtn.classList.remove('btn-outline-primary');
-            } else {
-                filterBtn.innerHTML = `<i class="bi bi-funnel me-1"></i>Применить`;
-                filterBtn.classList.add('btn-outline-primary');
-                filterBtn.classList.remove('btn-primary');
-            }
-        }
-    }
-
-    // Инициализация и обновление счетчика
-    updateFilterCount();
-    document.querySelectorAll('#filterForm select, #filterForm input').forEach(input => {
-        input.addEventListener('change', updateFilterCount);
-    });
-
-    // Удаление через модальное окно (используем уже существующее)
-    window.confirmDelete = function(name, url) {
-        // Используем существующее модальное окно подтверждения удаления
-        const deleteModal = document.querySelector('[data-confirm-delete]');
-        if (deleteModal) {
-            deleteModal.dataset.deleteUrl = url;
-            deleteModal.dataset.deleteName = name;
-            deleteModal.click();
-        } else {
-            // Fallback на стандартное подтверждение
-            if (confirm(`Удалить сотрудника «${name}»?`)) {
-                window.location.href = url;
-            }
-        }
-    };
-
-    // Автокомплит для руководителей и должностей
-    function initializeAutocomplete() {
-        // Инициализация автокомплита для руководителей
-        const managerSelect = document.getElementById('filter-manager');
-        if (managerSelect && typeof $.fn.select2 !== 'undefined') {
-            $(managerSelect).select2({
-                ajax: {
-                    url: "{% url 'hr:hr_manager_autocomplete' %}",
-                    dataType: 'json',
-                    delay: 250,
-                    data: params => ({ q: params.term }),
-                    processResults: data => ({
-                        results: data.map(item => ({ id: item.id, text: item.name }))
-                    }),
-                    cache: true
-                },
-                minimumInputLength: 1,
-                placeholder: 'Поиск руководителя...',
-                allowClear: true,
-                theme: 'bootstrap-5'
-            });
-        }
-
-        // Инициализация автокомплита для должностей
-        const jobTitleSelect = document.getElementById('filter-job-title');
-        if (jobTitleSelect && typeof $.fn.select2 !== 'undefined') {
-            $(jobTitleSelect).select2({
-                ajax: {
-                    url: "{% url 'hr:hr_job_title_autocomplete' %}",
-                    dataType: 'json',
-                    delay: 250,
-                    data: params => ({ q: params.term }),
-                    processResults: data => ({
-                        results: data.map(item => ({ id: item, text: item }))
-                    }),
-                    cache: true
-                },
-                minimumInputLength: 1,
-                placeholder: 'Поиск должности...',
-                allowClear: true,
-                theme: 'bootstrap-5'
-            });
-        }
-    }
-
-    // Инициализируем автокомплит после загрузки DOM
-    if (typeof $ !== 'undefined' && $.fn.select2) {
-        initializeAutocomplete();
-    } else {
-        // Ждем загрузки jQuery и Select2
-        const checkInterval = setInterval(() => {
-            if (typeof $ !== 'undefined' && $.fn.select2) {
-                clearInterval(checkInterval);
-                initializeAutocomplete();
-            }
-        }, 100);
-    }
-
-    // Инициализация всех collapse элементов (важно!)
-    const collapseElements = document.querySelectorAll('.collapse');
-    collapseElements.forEach(collapseEl => {
-        new bootstrap.Collapse(collapseEl, {
-            toggle: false
-        });
-    });
 });
 </script>
 
 <style>
-/* Специфичные стили для страницы персонала */
-.card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* Дополнительные стили */
+.object-fit-cover {
+    object-fit: cover;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-}
-
-/* Стили для бейджей статусов */
-.badge-status {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: 0.375rem;
-}
-
-/* Обрезание длинного текста */
-.text-truncate-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+.truncate {
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .card-body {
-        padding: 1rem !important;
-    }
-
-    .table-responsive {
-        font-size: 0.9rem;
-    }
-}
-
-/* Стили для пустых состояний */
-.empty-state {
-    opacity: 0.7;
-}
-
-.empty-state:hover {
-    opacity: 1;
-}
-
-/* Стили для ссылок в таблице */
+/* Улучшенные состояния для ссылок в таблице */
 .table a {
     transition: color 0.2s;
 }
@@ -820,35 +823,41 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--bs-primary) !important;
 }
 
-/* Стили для collapse элементов */
+/* Консистентные отступы */
+.card-body {
+    padding: 1rem;
+}
+
+.card-footer {
+    padding: 0.75rem 1rem;
+}
+
+/* Адаптивные стили для карточек */
+@media (max-width: 768px) {
+    .card-img-top {
+        height: 140px !important;
+    }
+}
+
+/* Плавное появление фильтров */
 .collapsing {
-    transition: height 0.3s ease;
+    transition: height 0.2s ease;
 }
 
-/* Кастомизация иконок collapse */
-[aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg);
-    transition: transform 0.3s ease;
+/* Стили для поискового поля */
+#searchForm .input-group .form-control {
+    border-left: 1px solid #dee2e6;
 }
 
-[aria-expanded="false"] .bi-chevron-down {
-    transform: rotate(0deg);
-    transition: transform 0.3s ease;
+#searchForm .input-group .btn-outline-secondary {
+    border-left: 0;
+    border-right: 0;
 }
 
-/* Темная тема */
-[data-bs-theme="dark"] .card {
-    background-color: var(--bs-dark);
-    border-color: var(--bs-border-color);
-}
-
-[data-bs-theme="dark"] .table-light {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .alert-light {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: var(--bs-border-color);
+/* Подсветка активного поиска */
+#searchForm .form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    border-color: #86b7fe;
 }
 </style>
 {% endblock %}
