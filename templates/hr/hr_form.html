@@ -31,18 +31,6 @@
           </div>
         </div>
 
-        <div class="alert alert-info d-flex align-items-center mb-4">
-          <i class="fas fa-info-circle fa-2x me-3"></i>
-          <div>
-            <strong>Внимание!</strong>
-            Поля, отмеченные <span class="text-danger fw-semibold">*</span>, обязательны для заполнения.
-            {% if not create %}
-            <br>
-            <small>Последнее изменение: {{ object.updated_at|date:"d.m.Y H:i" }}</small>
-            {% endif %}
-          </div>
-        </div>
-
         <form method="post" novalidate id="hrForm">
           {% csrf_token %}
 
@@ -115,7 +103,7 @@
                   <i class="fas fa-user-tag me-1"></i>
                   {{ form.job_title.label }}
                 </label>
-                {{ form.job_title|add_class:"form-control" }}
+                {{ form.job_title|add_class:"form-select js-job-title" }}
                 {% if form.job_title.errors %}
                 <div class="invalid-feedback d-block">
                   {{ form.job_title.errors }}
@@ -123,12 +111,6 @@
                 {% endif %}
                 <div class="form-text">Введите должность или выберите из списка</div>
 
-                <!-- Datalist для подсказок должностей -->
-                <datalist id="job-titles-datalist">
-                  {% for title in job_titles %}
-                    <option value="{{ title }}">
-                  {% endfor %}
-                </datalist>
               </div>
             </div>
           </div>
@@ -200,6 +182,7 @@
      ===================================================== -->
 <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
 <script src="{% static 'admin/js/vendor/select2/select2.full.js' %}"></script>
+
 <script>
 $(document).ready(function () {
     // Инициализация Select2 для руководителя
@@ -222,38 +205,40 @@ $(document).ready(function () {
     });
 
     // Автодополнение для должности
-    const jobTitleInput = $('#id_job_title');
-    if (jobTitleInput.length) {
-        jobTitleInput.attr('list', 'job-titles-datalist');
+    const $job = $('.js-job-title');
 
-        // Инициализация Select2 для должности с тегами
-        jobTitleInput.select2({
-            width: '100%',
-            tags: true,
-            placeholder: 'Введите или выберите должность',
-            allowClear: true,
-            theme: 'bootstrap-5',
-            ajax: {
-                url: "{% url 'hr:hr_job_title_autocomplete' %}",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return { q: params.term };
-                },
-                processResults: function (data) {
-                    return { results: data.results };
-                }
+if ($job.length) {
+    $job.select2({
+        width: '100%',
+        tags: true,
+        placeholder: 'Введите или выберите должность',
+        allowClear: true,
+        theme: 'bootstrap-5',
+        ajax: {
+            url: "{% url 'hr:hr_job_title_autocomplete' %}",
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return { q: params.term };
             },
-            createTag: function (params) {
-                const term = $.trim(params.term);
-                if (!term) return null;
-                return {
-                    id: term,
-                    text: term
-                };
+            processResults: function (data) {
+                return { results: data.results };
             }
-        });
+        },
+        createTag: function (params) {
+            const term = $.trim(params.term);
+            if (!term) return null;
+            return { id: term, text: term };
+        }
+    });
+
+    // 🔑 ВОССТАНОВЛЕНИЕ значения при редактировании
+    const initial = "{{ form.instance.job_title|default_if_none:''|escapejs }}";
+    if (initial) {
+        const opt = new Option(initial, initial, true, true);
+        $job.append(opt).trigger('change');
     }
+}
 
     // Проверка обязательных полей
     function validateRequiredFields() {
@@ -367,5 +352,74 @@ $(document).ready(function () {
     background-color: var(--bs-success);
     border-color: var(--bs-success);
 }
+
+/* ================================
+   HARD FIX: Select2 single alignment
+   ================================ */
+
+.select2-container--default
+.select2-selection--single {
+    display: flex;
+    align-items: center;
+}
+
+/* КЛЮЧЕВОЙ ФИКС */
+.select2-container--default
+.select2-selection--single
+.select2-selection__rendered {
+    display: flex !important;
+    align-items: center !important;
+
+    height: 100% !important;
+    line-height: normal !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* =========================================
+   Select2 SINGLE — HARD ABSOLUTE ALIGN FIX
+   ========================================= */
+
+.select2-container--default
+.select2-selection--single {
+    position: relative;
+    height: calc(2.375rem + 2px);
+}
+
+/* 🔥 ключ: вырываем текст из baseline */
+.select2-container--default
+.select2-selection--single
+.select2-selection__rendered {
+    position: absolute;
+    left: .75rem;
+    right: 2.25rem; /* место под стрелку */
+
+    top: 50%;
+    transform: translateY(-50%);
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    line-height: normal !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* clear (×) */
+.select2-container--default
+.select2-selection--single
+.select2-selection__clear {
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 </style>
 {% endblock %}
