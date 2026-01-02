@@ -370,6 +370,7 @@
 {% endfor %}
 </select>
 
+
                                     {% for e in form.location.errors %}
                                     <div class="invalid-feedback d-block">
                                         {{ e }}
@@ -438,7 +439,6 @@
                                         <i class="bi bi-person me-1"></i>
                                         {{ form.responsible_default.label }}
                                     </label>
-                                    <span class="text-danger">*</span>
 <select
     name="responsible_default"
     class="form-select js-tom-select-responsible"

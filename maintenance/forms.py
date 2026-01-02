@@ -391,12 +391,10 @@ class PlannedOrderForm(forms.ModelForm):
         ],
         widget=forms.RadioSelect(attrs={
             "class": "form-check-input frequency-choice",
-            "data-action": "change->planned-order#onFrequencyChange"
         }),
         required=True,
         initial="weekly"
     )
-
     # Переопределяем поля интервала для скрытого хранения
     interval_value = forms.IntegerField(
         required=False,
@@ -434,7 +432,6 @@ class PlannedOrderForm(forms.ModelForm):
         widget=forms.DateInput(attrs={
             "type": "date",
             "class": "form-control first-run-date",
-            "data-frequency": "daily"
         }),
         help_text="Дата первого запуска ежедневного обслуживания"
     )
@@ -445,7 +442,6 @@ class PlannedOrderForm(forms.ModelForm):
         required=False,
         widget=forms.Select(attrs={
             "class": "form-select weekday-select",
-            "data-frequency": "weekly"
         }),
         help_text="День недели для еженедельного обслуживания"
     )
@@ -457,7 +453,6 @@ class PlannedOrderForm(forms.ModelForm):
         max_value=31,
         widget=forms.NumberInput(attrs={
             "class": "form-control day-of-month",
-            "data-frequency": "monthly",
             "min": "1",
             "max": "31"
         }),
@@ -494,13 +489,16 @@ class PlannedOrderForm(forms.ModelForm):
                 "placeholder": "Описание плановых работ..."
             }),
             "workstation": forms.Select(attrs={
-                "class": "form-select"
+                "class": "form-select js-tom-select-workstation",
+                "data-placeholder": "Выберите оборудование..."
             }),
             "location": forms.Select(attrs={
-                "class": "form-select"
+                "class": "form-select js-tom-select-location",
+                "data-placeholder": "Выберите локацию..."
             }),
             "responsible_default": forms.Select(attrs={
-                "class": "form-select"
+                "class": "form-select js-tom-select-responsible",
+                "data-placeholder": "Выберите ответственного..."
             }),
             "category": forms.Select(attrs={
                 "class": "form-select"
@@ -540,6 +538,27 @@ class PlannedOrderForm(forms.ModelForm):
         """
         super().__init__(*args, **kwargs)
 
+        # Для локации - select с TomSelect
+        self.fields["location"].widget.attrs.update({
+            "class": "form-select js-tom-select-location",
+            "data-placeholder": "Выберите локацию...",
+            "data-allow-empty-option": "true",
+        })
+
+        # Для оборудования - тоже TomSelect
+        self.fields["workstation"].widget.attrs.update({
+            "class": "form-select js-tom-select-workstation",
+            "data-placeholder": "Выберите оборудование...",
+            "data-allow-empty-option": "true",
+        })
+
+        # Для ответственного - TomSelect
+        self.fields["responsible_default"].widget.attrs.update({
+            "class": "form-select js-tom-select-responsible",
+            "data-placeholder": "Выберите ответственного...",
+            "data-allow-empty-option": "true",
+        })
+
         # Делаем ответственного обязательным
         self.fields["responsible_default"].required = True
         self.fields["responsible_default"].queryset = HumanResource.objects.filter(
@@ -560,168 +579,6 @@ class PlannedOrderForm(forms.ModelForm):
         # Установка начального значения frequency_choice для существующего объекта
         if self.instance.pk:
             self._set_frequency_choice_from_instance()
-
-    def _set_frequency_choice_from_instance(self):
-        """
-        Устанавливает значение frequency_choice на основе существующего объекта.
-        """
-        if (self.instance.interval_unit == IntervalUnit.DAY and
-                self.instance.interval_value == 1):
-            self.fields["frequency_choice"].initial = "daily"
-        elif (self.instance.interval_unit == IntervalUnit.WEEK and
-              self.instance.interval_value == 1):
-            self.fields["frequency_choice"].initial = "weekly"
-        elif (self.instance.interval_unit == IntervalUnit.MONTH and
-              self.instance.interval_value == 1):
-            self.fields["frequency_choice"].initial = "monthly"
-        else:
-            self.fields["frequency_choice"].initial = "custom"
-
-    def clean(self):
-        """
-        Валидация формы плановой работы.
-        """
-        cleaned_data = super().clean()
-
-        # Проверка, что форма не пустая
-        if not self.has_changed():
-            raise forms.ValidationError(
-                "Форма пуста. Заполните основные параметры плана."
-            )
-
-        frequency = cleaned_data.get("frequency_choice")
-
-        if not frequency:
-            raise forms.ValidationError(
-                "Выберите периодичность работ."
-            )
-
-        # Валидация по режимам
-        if frequency == "daily":
-            if not cleaned_data.get("first_run_date"):
-                self.add_error(
-                    "first_run_date",
-                    "Укажите дату первого обслуживания для ежедневного плана"
-                )
-            cleaned_data["interval_unit"] = IntervalUnit.DAY
-            cleaned_data["interval_value"] = 1
-
-        elif frequency == "weekly":
-            if cleaned_data.get("weekday") in (None, ""):
-                self.add_error(
-                    "weekday",
-                    "Выберите день недели для еженедельного плана"
-                )
-            cleaned_data["interval_unit"] = IntervalUnit.WEEK
-            cleaned_data["interval_value"] = 1
-
-        elif frequency == "monthly":
-            day_of_month = cleaned_data.get("day_of_month")
-            if day_of_month is None:
-                self.add_error(
-                    "day_of_month",
-                    "Укажите число месяца для ежемесячного плана"
-                )
-            elif not (1 <= day_of_month <= 31):
-                self.add_error(
-                    "day_of_month",
-                    "Число месяца должно быть в диапазоне 1-31"
-                )
-            cleaned_data["interval_unit"] = IntervalUnit.MONTH
-            cleaned_data["interval_value"] = 1
-
-        elif frequency == "custom":
-            interval_value = cleaned_data.get("interval_value")
-            interval_unit = cleaned_data.get("interval_unit")
-
-            if interval_value in (None, ""):
-                self.add_error(
-                    "interval_value",
-                    "Укажите значение интервала"
-                )
-            elif interval_value < 1:
-                self.add_error(
-                    "interval_value",
-                    "Значение интервала должно быть ≥ 1"
-                )
-
-            if not interval_unit:
-                self.add_error(
-                    "interval_unit",
-                    "Выберите единицу измерения интервала"
-                )
-
-        # Проверка трудозатрат
-        labor_plan_hours = cleaned_data.get("labor_plan_hours")
-        if labor_plan_hours is not None and labor_plan_hours < 0:
-            self.add_error(
-                "labor_plan_hours",
-                "Трудоёмкость не может быть отрицательной"
-            )
-
-        return cleaned_data
-
-    def clean_name(self):
-        """
-        Валидация названия плана.
-        """
-        name = self.cleaned_data.get("name")
-
-        if name and len(name.strip()) < 3:
-            raise forms.ValidationError(
-                "Название плана должно содержать минимум 3 символа"
-            )
-
-        return name.strip() if name else name
-
-    def clean_labor_plan_hours(self):
-        """
-        Валидация трудозатрат.
-        """
-        labor_plan_hours = self.cleaned_data.get("labor_plan_hours")
-
-        if labor_plan_hours is not None:
-            # Округление до 1 знака после запятой
-            labor_plan_hours = round(labor_plan_hours, 1)
-
-            # Проверка максимального значения
-            if labor_plan_hours > 9999.9:
-                raise forms.ValidationError(
-                    "Трудоёмкость слишком велика"
-                )
-
-        return labor_plan_hours
-
-    def save(self, commit=True):
-        """
-        Сохранение формы с пересчетом next_run при изменении расписания.
-        """
-        obj = super().save(commit=False)
-
-        # Определяем, изменились ли поля расписания
-        schedule_fields = {
-            "frequency_choice",
-            "first_run_date",
-            "weekday",
-            "day_of_month",
-            "interval_value",
-            "interval_unit",
-            "is_active",
-        }
-        schedule_changed = (
-                not obj.pk or
-                any(field in self.changed_data for field in schedule_fields)
-        )
-
-        # Пересчитываем next_run если план активен и расписание изменилось
-        if obj.is_active and schedule_changed:
-            obj.next_run = obj.compute_initial_next_run()
-
-        if commit:
-            obj.save()
-            self.save_m2m()
-
-        return obj
 
 
 # ============================================================================
