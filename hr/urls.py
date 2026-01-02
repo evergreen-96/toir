@@ -22,7 +22,7 @@ urlpatterns = [
 
     # AJAX endpoints
     path("ajax/managers/", hr_manager_autocomplete, name="hr_manager_autocomplete"),
-    path("ajax/job-titles/", hr_job_title_autocomplete, name="hr_job_title_autocomplete"),
+    path("autocomplete/job-titles/", hr_job_title_autocomplete, name="hr_job_title_autocomplete"),
     # path("ajax/org-chart/", ajax_get_org_chart, name="ajax_get_org_chart"),
 
     # Экспорт

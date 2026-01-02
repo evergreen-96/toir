@@ -10,11 +10,19 @@ class HumanResourceForm(forms.ModelForm):
         model = HumanResource
         fields = ["name", "job_title", "manager", "is_active"]
         widgets = {
-            'job_title': forms.TextInput(
-                attrs={'class': 'form-control', 'list': 'job-titles-datalist'}
+            'manager': forms.Select(
+                attrs={
+                    'class': 'form-select js-tom-select',
+                    'data-placeholder': _('Выберите руководителя...')
+                }
             ),
-            'name': forms.TextInput(
-                attrs={'class': 'form-control'}
+            'job_title': forms.TextInput(
+                attrs={
+                    'class': 'form-control js-tom-select',
+                    'data-placeholder': _('Введите должность...'),
+                    'data-create': 'true',  # Разрешить создание новых
+                    'data-create-on-blur': 'true'
+                }
             ),
         }
         help_texts = {
@@ -25,21 +33,33 @@ class HumanResourceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Оптимизируем queryset для поля manager
-        self.fields['manager'].queryset = HumanResource.objects.all().order_by('name')
+        # Для менеджера - обычный select с поиском
+        self.fields['manager'].queryset = HumanResource.objects.filter(
+            is_active=True
+        ).order_by('name')
 
         if self.instance.pk:
-            # Исключаем возможность выбрать самого себя руководителем
             self.fields['manager'].queryset = self.fields['manager'].queryset.exclude(
                 pk=self.instance.pk
             )
 
-        # Добавляем CSS классы
+        # Для должности - создаем свой field
+        self.fields['job_title'] = forms.CharField(
+            label=_("Должность"),
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'form-control js-tom-select-job',
+                'data-placeholder': _('Выберите или введите новую должность...'),
+            })
+        )
+
+        # Классы Bootstrap для остальных полей
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
-                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+                base = field.widget.attrs.get('class', '')
+                if 'form-control' not in base and 'form-select' not in base:
+                    field.widget.attrs['class'] = (base + ' form-control').strip()
 
-        # Делаем поле имени обязательным
         self.fields['name'].required = True
 
 

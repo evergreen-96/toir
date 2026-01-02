@@ -230,12 +230,15 @@ class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
         manager_id = request.GET.get('manager')
         manager_instance = None
         manager_info = None
+        initial_manager = None  # Для хранения выбранного значения руководителя
 
         # Если передан manager, предзаполняем форму и получаем информацию о руководителе
         if manager_id:
             try:
                 manager_instance = HumanResource.objects.get(pk=manager_id)
-                form = HumanResourceForm(initial={'manager': manager_id})
+                initial_manager = manager_instance
+                # Правильное предзаполнение формы
+                form = HumanResourceForm(initial={'manager': manager_instance})
                 manager_info = {
                     'id': manager_instance.pk,
                     'name': manager_instance.name,
@@ -247,16 +250,30 @@ class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
                     'name': f'Руководитель #{manager_id} (не найден)',
                     'job_title': 'не найден'
                 }
+                initial_manager = None
             except HumanResource.MultipleObjectsReturned:
                 # Если несколько объектов, берем первый
                 manager_instance = HumanResource.objects.filter(pk=manager_id).first()
                 if manager_instance:
-                    form = HumanResourceForm(initial={'manager': manager_id})
+                    initial_manager = manager_instance
+                    form = HumanResourceForm(initial={'manager': manager_instance})
                     manager_info = {
                         'id': manager_instance.pk,
                         'name': manager_instance.name,
                         'job_title': manager_instance.job_title or 'нет должности'
                     }
+                else:
+                    initial_manager = None
+
+        # Получаем ВСЕХ активных руководителей для предзагрузки
+        all_managers = HumanResource.objects.filter(
+            is_active=True
+        ).order_by('name').values('id', 'name', 'job_title')[:100]
+
+        # Получаем ВСЕ должности для предзагрузки
+        all_job_titles = HumanResource.objects.exclude(
+            job_title=""
+        ).values_list('job_title', flat=True).distinct().order_by('job_title')[:100]
 
         # Список должностей для автодополнения
         job_titles = HumanResource.objects.exclude(
@@ -270,45 +287,79 @@ class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
             'create': True,
             'job_titles': job_titles,
             'parent_manager': manager_id,
-            'manager_info': manager_info,  # Передаем информацию о руководителе
+            'manager_info': manager_info,
+            'initial_manager': initial_manager,  # Передаем выбранного руководителя
+            'all_managers': list(all_managers),
+            'all_job_titles': list(all_job_titles),
         })
 
     def post(self, request):
-        """Обработка создания"""
+        """Обработка отправки формы"""
         form = HumanResourceForm(request.POST)
 
-        # Список должностей для автодополнения
-        job_titles = HumanResource.objects.exclude(
-            job_title=""
-        ).values_list('job_title', flat=True).distinct()
-
         if form.is_valid():
-            obj = form.save(commit=False)
+            try:
+                # Создаем объект, но не сохраняем пока
+                obj = form.save(commit=False)
 
-            # Добавляем информацию для аудита
-            obj = self.add_audit_info(obj, "создание")
+                # Добавляем информацию для аудита
+                obj = self.add_audit_info(obj, "создание")
 
-            # Сохраняем объект
-            obj.save()
+                # Сохраняем объект
+                obj.save()
 
-            # Добавляем сообщение об успехе
-            messages.success(
+                # Обработка "Сохранить и добавить еще"
+                save_and_add = request.POST.get('save_and_add')
+
+                if save_and_add:
+                    messages.success(
+                        request,
+                        _('Сотрудник "{}" успешно создан').format(obj.name)
+                    )
+                    return redirect('{}?manager={}'.format(
+                        reverse('hr:hr_new'),
+                        obj.pk  # Делаем нового сотрудника руководителем по умолчанию
+                    ))
+                else:
+                    messages.success(
+                        request,
+                        _('Сотрудник "{}" успешно создан').format(obj.name)
+                    )
+                    return redirect('hr:hr_detail', pk=obj.pk)
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    _('Ошибка при создании сотрудника: {}').format(str(e))
+                )
+        else:
+            messages.error(
                 request,
-                _('Сотрудник "{}" успешно создан').format(obj.name)
+                _('Пожалуйста, исправьте ошибки в форме')
             )
 
-            return redirect("hr:hr_detail", pk=obj.pk)
+        # Если форма невалидна или есть ошибки, показываем форму снова
+        all_managers = HumanResource.objects.filter(
+            is_active=True
+        ).order_by('name').values('id', 'name', 'job_title')[:100]
+
+        all_job_titles = HumanResource.objects.exclude(
+            job_title=""
+        ).values_list('job_title', flat=True).distinct().order_by('job_title')[:100]
+
+        job_titles = HumanResource.objects.exclude(
+            job_title__isnull=True
+        ).exclude(
+            job_title=""
+        ).values_list('job_title', flat=True).distinct().order_by('job_title')
 
         return render(request, self.template_name, {
             'form': form,
             'create': True,
             'job_titles': job_titles,
+            'all_managers': list(all_managers),
+            'all_job_titles': list(all_job_titles),
         })
-
-
-# =======================
-# Update View
-# =======================
 
 class HRUpdateView(LoginRequiredMixin, PermissionRequiredMixin,
                    HRContextMixin, HRAuditMixin, View):
@@ -322,6 +373,16 @@ class HRUpdateView(LoginRequiredMixin, PermissionRequiredMixin,
         obj = get_object_or_404(HumanResource, pk=pk)
         form = HumanResourceForm(instance=obj)
 
+        # Получаем ВСЕХ активных руководителей для предзагрузки
+        all_managers = HumanResource.objects.filter(
+            is_active=True
+        ).exclude(pk=obj.pk).order_by('name').values('id', 'name', 'job_title')[:100]
+
+        # Получаем ВСЕ должности для предзагрузки
+        all_job_titles = HumanResource.objects.exclude(
+            job_title=""
+        ).values_list('job_title', flat=True).distinct().order_by('job_title')[:100]
+
         # Список должностей для автодополнения
         job_titles = HumanResource.objects.exclude(
             job_title=""
@@ -332,42 +393,62 @@ class HRUpdateView(LoginRequiredMixin, PermissionRequiredMixin,
             'create': False,
             'object': obj,
             'job_titles': job_titles,
+            'all_managers': list(all_managers),  # Добавляем всех руководителей
+            'all_job_titles': list(all_job_titles),  # Добавляем все должности
         })
 
     def post(self, request, pk):
-        """Обработка редактирования"""
+        """Обработка отправки формы редактирования"""
         obj = get_object_or_404(HumanResource, pk=pk)
         form = HumanResourceForm(request.POST, instance=obj)
 
-        # Список должностей для автодополнения
+        if form.is_valid():
+            try:
+                obj = form.save(commit=False)
+
+                # Добавляем информацию для аудита
+                obj = self.add_audit_info(obj, "редактирование")
+
+                obj.save()
+
+                messages.success(
+                    request,
+                    _('Изменения сотрудника "{}" сохранены').format(obj.name)
+                )
+                return redirect('hr:hr_detail', pk=obj.pk)
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    _('Ошибка при сохранении изменений: {}').format(str(e))
+                )
+        else:
+            messages.error(
+                request,
+                _('Пожалуйста, исправьте ошибки в форме')
+            )
+
+        # Если форма невалидна, показываем форму снова
+        all_managers = HumanResource.objects.filter(
+            is_active=True
+        ).exclude(pk=obj.pk).order_by('name').values('id', 'name', 'job_title')[:100]
+
+        all_job_titles = HumanResource.objects.exclude(
+            job_title=""
+        ).values_list('job_title', flat=True).distinct().order_by('job_title')[:100]
+
         job_titles = HumanResource.objects.exclude(
             job_title=""
         ).values_list('job_title', flat=True).distinct()
-
-        if form.is_valid():
-            obj = form.save(commit=False)
-
-            # Добавляем информацию для аудита
-            obj = self.add_audit_info(obj, "редактирование")
-
-            # Сохраняем объект
-            obj.save()
-
-            # Добавляем сообщение об успехе
-            messages.success(
-                request,
-                _('Изменения в сотруднике "{}" сохранены').format(obj.name)
-            )
-
-            return redirect("hr:hr_detail", pk=obj.pk)
 
         return render(request, self.template_name, {
             'form': form,
             'create': False,
             'object': obj,
             'job_titles': job_titles,
+            'all_managers': list(all_managers),
+            'all_job_titles': list(all_job_titles),
         })
-
 
 # =======================
 # Delete View
@@ -449,28 +530,37 @@ def hr_manager_autocomplete(request):
 @login_required
 @permission_required('hr.view_humanresource', raise_exception=True)
 def hr_job_title_autocomplete(request):
-    """Автодополнение для поиска должностей"""
+    """Автодополнение для должностей (формат для Tom-select)"""
     q = request.GET.get("q", "")
+    load_all = request.GET.get("load_all", "")
 
-    qs = (
-        HumanResource.objects
-        .exclude(job_title="")
-        .values_list("job_title", flat=True)
-        .distinct()
-        .order_by("job_title")
-    )
+    qs = HumanResource.objects.exclude(job_title="")
 
-    if q:
+    # Если запрос load_all=true или пустой запрос - загружаем все должности
+    if load_all == "true" or not q:
+        titles = (
+            qs.values_list("job_title", flat=True)
+            .distinct()
+            .order_by("job_title")[:100]  # Ограничим 100 записей
+        )
+    else:
+        # Поиск по запросу
         qs = qs.filter(job_title__icontains=q)
+        titles = (
+            qs.values_list("job_title", flat=True)
+            .distinct()
+            .order_by("job_title")[:20]
+        )
 
-    qs = qs[:20]
+    # Формат для Tom-select
+    results = []
+    for title in titles:
+        results.append({
+            "value": title,
+            "text": title
+        })
 
-    return JsonResponse({
-        "results": [
-            {"id": title, "text": title}
-            for title in qs
-        ]
-    })
+    return JsonResponse({"results": results})
 
 
 # =======================
