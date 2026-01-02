@@ -1,821 +1,101 @@
 {% extends "base.html" %}
 {% load form_extras %}
-
 {% block title %}
-    {% if create %}Новый материал{% else %}Редактирование материала #{{ form.instance.pk }}{% endif %}
+  {% if create %}Новый материал{% else %}Редактирование материала{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
-    <!-- =====================================================
-         1. HEADER
-         ===================================================== -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-        <div class="mb-3 mb-md-0">
-            <nav aria-label="breadcrumb" class="mb-2">
-                <ol class="breadcrumb small">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'inventory:material_list' %}" class="text-decoration-none">
-                            Материалы
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        {% if create %}Новый материал{% else %}Редактирование{% endif %}
-                    </li>
-                </ol>
-            </nav>
+<div class="row justify-content-center">
+  <div class="col-xl-8 col-lg-9">
 
-            <h1 class="h2 mb-1">
-                {% if create %}
-                <i class="bi bi-clipboard-plus me-2 text-success"></i>
-                Новый материал
-                {% else %}
-                <i class="bi bi-pencil-square me-2 text-primary"></i>
-                Редактирование материала #{{ form.instance.pk }}
-                {% endif %}
-            </h1>
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
 
-            <div class="text-muted small">
-                {% if create %}
-                Создание новой позиции в справочнике материалов
-                {% else %}
-                Последнее изменение: {{ form.instance.updated_at|date:"d.m.Y H:i"|default:"—" }}
-                {% endif %}
-            </div>
+        <!-- ===== Header ===== -->
+        <div class="mb-3">
+          <h1 class="h4 mb-1">
+            {% if create %}Новый материал{% else %}Редактирование материала{% endif %}
+          </h1>
+          <div class="text-muted small">
+            Основные параметры материала
+          </div>
         </div>
 
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" href="{% url 'inventory:material_list' %}">
-                <i class="bi bi-arrow-left me-1"></i>Назад
-            </a>
-
-            {% if not create %}
-            <a class="btn btn-outline-info" href="{% url 'inventory:material_detail' form.instance.pk %}">
-                <i class="bi bi-eye me-1"></i>Просмотр
-            </a>
-            {% endif %}
+        <!-- ===== Legend ===== -->
+        <div class="text-muted small mb-4">
+          <span class="text-danger fw-semibold">*</span> — обязательные поля
         </div>
+
+        <form method="post" novalidate enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="row g-3">
+
+            {% for field in form %}
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  {{ field.label }}
+                  {% if field.field.required %}
+                    <span class="text-danger">*</span>
+                  {% endif %}
+                </label>
+
+                {% if field.field.widget.input_type == "select" or field.name == "suitable_for" %}
+                  {{ field|add_class:"form-select js-select2" }}
+                {% elif field.field.widget.input_type == "checkbox" %}
+                  <div class="form-check">
+                    {{ field|add_class:"form-check-input" }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                {% elif field.field.widget.input_type == "file" %}
+                  {{ field|add_class:"form-control" }}
+                {% else %}
+                  {{ field|add_class:"form-control" }}
+                {% endif %}
+
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+
+                {% if field.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ field.errors }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+          </div>
+
+          <!-- ===== Actions ===== -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'inventory:material_list' %}">
+              Отмена
+            </a>
+            <button class="btn btn-primary px-4" type="submit">
+              Сохранить
+            </button>
+          </div>
+
+        </form>
+
+      </div>
     </div>
 
-    <!-- Информационная подсказка -->
-    <div class="alert alert-light border mb-4">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-info-circle text-primary me-2"></i>
-            <div class="small">
-                Поля, отмеченные <span class="text-danger fw-semibold">*</span>, обязательны для заполнения.
-                <span class="d-block mt-1">
-                    <i class="bi bi-lightbulb text-warning"></i>
-                    Для поля "Группа" можно выбрать существующее значение или ввести новое.
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Основная форма -->
-    <form id="material-form" method="post" novalidate enctype="multipart/form-data">
-        {% csrf_token %}
-
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger mb-4">
-            <div class="d-flex align-items-center">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <div>{{ form.non_field_errors }}</div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="row">
-            <!-- Левая колонка: Основные данные -->
-            <div class="col-lg-8">
-                <div class="row g-3">
-                    <!-- =====================================================
-                         2. ОСНОВНАЯ ИНФОРМАЦИЯ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-info-circle me-2 text-primary"></i>
-                                    Основная информация
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Название -->
-                                <div class="mb-3">
-                                    <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold required">
-                                        <i class="bi bi-card-heading me-1"></i>
-                                        {{ form.name.label }}
-                                    </label>
-                                    <input type="text"
-                                           name="{{ form.name.name }}"
-                                           value="{{ form.name.value|default_if_none:'' }}"
-                                           class="form-control {% if form.name.errors %}is-invalid{% endif %}"
-                                           id="{{ form.name.id_for_label }}"
-                                           {% if form.name.field.required %}required{% endif %}>
-                                    {% if form.name.help_text %}
-                                    <div class="form-text">{{ form.name.help_text }}</div>
-                                    {% endif %}
-                                    {% for error in form.name.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ error }}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Группа и артикул -->
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.group.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-tags me-1"></i>
-                                                {{ form.group.label }}
-                                            </label>
-                                            <select name="{{ form.group.name }}"
-                                                    class="form-select js-select2-creatable {% if form.group.errors %}is-invalid{% endif %}"
-                                                    id="{{ form.group.id_for_label }}"
-                                                    data-tags="true"
-                                                    data-placeholder="Выберите или введите новую группу">
-                                                {% if form.group.value %}
-                                                    {% if form.group.value not in form.group.field.choices_values %}
-                                                    <option value="{{ form.group.value }}" selected>{{ form.group.value }}</option>
-                                                    {% endif %}
-                                                {% endif %}
-                                                {% for value, text in form.group.field.choices %}
-                                                    {% if value %}
-                                                    <option value="{{ value }}" {% if form.group.value == value %}selected{% endif %}>
-                                                        {{ text }}
-                                                    </option>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </select>
-                                            <input type="hidden" name="group_new" id="group_new_input">
-                                            {% if form.group.help_text %}
-                                            <div class="form-text">{{ form.group.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.group.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.article.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-upc-scan me-1"></i>
-                                                {{ form.article.label }}
-                                            </label>
-                                            <input type="text"
-                                                   name="{{ form.article.name }}"
-                                                   value="{{ form.article.value|default_if_none:'' }}"
-                                                   class="form-control {% if form.article.errors %}is-invalid{% endif %}"
-                                                   id="{{ form.article.id_for_label }}">
-                                            {% if form.article.help_text %}
-                                            <div class="form-text">{{ form.article.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.article.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Номер детали и производитель -->
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.part_number.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-gear me-1"></i>
-                                                {{ form.part_number.label }}
-                                            </label>
-                                            <input type="text"
-                                                   name="{{ form.part_number.name }}"
-                                                   value="{{ form.part_number.value|default_if_none:'' }}"
-                                                   class="form-control {% if form.part_number.errors %}is-invalid{% endif %}"
-                                                   id="{{ form.part_number.id_for_label }}">
-                                            {% if form.part_number.help_text %}
-                                            <div class="form-text">{{ form.part_number.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.part_number.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.vendor.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-building me-1"></i>
-                                                {{ form.vendor.label }}
-                                            </label>
-                                            <input type="text"
-                                                   name="{{ form.vendor.name }}"
-                                                   value="{{ form.vendor.value|default_if_none:'' }}"
-                                                   class="form-control {% if form.vendor.errors %}is-invalid{% endif %}"
-                                                   id="{{ form.vendor.id_for_label }}">
-                                            {% if form.vendor.help_text %}
-                                            <div class="form-text">{{ form.vendor.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.vendor.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Единица измерения и склад -->
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.uom.id_for_label }}" class="form-label fw-semibold required">
-                                                <i class="bi bi-rulers me-1"></i>
-                                                {{ form.uom.label }}
-                                            </label>
-                                            <select name="{{ form.uom.name }}"
-                                                    class="form-select {% if form.uom.errors %}is-invalid{% endif %}"
-                                                    id="{{ form.uom.id_for_label }}"
-                                                    {% if form.uom.field.required %}required{% endif %}>
-                                                {% for value, text in form.uom.field.choices %}
-                                                    <option value="{{ value }}" {% if form.uom.value == value %}selected{% endif %}>
-                                                        {{ text }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                            {% if form.uom.help_text %}
-                                            <div class="form-text">{{ form.uom.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.uom.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.warehouse.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-shop me-1"></i>
-                                                {{ form.warehouse.label }}
-                                            </label>
-                                            <select name="{{ form.warehouse.name }}"
-                                                    class="form-select js-select2 {% if form.warehouse.errors %}is-invalid{% endif %}"
-                                                    id="{{ form.warehouse.id_for_label }}">
-                                                <option value="">--- Выберите склад ---</option>
-                                                {% for value, text in form.warehouse.field.choices %}
-                                                    <option value="{{ value }}" {% if form.warehouse.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
-                                                        {{ text }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                            {% if form.warehouse.help_text %}
-                                            <div class="form-text">{{ form.warehouse.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.warehouse.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Количества -->
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.qty_available.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-box-arrow-in-down me-1"></i>
-                                                {{ form.qty_available.label }}
-                                            </label>
-                                            <input type="number"
-                                                   name="{{ form.qty_available.name }}"
-                                                   value="{{ form.qty_available.value|default_if_none:0 }}"
-                                                   class="form-control {% if form.qty_available.errors %}is-invalid{% endif %}"
-                                                   id="{{ form.qty_available.id_for_label }}"
-                                                   step="0.01"
-                                                   min="0">
-                                            {% if form.qty_available.help_text %}
-                                            <div class="form-text">{{ form.qty_available.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.qty_available.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.qty_reserved.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-lock me-1"></i>
-                                                {{ form.qty_reserved.label }}
-                                            </label>
-                                            <input type="number"
-                                                   name="{{ form.qty_reserved.name }}"
-                                                   value="{{ form.qty_reserved.value|default_if_none:0 }}"
-                                                   class="form-control {% if form.qty_reserved.errors %}is-invalid{% endif %}"
-                                                   id="{{ form.qty_reserved.id_for_label }}"
-                                                   step="0.01"
-                                                   min="0">
-                                            {% if form.qty_reserved.help_text %}
-                                            <div class="form-text">{{ form.qty_reserved.help_text }}</div>
-                                            {% endif %}
-                                            {% for error in form.qty_reserved.errors %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ error }}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Описание -->
-                                <div class="mb-3">
-                                    <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
-                                        <i class="bi bi-card-text me-1"></i>
-                                        {{ form.description.label }}
-                                    </label>
-                                    <textarea name="{{ form.description.name }}"
-                                              class="form-control {% if form.description.errors %}is-invalid{% endif %}"
-                                              id="{{ form.description.id_for_label }}"
-                                              rows="3">{{ form.description.value|default_if_none:'' }}</textarea>
-                                    {% if form.description.help_text %}
-                                    <div class="form-text">{{ form.description.help_text }}</div>
-                                    {% endif %}
-                                    {% for error in form.description.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ error }}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Подходит для оборудования -->
-                                <div class="mb-3">
-                                    <label for="{{ form.suitable_for.id_for_label }}" class="form-label fw-semibold">
-                                        <i class="bi bi-cpu me-1"></i>
-                                        {{ form.suitable_for.label }}
-                                    </label>
-                                    <select name="{{ form.suitable_for.name }}"
-                                            class="form-select js-select2 {% if form.suitable_for.errors %}is-invalid{% endif %}"
-                                            id="{{ form.suitable_for.id_for_label }}"
-                                            multiple>
-                                        {% for value, text in form.suitable_for.field.choices %}
-                                            <option value="{{ value }}"
-                                                    {% if value in form.suitable_for.value or value|stringformat:"s" in form.suitable_for.value %}selected{% endif %}>
-                                                {{ text }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                    {% if form.suitable_for.help_text %}
-                                    <div class="form-text">{{ form.suitable_for.help_text }}</div>
-                                    {% endif %}
-                                    {% for error in form.suitable_for.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ error }}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Активность -->
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input type="checkbox"
-                                               name="{{ form.is_active.name }}"
-                                               class="form-check-input {% if form.is_active.errors %}is-invalid{% endif %}"
-                                               id="{{ form.is_active.id_for_label }}"
-                                               {% if form.is_active.value %}checked{% endif %}>
-                                        <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
-                                            <i class="bi bi-toggle-on me-1"></i>
-                                            {{ form.is_active.label }}
-                                        </label>
-                                    </div>
-                                    {% if form.is_active.help_text %}
-                                    <div class="form-text">{{ form.is_active.help_text }}</div>
-                                    {% endif %}
-                                    {% for error in form.is_active.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ error }}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- =====================================================
-                         3. ИЗОБРАЖЕНИЕ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-image me-2 text-primary"></i>
-                                    Изображение материала
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Текущее изображение -->
-                                {% if not create and form.instance.image %}
-                                <div class="mb-4">
-                                    <div class="text-muted small mb-2">Текущее изображение:</div>
-                                    <div class="text-center">
-                                        <img src="{{ form.instance.image.url }}"
-                                             alt="{{ form.instance.name }}"
-                                             class="img-fluid rounded border mb-2 img-preview"
-                                             style="max-height: 200px; object-fit: contain;">
-                                        <div class="small text-muted">
-                                            {{ form.instance.image.name|cut:"materials/"|truncatechars:40 }}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                <!-- Поле загрузки изображения -->
-                                <div class="mb-3">
-                                    <label for="{{ form.image.id_for_label }}" class="form-label fw-semibold">
-                                        <i class="bi bi-upload me-1"></i>
-                                        {{ form.image.label }}
-                                    </label>
-                                    <input type="file"
-                                           name="{{ form.image.name }}"
-                                           class="form-control {% if form.image.errors %}is-invalid{% endif %}"
-                                           id="{{ form.image.id_for_label }}"
-                                           accept="image/*">
-                                    {% if form.image.help_text %}
-                                    <div class="form-text">{{ form.image.help_text }}</div>
-                                    {% endif %}
-                                    {% for error in form.image.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ error }}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Подсказка по изображению -->
-                                <div class="alert alert-light border small">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    Поддерживаются форматы: JPG, PNG, GIF, WebP. Максимальный размер: 5 MB.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Правая колонка: Действия -->
-            <div class="col-lg-4">
-                <div class="sticky-top" style="top: 20px;">
-                    <!-- =====================================================
-                         4. ДЕЙСТВИЯ
-                         ===================================================== -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-dark border-0">
-                            <h5 class="mb-0">
-                                <i class="bi bi-lightning me-2 text-primary"></i>
-                                Действия
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <!-- Основная кнопка сохранения -->
-                                <button type="submit"
-                                        class="btn btn-primary btn-lg d-flex align-items-center justify-content-center"
-                                        id="saveBtn">
-                                    <i class="bi bi-save me-2"></i>
-                                    {% if create %}Создать материал{% else %}Сохранить изменения{% endif %}
-                                </button>
-
-                                <!-- Кнопка "Сохранить и добавить еще" -->
-                                {% if create %}
-                                <button type="button"
-                                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
-                                        id="saveAndAddAnotherBtn">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Сохранить и добавить еще
-                                </button>
-                                {% endif %}
-
-                                <!-- Кнопка отмены -->
-                                <a href="{% url 'inventory:material_list' %}"
-                                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-x-circle me-2"></i>
-                                    Отмена
-                                </a>
-
-                                <!-- Ссылка на просмотр (при редактировании) -->
-                                {% if not create %}
-                                <a href="{% url 'inventory:material_detail' form.instance.pk %}"
-                                   class="btn btn-outline-info d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-eye me-2"></i>
-                                    Просмотр материала
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Индикатор прогресса -->
-                    <div class="mt-3" id="progressIndicator" style="display: none;">
-                        <div class="d-flex align-items-center">
-                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                <span class="visually-hidden">Загрузка...</span>
-                            </div>
-                            <span class="small text-muted">Сохранение данных...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+  </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
-<style>
-/* Стили для обязательных полей */
-.form-label.required::after {
-    content: " *";
-    color: var(--bs-danger);
-    font-weight: 600;
-}
-
-/* Стили для карточек */
-.card {
-    border: 1px solid var(--bs-border-color);
-    transition: box-shadow 0.2s ease;
-}
-
-.card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-}
-
-.card-header.bg-dark {
-    background-color: var(--bs-light-bg-subtle) !important;
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-/* Стили для изображения */
-.img-preview {
-    max-height: 200px;
-    object-fit: contain;
-    border: 1px solid var(--bs-border-color);
-    border-radius: .375rem;
-}
-
-/* Стили для нового значения в select2 */
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 38px;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .sticky-top {
-        position: static !important;
-    }
-
-    .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-    }
-}
-
-/* Темная тема */
-[data-bs-theme="dark"] .card-header.bg-dark {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .alert-light {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: var(--bs-border-color);
-}
-</style>
-{% endblock %}
-
-{% block extra_js %}
+<!-- ===== Select2 init ===== -->
 <script>
-$(document).ready(function () {
-    // =====================================================
-    // ИНИЦИАЛИЗАЦИЯ SELECT2 ДЛЯ ПОЛЯ "ГРУППА" (С ВОЗМОЖНОСТЬЮ ДОБАВЛЕНИЯ НОВЫХ)
-    // =====================================================
-    $('#{{ form.group.id_for_label }}').select2({
-        width: '100%',
-        placeholder: $(this).data('placeholder') || 'Выберите или введите новую группу',
-        allowClear: true,
-        tags: true, // Разрешаем добавление новых тегов
-        createTag: function (params) {
-            // Проверяем, что введенное значение не пустое
-            var term = $.trim(params.term);
-            if (term === '') {
-                return null;
-            }
-
-            // Проверяем, нет ли уже такого варианта
-            var exists = false;
-            $(this.$element).find('option').each(function() {
-                if ($(this).text().toLowerCase() === term.toLowerCase()) {
-                    exists = true;
-                    return false;
-                }
-            });
-
-            if (exists) {
-                return null;
-            }
-
-            return {
-                id: term,
-                text: term,
-                newTag: true // Добавляем флаг нового тега
-            };
-        },
-        language: {
-            noResults: function() {
-                return "Введите новое значение и нажмите Enter";
-            }
-        }
+  $(document).ready(function () {
+    $('.js-select2').select2({
+      width: '100%',
+      placeholder: 'Выберите',
+      allowClear: true
     });
-
-    // =====================================================
-    // ИНИЦИАЛИЗАЦИЯ ОБЫЧНОГО SELECT2 ДЛЯ ДРУГИХ ПОЛЕЙ
-    // =====================================================
-    $('.js-select2:not(.js-select2-creatable)').select2({
-        width: '100%',
-        placeholder: 'Выберите значение',
-        allowClear: true,
-        language: {
-            noResults: function() {
-                return "Результатов не найдено";
-            }
-        }
-    });
-
-    // =====================================================
-    // ОБРАБОТКА НОВЫХ ЗНАЧЕНИЙ В ГРУППЕ ПРИ ОТПРАВКЕ ФОРМЫ
-    // =====================================================
-    $('#material-form').on('submit', function(e) {
-        // Получаем выбранное значение из Select2
-        var groupSelect = $('#{{ form.group.id_for_label }}');
-        var selectedValue = groupSelect.val();
-
-        if (selectedValue) {
-            // Проверяем, является ли выбранное значение новым (не из списка options)
-            var isNewValue = true;
-            groupSelect.find('option').each(function() {
-                if ($(this).val() === selectedValue) {
-                    isNewValue = false;
-                    return false;
-                }
-            });
-
-            if (isNewValue) {
-                // Если это новое значение, добавляем его в скрытое поле
-                $('#group_new_input').val(selectedValue);
-            } else {
-                $('#group_new_input').val('');
-            }
-        }
-    });
-
-    // =====================================================
-    // ПРЕДПРОСМОТР ИЗОБРАЖЕНИЯ
-    // =====================================================
-    const imageInput = document.getElementById('{{ form.image.id_for_label }}');
-    if (imageInput) {
-        imageInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Создаем или обновляем превью
-                    let preview = document.querySelector('.img-preview');
-                    if (!preview) {
-                        preview = document.createElement('img');
-                        preview.className = 'img-preview mt-2';
-                        preview.style.maxHeight = '200px';
-                        preview.style.objectFit = 'contain';
-                        preview.style.border = '1px solid var(--bs-border-color)';
-                        preview.style.borderRadius = '.375rem';
-                        imageInput.parentNode.appendChild(preview);
-                    }
-                    preview.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-
-    // =====================================================
-    // ВАЛИДАЦИЯ ФОРМЫ
-    // =====================================================
-    function validateRequiredFields() {
-        const requiredFields = [
-            '{{ form.name.id_for_label }}',
-            '{{ form.uom.id_for_label }}'
-        ];
-
-        let isValid = true;
-
-        requiredFields.forEach(function(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (field && !field.value && field.offsetParent !== null) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else if (field) {
-                field.classList.remove('is-invalid');
-            }
-        });
-
-        return isValid;
-    }
-
-    // =====================================================
-    // УПРАВЛЕНИЕ СОХРАНЕНИЕМ
-    // =====================================================
-    function toggleLoading(show) {
-        const progressIndicator = document.getElementById('progressIndicator');
-        const saveBtn = document.getElementById('saveBtn');
-        const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
-
-        if (progressIndicator && saveBtn) {
-            if (show) {
-                progressIndicator.style.display = 'flex';
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Сохранение...';
-                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = true;
-            } else {
-                progressIndicator.style.display = 'none';
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>' +
-                    ({{ create|yesno:"true,false" }} ? 'Создать материал' : 'Сохранить изменения');
-                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = false;
-            }
-        }
-    }
-
-    // Обработка отправки формы
-    const form = document.getElementById('material-form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!validateRequiredFields()) {
-                e.preventDefault();
-
-                // Прокрутка к первой ошибке
-                const firstError = document.querySelector('.is-invalid');
-                if (firstError) {
-                    firstError.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                    firstError.focus();
-                }
-
-                return false;
-            }
-
-            toggleLoading(true);
-        });
-    }
-
-    // Кнопка "Сохранить и добавить еще"
-    const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
-    if (saveAndAddAnotherBtn) {
-        saveAndAddAnotherBtn.addEventListener('click', function() {
-            if (validateRequiredFields()) {
-                // Добавляем скрытое поле для редиректа
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'save_and_add';
-                hiddenInput.value = '1';
-                form.appendChild(hiddenInput);
-
-                toggleLoading(true);
-                form.submit();
-            }
-        });
-    }
-
-    // Очистка ошибок при вводе данных
-    document.querySelectorAll('input, select, textarea').forEach(field => {
-        field.addEventListener('input', function() {
-            if (this.value.trim()) {
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        field.addEventListener('change', function() {
-            this.classList.remove('is-invalid');
-        });
-    });
-
-    // Сброс индикатора загрузки при ошибке валидации на сервере
-    window.addEventListener('pageshow', function() {
-        toggleLoading(false);
-    });
-});
+  });
 </script>
 {% endblock %}

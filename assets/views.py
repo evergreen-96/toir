@@ -117,7 +117,7 @@ class WorkstationForm(forms.ModelForm):
         self.fields['location'].queryset = Location.objects.all().order_by('name')
         self.fields['responsible'].queryset = HumanResource.objects.filter(
             is_active=True
-        ).order_by('name')  # Убираем select_related('user')
+        ).order_by('name')
 
         # Добавляем CSS классы
         for field_name, field in self.fields.items():

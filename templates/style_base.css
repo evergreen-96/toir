@@ -90,28 +90,28 @@ body {
    Forms & required fields
    ===================================================== */
 
-.form-check-input[type="radio"] {
-    width: 1.25em;
-    height: 1.25em;
-    margin-right: .5em;
-}
+/*.form-check-input[type="radio"] {*/
+/*    width: 1.25em;*/
+/*    height: 1.25em;*/
+/*    margin-right: .5em;*/
+/*}*/
 
-.form-check-label {
-    font-weight: 500;
-    cursor: pointer;
-}
+/*.form-check-label {*/
+/*    font-weight: 500;*/
+/*    cursor: pointer;*/
+/*}*/
 
-.form-label.required::after {
-    content: " *";
-    color: var(--bs-danger);
-    font-weight: 600;
-}
+/*.form-label.required::after {*/
+/*    content: " *";*/
+/*    color: var(--bs-danger);*/
+/*    font-weight: 600;*/
+/*}*/
 
-.form-control:required,
-.form-select:required {
-    border-left: 3px solid var(--bs-danger);
-    padding-left: calc(.75rem - 3px);
-}
+/*.form-control:required,*/
+/*.form-select:required {*/
+/*    border-left: 3px solid var(--bs-danger);*/
+/*    padding-left: calc(.75rem - 3px);*/
+/*}*/
 
 /* =====================================================
    Form sections
