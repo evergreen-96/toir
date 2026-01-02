@@ -78,6 +78,19 @@ urlpatterns = [
     # AJAX И ВСПОМОГАТЕЛЬНЫЕ ЭНДПОИНТЫ
     # ============================================
 
+    # AJAX для плановых работ
+    path("ajax/locations/",
+         views.ajax_locations,
+         name="ajax_locations"),
+
+    path("ajax/responsibles/",
+         views.ajax_responsibles,
+         name="ajax_responsibles"),
+
+    path("ajax/all-job-titles/",
+         views.ajax_all_job_titles,
+         name="ajax_all_job_titles"),
+
     # Получение оборудования по выбранной локации (AJAX)
     path("ajax/workstations-by-location/",
          views.get_workstations_by_location,

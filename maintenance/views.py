@@ -22,6 +22,7 @@ from assets.models import Workstation, WorkstationStatus, WorkstationGlobalState
 from core.audit import build_change_reason
 from hr.models import HumanResource
 from inventory.models import Material
+from locations.models import Location
 from maintenance.forms import WorkOrderMaterialFormSet, WorkOrderForm, PlannedOrderForm
 from maintenance.models import (
     WorkOrder, PlannedOrder, WorkOrderStatus, WorkCategory,
@@ -574,14 +575,12 @@ def planned_order_create(request: HttpRequest):
     if request.method == "POST":
         form = PlannedOrderForm(request.POST)
 
-        # Защита от пустой отправки
         if not form.has_changed():
             messages.warning(
                 request,
                 "Форма пуста. Заполните основные параметры плана."
             )
         elif form.is_valid():
-            # Создание плановой работы
             planned_order = form.save(commit=False)
             planned_order._history_user = request.user
             planned_order._change_reason = build_change_reason(
@@ -594,12 +593,18 @@ def planned_order_create(request: HttpRequest):
     else:
         form = PlannedOrderForm()
 
+    # Получение данных для автодополнения
+    all_locations = Location.objects.all().order_by('name')  # Убрали фильтр по is_active
+    all_responsibles = HumanResource.objects.filter(is_active=True).order_by('name')
+
     return render(
         request,
         "maintenance/plan_form.html",
         {
             "form": form,
             "create": True,
+            "all_locations": all_locations,
+            "all_responsibles": all_responsibles,
         },
     )
 
@@ -611,11 +616,9 @@ def planned_order_update(request: HttpRequest, pk: int):
     if request.method == "POST":
         form = PlannedOrderForm(request.POST, instance=planned_order)
 
-        # Защита от пустой отправки
         if not form.has_changed():
             messages.warning(request, "Нет изменений для сохранения.")
         elif form.is_valid():
-            # Сохранение плановой работы
             planned_order = form.save(commit=False)
             planned_order._history_user = request.user
             planned_order._change_reason = build_change_reason(
@@ -628,6 +631,10 @@ def planned_order_update(request: HttpRequest, pk: int):
     else:
         form = PlannedOrderForm(instance=planned_order)
 
+    # Получение данных для автодополнения
+    all_locations = Location.objects.all().order_by('name')  # Убрали фильтр по is_active
+    all_responsibles = HumanResource.objects.filter(is_active=True).order_by('name')
+
     return render(
         request,
         "maintenance/plan_form.html",
@@ -635,6 +642,8 @@ def planned_order_update(request: HttpRequest, pk: int):
             "form": form,
             "create": False,
             "object": planned_order,
+            "all_locations": all_locations,
+            "all_responsibles": all_responsibles,
         },
     )
 
@@ -940,11 +949,6 @@ def planned_order_preview(request: HttpRequest) -> JsonResponse:
         "runs": [_fmt_local(run) for run in runs],
     })
 
-
-# ============================================================================
-# AJAX ФУНКЦИОНАЛ
-# ============================================================================
-
 def ajax_material_search(request: HttpRequest) -> JsonResponse:
     """AJAX поиск материалов."""
     query = request.GET.get('q', '').strip()
@@ -999,3 +1003,50 @@ def ajax_material_search(request: HttpRequest) -> JsonResponse:
             'more': page_obj.has_next()
         }
     })
+
+
+# ============================================================================
+# AJAX ДЛЯ ПЛАНОВЫХ РАБОТ
+# ============================================================================
+
+@require_GET
+def ajax_locations(request: HttpRequest) -> JsonResponse:
+    """AJAX поиск локаций для TomSelect."""
+    query = request.GET.get('q', '').strip()
+
+    # Убрали фильтр по is_active, так как такого поля нет в Location
+    locations = Location.objects.all().order_by('name')
+
+    if query:
+        locations = locations.filter(name__icontains=query)
+
+    results = [{"value": loc.id, "text": loc.name} for loc in locations[:50]]
+
+    return JsonResponse({"results": results})
+
+
+@require_GET
+def ajax_responsibles(request: HttpRequest) -> JsonResponse:
+    """AJAX поиск ответственных сотрудников для TomSelect."""
+    query = request.GET.get('q', '').strip()
+
+    responsibles = HumanResource.objects.filter(is_active=True).order_by('name')
+
+    if query:
+        responsibles = responsibles.filter(name__icontains=query)
+
+    results = [{"value": hr.id, "text": hr.name} for hr in responsibles[:50]]
+
+    return JsonResponse({"results": results})
+
+
+@require_GET
+def ajax_all_job_titles(request: HttpRequest) -> JsonResponse:
+    """AJAX получение всех уникальных должностей для автодополнения."""
+    job_titles = HumanResource.objects.filter(
+        job_title__isnull=False
+    ).values_list('job_title', flat=True).distinct().order_by('job_title')
+
+    results = [{"value": title, "text": title} for title in job_titles]
+
+    return JsonResponse({"results": results})
