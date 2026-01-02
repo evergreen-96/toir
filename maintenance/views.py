@@ -733,7 +733,7 @@ class PlannedOrderDetailView(DetailView):
             .select_related("responsible", "workstation")
             .order_by("-created_at")
         )
-
+        print(context)
         return context
 
 
