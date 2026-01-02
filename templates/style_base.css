@@ -659,3 +659,14 @@ body {
 [data-bs-theme="dark"] .ts-control.multi input {
     color: #e9ecef !important;
 }
+/* Светлая тема */
+.ts-control .item {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+}
+
+/* Темная тема */
+[data-bs-theme="dark"] .ts-control .item {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}

@@ -181,6 +181,12 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+.form-select.js-tom-select-location,
+.form-select.js-tom-select-workstation,
+.form-select.js-tom-select-responsible {
+    background-image: none !important;
+}
 </style>
 {% endblock %}
 
@@ -339,20 +345,31 @@
                                         {{ form.location.label }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <select
-                                        name="location"
-                                        class="form-select js-tom-select-location"
-                                        id="id_location"
-                                        data-placeholder="Выберите локацию..."
-                                        data-allow-empty-option="true"
-                                    >
-                                        <option value=""></option>
-                                        {% if form.instance.location %}
-                                            <option value="{{ form.instance.location.pk }}" selected>
-                                                {{ form.instance.location.name }}
-                                            </option>
-                                        {% endif %}
-                                    </select>
+<select
+    name="location"
+    class="form-select js-tom-select-location"
+    id="id_location"
+    data-placeholder="Выберите локацию..."
+    data-allow-empty-option="true"
+>
+    <option value=""></option>
+
+    {% if form.instance.location %}
+        <option value="{{ form.instance.location.pk }}" selected>
+            {{ form.instance.location.name }}
+        </option>
+    {% endif %}
+
+    <!-- ПРЕДЗАГРУЖАЕМ ВСЕ ЛОКАЦИИ СРАЗУ (как в hr_form.html) -->
+{% for loc in all_locations %}
+    {% if not form.instance.location or loc.id != form.instance.location.pk %}
+        <option value="{{ loc.id }}">
+            {{ loc.name }}  <!-- Вот здесь правильно -->
+        </option>
+    {% endif %}
+{% endfor %}
+</select>
+
                                     {% for e in form.location.errors %}
                                     <div class="invalid-feedback d-block">
                                         {{ e }}
@@ -367,20 +384,29 @@
                                         {{ form.workstation.label }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <select
-                                        name="workstation"
-                                        class="form-select js-tom-select-workstation"
-                                        id="id_workstation"
-                                        data-placeholder="Выберите оборудование..."
-                                        data-allow-empty-option="true"
-                                    >
-                                        <option value=""></option>
-                                        {% if form.instance.workstation %}
-                                            <option value="{{ form.instance.workstation.pk }}" selected>
-                                                {{ form.instance.workstation.name }}
-                                            </option>
-                                        {% endif %}
-                                    </select>
+<select
+    name="workstation"
+    class="form-select js-tom-select-workstation"
+    id="id_workstation"
+    data-placeholder="Выберите оборудование..."
+    data-allow-empty-option="true"
+>
+    <option value=""></option>
+    {% if form.instance.workstation %}
+        <option value="{{ form.instance.workstation.pk }}" selected>
+            {{ form.instance.workstation.name }}
+        </option>
+    {% endif %}
+
+    <!-- ПРЕДЗАГРУЖАЕМ ВСЕ ОБОРУДОВАНИЕ -->
+    {% for ws in all_workstations %}
+        {% if not form.instance.workstation or ws.id != form.instance.workstation.pk %}
+            <option value="{{ ws.id }}" data-location="{{ ws.location_id }}">
+                {{ ws.name }}
+            </option>
+        {% endif %}
+    {% endfor %}
+</select>
                                     <div id="workstation-empty-hint"
                                          class="text-muted small mt-1"
                                          style="display:none;">
@@ -412,20 +438,30 @@
                                         <i class="bi bi-person me-1"></i>
                                         {{ form.responsible_default.label }}
                                     </label>
-                                    <select
-                                        name="responsible_default"
-                                        class="form-select js-tom-select-responsible"
-                                        id="id_responsible_default"
-                                        data-placeholder="Выберите ответственного..."
-                                        data-allow-empty-option="true"
-                                    >
-                                        <option value=""></option>
-                                        {% if form.instance.responsible_default %}
-                                            <option value="{{ form.instance.responsible_default.pk }}" selected>
-                                                {{ form.instance.responsible_default.name }}
-                                            </option>
-                                        {% endif %}
-                                    </select>
+                                    <span class="text-danger">*</span>
+<select
+    name="responsible_default"
+    class="form-select js-tom-select-responsible"
+    id="id_responsible_default"
+    data-placeholder="Выберите ответственного..."
+    data-allow-empty-option="true"
+>
+    <option value=""></option>
+    {% if form.instance.responsible_default %}
+        <option value="{{ form.instance.responsible_default.pk }}" selected>
+            {{ form.instance.responsible_default.name }}
+        </option>
+    {% endif %}
+
+    <!-- ПРЕДЗАГРУЖАЕМ ВСЕХ ОТВЕТСТВЕННЫХ -->
+    {% for resp in all_responsibles %}
+        {% if not form.instance.responsible_default or resp.id != form.instance.responsible_default.pk %}
+            <option value="{{ resp.id }}">
+                {{ resp.name }}
+            </option>
+        {% endif %}
+    {% endfor %}
+</select>
                                     {% for e in form.responsible_default.errors %}
                                     <div class="invalid-feedback d-block">
                                         {{ e }}
@@ -683,129 +719,138 @@ document.addEventListener('DOMContentLoaded', function () {
     // ИНИЦИАЛИЗАЦИЯ TOM SELECT
     // ===========================
 
-    // 1. Tom-select для локации
-    const locationSelect = new TomSelect('#id_location', {
-        maxOptions: null,
-        placeholder: 'Выберите локацию...',
-        allowEmptyOption: true,
+// ===========================
+// ИНИЦИАЛИЗАЦИЯ TOM SELECT
+// ===========================
 
-        load: function(query, callback) {
-            if (query.length > 0) {
-                fetch(`{% url 'maintenance:ajax_locations' %}?q=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    callback(data.results || data);
-                })
-                .catch(() => {
-                    callback();
-                });
-            } else {
-                callback();
-            }
-        },
+// 1. Tom-select для локации (ПРЕДЗАГРУЖЕННЫЕ ДАННЫЕ)
+const locationSelect = new TomSelect('#id_location', {
+    maxOptions: null,
+    placeholder: 'Выберите локацию...',
+    allowEmptyOption: true,
+    searchField: ['text'],
+    sortField: { field: 'text', direction: 'asc' },
+    create: false,
+    persist: false,
 
-        render: {
-            option: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
-            },
-            item: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
-            }
+    // Используем только предзагруженные опции
+    onInitialize: function() {
+        console.log('Локации загружены:', this.options.length);
+    }
+});
+
+// 2. Tom-select для оборудования (с фильтрацией по локации)
+const workstationSelect = new TomSelect('#id_workstation', {
+    maxOptions: null,
+    placeholder: 'Выберите оборудование...',
+    allowEmptyOption: true,
+    searchField: ['text'],
+    sortField: { field: 'text', direction: 'asc' },
+
+    load: function(query, callback) {
+        const locationId = locationSelect.getValue();
+        if (!locationId) {
+            callback();
+            return;
         }
+
+        fetch(`{% url 'maintenance:ajax_workstations_by_location' %}?location_id=${locationId}&q=${encodeURIComponent(query)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => callback(data.items || []))
+        .catch(() => callback());
+    },
+
+    render: {
+        option: (data, escape) => `<div>${escape(data.text)}</div>`,
+        item:   (data, escape) => `<div>${escape(data.text)}</div>`
+    }
+});
+
+// 3. Tom-select для ответственного (теперь использует предзагруженные опции)
+const responsibleSelect = new TomSelect('#id_responsible_default', {
+    maxOptions: null,
+    placeholder: 'Выберите ответственного...',
+    allowEmptyOption: true,
+    searchField: ['text'],
+    sortField: { field: 'text', direction: 'asc' },
+
+    load: function(query, callback) {
+        fetch(`{% url 'maintenance:ajax_responsibles' %}?q=${encodeURIComponent(query)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => callback(data.results || data))
+        .catch(() => callback());
+    },
+
+    render: {
+        option: (data, escape) => `<div>${escape(data.text)}</div>`,
+        item:   (data, escape) => `<div>${escape(data.text)}</div>`
+    }
+});
+
+// ===========================
+// ФИЛЬТРАЦИЯ ОБОРУДОВАНИЯ ПО ЛОКАЦИИ
+// ===========================
+const $emptyHint = document.getElementById('workstation-empty-hint');
+const WS_URL = "{% url 'maintenance:ajax_workstations_by_location' %}";
+
+function resetWorkstations(showHint = false) {
+    workstationSelect.clear();
+    workstationSelect.clearOptions();
+    workstationSelect.disable();
+
+    if (showHint) {
+        $emptyHint.style.display = 'block';
+    } else {
+        $emptyHint.style.display = 'none';
+    }
+}
+
+function populateWorkstations(items) {
+    workstationSelect.clear();
+    workstationSelect.clearOptions();
+
+    // Добавляем опции
+    items.forEach(item => {
+        workstationSelect.addOption({
+            value: item.id,
+            text: item.text
+        });
     });
 
-    // 2. Tom-select для оборудования (с фильтрацией по локации)
-    const workstationSelect = new TomSelect('#id_workstation', {
-        maxOptions: null,
-        placeholder: 'Выберите оборудование...',
-        allowEmptyOption: true,
+    workstationSelect.enable();
+    $emptyHint.style.display = 'none';
+}
 
-        load: function(query, callback) {
-            const locationId = locationSelect.getValue();
-            if (!locationId) {
-                callback();
-                document.getElementById('workstation-empty-hint').style.display = 'block';
-                return;
-            }
+// Обработчик изменения локации
+locationSelect.on('change', function(value) {
+    resetWorkstations(false);
 
-            fetch(`{% url 'maintenance:ajax_workstations_by_location' %}?location_id=${locationId}&q=${encodeURIComponent(query)}`, {
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok && data.items.length > 0) {
-                    document.getElementById('workstation-empty-hint').style.display = 'none';
-                    callback(data.items);
-                } else {
-                    document.getElementById('workstation-empty-hint').style.display = 'block';
-                    callback();
-                }
-            })
-            .catch(() => {
-                callback();
-                document.getElementById('workstation-empty-hint').style.display = 'block';
-            });
-        },
+    if (!value) return;
 
-        render: {
-            option: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
-            },
-            item: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
-            }
+    fetch(`${WS_URL}?location_id=${value}`, {
+        headers: {"X-Requested-With": "XMLHttpRequest"}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.ok || data.items.length === 0) {
+            resetWorkstations(true);
+            return;
         }
-    });
+        populateWorkstations(data.items);
+    })
+    .catch(() => resetWorkstations(true));
+});
 
-    // 3. Tom-select для ответственного
-    const responsibleSelect = new TomSelect('#id_responsible_default', {
-        maxOptions: null,
-        placeholder: 'Выберите ответственного...',
-        allowEmptyOption: true,
+// Инициализация при загрузке (если есть выбранная локация)
+if (locationSelect.getValue()) {
+    locationSelect.trigger('change');
+}
 
-        load: function(query, callback) {
-            if (query.length > 0) {
-                fetch(`{% url 'maintenance:ajax_responsibles' %}?q=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    callback(data.results || data);
-                })
-                .catch(() => {
-                    callback();
-                });
-            } else {
-                callback();
-            }
-        },
 
-        render: {
-            option: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
-            },
-            item: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
-            }
-        }
-    });
-
-    // Обновляем оборудование при изменении локации
-    locationSelect.on('change', function() {
-        workstationSelect.clear();
-        workstationSelect.clearOptions();
-    });
 
     // ===========================
     // УПРАВЛЕНИЕ ПЕРИОДИЧНОСТЬЮ

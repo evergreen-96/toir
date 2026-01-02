@@ -589,13 +589,21 @@ def planned_order_create(request: HttpRequest):
             planned_order.save()
 
             messages.success(request, "План создан.")
-            return redirect("maintenance:plan_list")
+
+            # Обработка "Сохранить и добавить еще"
+            save_and_add = request.POST.get('save_and_add')
+            if save_and_add:
+                return redirect('maintenance:plan_new')
+            else:
+                return redirect("maintenance:plan_list")
     else:
         form = PlannedOrderForm()
 
-    # Получение данных для автодополнения
-    all_locations = Location.objects.all().order_by('name')  # Убрали фильтр по is_active
-    all_responsibles = HumanResource.objects.filter(is_active=True).order_by('name')
+    # Получение ВСЕХ данных для предзагрузки (как в HR)
+    all_locations = list(Location.objects.all().order_by('name')[:100])
+    all_responsibles = list(HumanResource.objects.filter(is_active=True)
+                            .order_by('name')[:100])
+    all_workstations = list()
 
     return render(
         request,
@@ -603,8 +611,16 @@ def planned_order_create(request: HttpRequest):
         {
             "form": form,
             "create": True,
-            "all_locations": all_locations,
-            "all_responsibles": all_responsibles,
+            "all_locations": all_locations,  # ВСЕ локации для select
+            "all_responsibles": all_responsibles,  # ВСЕ ответственные
+            "all_workstations": all_workstations,  # ВСЕ оборудование
+            # Для фильтрации оборудования по локации на клиенте
+            "location_workstations": {
+                loc.id: list(Workstation.objects.filter(location=loc)
+                             .order_by('name')
+                             .values('id', 'name'))
+                for loc in all_locations[:20]  # Ограничим для производительности
+            }
         },
     )
 
@@ -631,9 +647,12 @@ def planned_order_update(request: HttpRequest, pk: int):
     else:
         form = PlannedOrderForm(instance=planned_order)
 
-    # Получение данных для автодополнения
-    all_locations = Location.objects.all().order_by('name')  # Убрали фильтр по is_active
-    all_responsibles = HumanResource.objects.filter(is_active=True).order_by('name')
+    # Получение ВСЕХ данных для предзагрузки
+    all_locations = list(Location.objects.all().order_by('name')[:100])
+    all_responsibles = list(HumanResource.objects.filter(is_active=True)
+                            .order_by('name')[:100])
+    all_workstations = list(Workstation.objects.all()
+                            .order_by('name')[:100])
 
     return render(
         request,
@@ -644,6 +663,13 @@ def planned_order_update(request: HttpRequest, pk: int):
             "object": planned_order,
             "all_locations": all_locations,
             "all_responsibles": all_responsibles,
+            "all_workstations": all_workstations,
+            "location_workstations": {
+                loc.id: list(Workstation.objects.filter(location=loc)
+                             .order_by('name')
+                             .values('id', 'name'))
+                for loc in all_locations[:20]
+            }
         },
     )
 
