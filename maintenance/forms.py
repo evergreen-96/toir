@@ -533,54 +533,71 @@ class PlannedOrderForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        """
-        Инициализация формы плановой работы.
-        """
         super().__init__(*args, **kwargs)
 
-        # Для локации - select с TomSelect
-        self.fields["location"].widget.attrs.update({
-            "class": "form-select js-tom-select-location",
-            "data-placeholder": "Выберите локацию...",
-            "data-allow-empty-option": "true",
-        })
-
-        # Для оборудования - тоже TomSelect
-        self.fields["workstation"].widget.attrs.update({
-            "class": "form-select js-tom-select-workstation",
-            "data-placeholder": "Выберите оборудование...",
-            "data-allow-empty-option": "true",
-        })
-
-        # Для ответственного - TomSelect
-        self.fields["responsible_default"].widget.attrs.update({
-            "class": "form-select js-tom-select-responsible",
-            "data-placeholder": "Выберите ответственного...",
-            "data-allow-empty-option": "true",
-        })
-
-        # Делаем ответственного обязательным
+        # ---------- responsible ----------
         self.fields["responsible_default"].required = True
-        self.fields["responsible_default"].queryset = HumanResource.objects.filter(
-            is_active=True
-        ).order_by("name")
+        self.fields["responsible_default"].queryset = (
+            HumanResource.objects
+            .filter(is_active=True)
+            .order_by("name")
+        )
 
-        # Исключаем аварийные работы из категорий для плановых работ
+        # ---------- category ----------
         self.fields["category"].choices = [
-            (value, label)
-            for value, label in self.fields["category"].choices
-            if value != WorkCategory.EMERGENCY
+            (v, l)
+            for v, l in self.fields["category"].choices
+            if v != WorkCategory.EMERGENCY
         ]
 
-        # Поля интервала не обязательные для UI (заполняются автоматически)
-        self.fields["interval_value"].required = False
-        self.fields["interval_unit"].required = False
+        # ---------- workstation queryset (КРИТИЧНО) ----------
+        self.fields["workstation"].queryset = Workstation.objects.none()
 
-        # Установка начального значения frequency_choice для существующего объекта
+        # POST → по выбранной локации
+        if "location" in self.data:
+            try:
+                location_id = int(self.data.get("location"))
+                self.fields["workstation"].queryset = (
+                    Workstation.objects
+                    .filter(location_id=location_id)
+                    .order_by("name")
+                )
+            except (TypeError, ValueError):
+                pass
+
+        # EDIT → из instance
+        elif self.instance.pk and self.instance.location:
+            self.fields["workstation"].queryset = (
+                Workstation.objects
+                .filter(location=self.instance.location)
+                .order_by("name")
+            )
+
+        # ---------- frequency_choice ----------
         if self.instance.pk:
             self._set_frequency_choice_from_instance()
 
+    def _set_frequency_choice_from_instance(self):
+        """
+        Восстанавливает frequency_choice при редактировании
+        на основе interval_unit / weekday / day_of_month
+        """
+        if not self.instance.pk:
+            return
 
+        # CUSTOM — если интервал > 1
+        if self.instance.interval_value and self.instance.interval_value > 1:
+            self.initial["frequency_choice"] = "custom"
+            return
+
+        unit = self.instance.interval_unit
+
+        if unit == IntervalUnit.DAY:
+            self.initial["frequency_choice"] = "daily"
+        elif unit == IntervalUnit.WEEK:
+            self.initial["frequency_choice"] = "weekly"
+        elif unit == IntervalUnit.MONTH:
+            self.initial["frequency_choice"] = "monthly"
 # ============================================================================
 # FORMSET ДЛЯ МАТЕРИАЛОВ
 # ============================================================================

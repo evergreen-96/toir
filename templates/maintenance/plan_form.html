@@ -389,6 +389,7 @@
     name="workstation"
     class="form-select js-tom-select-workstation"
     id="id_workstation"
+    data-initial="{{ form.instance.workstation.pk|default:'' }}"
     data-placeholder="Выберите оборудование..."
     data-allow-empty-option="true"
 >
@@ -747,27 +748,43 @@ const workstationSelect = new TomSelect('#id_workstation', {
     searchField: ['text'],
     sortField: { field: 'text', direction: 'asc' },
 
-    load: function(query, callback) {
-        const locationId = locationSelect.getValue();
-        if (!locationId) {
-            callback();
-            return;
-        }
+load: function(query, callback) {
+    const locationId = locationSelect.getValue();
+    if (!locationId) {
+        callback();
+        return;
+    }
 
-        fetch(`{% url 'maintenance:ajax_workstations_by_location' %}?location_id=${locationId}&q=${encodeURIComponent(query)}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => callback(data.items || []))
-        .catch(() => callback());
-    },
+    fetch(`{% url 'maintenance:ajax_workstations_by_location' %}?location_id=${locationId}&q=${encodeURIComponent(query)}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => callback(data.items || []))
+    .catch(() => callback());
+},
 
     render: {
         option: (data, escape) => `<div>${escape(data.text)}</div>`,
         item:   (data, escape) => `<div>${escape(data.text)}</div>`
     }
 });
+const workstationEl = document.getElementById('id_workstation');
+const initialWorkstationId = workstationEl?.dataset.initial;
 
+if (initialWorkstationId) {
+    const initialOption = workstationEl.querySelector(
+        `option[value="${initialWorkstationId}"]`
+    );
+
+    if (initialOption) {
+        workstationSelect.addOption({
+            value: initialWorkstationId,
+            text: initialOption.textContent.trim(),
+        });
+
+        workstationSelect.setValue(initialWorkstationId, true); // без trigger change
+    }
+}
 // 3. Tom-select для ответственного (теперь использует предзагруженные опции)
 const responsibleSelect = new TomSelect('#id_responsible_default', {
     maxOptions: null,
@@ -775,16 +792,6 @@ const responsibleSelect = new TomSelect('#id_responsible_default', {
     allowEmptyOption: true,
     searchField: ['text'],
     sortField: { field: 'text', direction: 'asc' },
-
-    load: function(query, callback) {
-        fetch(`{% url 'maintenance:ajax_responsibles' %}?q=${encodeURIComponent(query)}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => callback(data.results || data))
-        .catch(() => callback());
-    },
-
     render: {
         option: (data, escape) => `<div>${escape(data.text)}</div>`,
         item:   (data, escape) => `<div>${escape(data.text)}</div>`
@@ -809,24 +816,45 @@ function resetWorkstations(showHint = false) {
     }
 }
 
-function populateWorkstations(items) {
+function populateWorkstationsByLocation(locationId) {
     workstationSelect.clear();
     workstationSelect.clearOptions();
 
-    // Добавляем опции
-    items.forEach(item => {
-        workstationSelect.addOption({
-            value: item.id,
-            text: item.text
-        });
+    const allOptions = workstationEl.querySelectorAll('option[data-location]');
+
+    let hasItems = false;
+
+    allOptions.forEach(opt => {
+        if (opt.dataset.location === locationId) {
+            workstationSelect.addOption({
+                value: opt.value,
+                text: opt.textContent.trim()
+            });
+            hasItems = true;
+        }
     });
 
-    workstationSelect.enable();
-    $emptyHint.style.display = 'none';
+    if (hasItems) {
+        workstationSelect.enable();
+        $emptyHint.style.display = 'none';
+    } else {
+        workstationSelect.disable();
+        $emptyHint.style.display = 'block';
+    }
 }
 
+let isInitialLocationSync = true;
 // Обработчик изменения локации
 locationSelect.on('change', function(value) {
+
+    // ⛔ НЕ сбрасываем оборудование при первом автосрабатывании
+    if (isInitialLocationSync && workstationSelect.getValue()) {
+        isInitialLocationSync = false;
+        return;
+    }
+
+    isInitialLocationSync = false;
+
     resetWorkstations(false);
 
     if (!value) return;
