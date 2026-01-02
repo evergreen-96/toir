@@ -1,0 +1,50 @@
+{% load static %}
+
+<div class="photo-widget">
+    <div class="section-header">Фотография</div>
+
+    <div class="photo-container">
+        <img src="{{ photo_url }}"
+             alt="{{ object_name|default:'Фото' }}"
+             class="{{ css_class }}"
+             style="max-width: {{ max_width }};"
+             data-bs-toggle="modal"
+             data-bs-target="#{{ modal_id }}"
+             onerror="this.onerror=null; this.src='{% static 'core/img/no-image.png' %}'">
+    </div>
+</div>
+
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 bg-transparent">
+            <div class="modal-body p-0">
+                <button type="button"
+                        class="btn-close btn-close-white position-absolute top-0 end-0 m-3 z-3"
+                        data-bs-dismiss="modal"></button>
+                <img src="{{ photo_url }}"
+                     alt="{{ object_name|default:'Фото' }}"
+                     class="img-fluid rounded shadow"
+                     onerror="this.onerror=null; this.src='{% static 'core/img/no-image.png' %}'">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.photo-widget .photo-container {
+    display: inline-block;
+    position: relative;
+}
+
+.{{ css_class }} {
+    cursor: zoom-in;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .5rem;
+    transition: transform 0.2s;
+}
+
+.{{ css_class }}:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+</style>

@@ -124,13 +124,6 @@ class WorkstationForm(forms.ModelForm):
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
-        # Делаем поле названия обязательным
-        self.fields['name'].required = True
-        self.fields['location'].required = True
-        self.fields['category'].required = True
-        self.fields['global_state'].required = True
-        self.fields['status'].required = True
-
     def clean_inventory_number(self):
         """Проверка уникальности инвентарного номера"""
         inventory_number = self.cleaned_data.get('inventory_number')
@@ -312,7 +305,6 @@ class WorkstationDetailView(LoginRequiredMixin, WorkstationContextMixin, DetailV
 
     def get_queryset(self):
         """Оптимизация запросов для детального просмотра"""
-        # УБИРАЕМ prefetch_related('history') - это вызывает ошибку
         return super().get_queryset().select_related(
             'location', 'responsible', 'created_by'
         )
@@ -320,7 +312,6 @@ class WorkstationDetailView(LoginRequiredMixin, WorkstationContextMixin, DetailV
     def get_context_data(self, **kwargs):
         """Добавление истории изменений"""
         context = super().get_context_data(**kwargs)
-        # Получаем историю через запрос, а не через prefetch
         if self.object:
             context['history'] = self.object.history.all()[:10]  # Последние 10 изменений
         return context

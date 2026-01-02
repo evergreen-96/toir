@@ -1,5 +1,7 @@
 from django import forms
 from django.core.validators import MinValueValidator
+from django.forms import ClearableFileInput
+
 from .models import Warehouse, Material
 from assets.models import Workstation
 
@@ -44,6 +46,17 @@ class WarehouseForm(BaseInventoryForm):
         })
 
 
+
+class ImageOnlyFileInput(ClearableFileInput):
+    """
+    Убираем дефолтный Django UI:
+    - 'На данный момент'
+    - 'Очистить [ ]'
+    """
+    initial_text = ''
+    input_text = ''
+    clear_checkbox_label = ''
+
 class MaterialForm(BaseInventoryForm):
     """Форма для материала"""
 
@@ -63,7 +76,9 @@ class MaterialForm(BaseInventoryForm):
             "image",
             "is_active",
         ]
-
+        widgets = {
+            'image': ImageOnlyFileInput(),
+        }
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

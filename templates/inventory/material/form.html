@@ -1,101 +1,527 @@
 {% extends "base.html" %}
-{% load form_extras %}
+{% load static form_extras %}
+
 {% block title %}
   {% if create %}Новый материал{% else %}Редактирование материала{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-xl-8 col-lg-9">
+<div class="container-fluid py-3">
+    <!-- =====================================================
+         1. HEADER
+         ===================================================== -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb small">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'inventory:material_list' %}" class="text-decoration-none">
+                            Материалы
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if create %}Новый материал{% else %}Редактирование{% endif %}
+                    </li>
+                </ol>
+            </nav>
 
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-
-        <!-- ===== Header ===== -->
-        <div class="mb-3">
-          <h1 class="h4 mb-1">
-            {% if create %}Новый материал{% else %}Редактирование материала{% endif %}
-          </h1>
-          <div class="text-muted small">
-            Основные параметры материала
-          </div>
-        </div>
-
-        <!-- ===== Legend ===== -->
-        <div class="text-muted small mb-4">
-          <span class="text-danger fw-semibold">*</span> — обязательные поля
-        </div>
-
-        <form method="post" novalidate enctype="multipart/form-data">
-          {% csrf_token %}
-
-          <div class="row g-3">
-
-            {% for field in form %}
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  {{ field.label }}
-                  {% if field.field.required %}
-                    <span class="text-danger">*</span>
-                  {% endif %}
-                </label>
-
-                {% if field.field.widget.input_type == "select" or field.name == "suitable_for" %}
-                  {{ field|add_class:"form-select js-select2" }}
-                {% elif field.field.widget.input_type == "checkbox" %}
-                  <div class="form-check">
-                    {{ field|add_class:"form-check-input" }}
-                    <label class="form-check-label" for="{{ field.id_for_label }}">
-                      {{ field.label }}
-                    </label>
-                  </div>
-                {% elif field.field.widget.input_type == "file" %}
-                  {{ field|add_class:"form-control" }}
+            <h1 class="h2 mb-1">
+                {% if create %}
+                <i class="bi bi-plus-circle me-2 text-success"></i>
+                Новый материал
                 {% else %}
-                  {{ field|add_class:"form-control" }}
+                <i class="bi bi-pencil-square me-2 text-primary"></i>
+                Редактирование материала
                 {% endif %}
+            </h1>
 
-                {% if field.help_text %}
-                  <div class="form-text">{{ field.help_text }}</div>
+            <div class="text-muted small">
+                {% if create %}
+                Добавление нового материала в систему
+                {% else %}
+                ID: {{ object.pk }} · Последнее изменение: {{ object.updated_at|date:"d.m.Y H:i" }}
                 {% endif %}
+            </div>
+        </div>
 
-                {% if field.errors %}
-                  <div class="invalid-feedback d-block">
-                    {{ field.errors }}
-                  </div>
-                {% endif %}
-              </div>
-            {% endfor %}
-
-          </div>
-
-          <!-- ===== Actions ===== -->
-          <div class="d-flex justify-content-between align-items-center mt-4">
-            <a class="btn btn-outline-secondary"
-               href="{% url 'inventory:material_list' %}">
-              Отмена
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="{% url 'inventory:material_list' %}">
+                <i class="bi bi-arrow-left me-1"></i>Назад
             </a>
-            <button class="btn btn-primary px-4" type="submit">
-              Сохранить
-            </button>
-          </div>
 
-        </form>
-
-      </div>
+            {% if not create %}
+            <a class="btn btn-outline-info" href="{% url 'inventory:material_detail' object.pk %}">
+                <i class="bi bi-eye me-1"></i>Просмотр
+            </a>
+            {% endif %}
+        </div>
     </div>
 
-  </div>
+    <!-- Основная форма -->
+    <form method="post" enctype="multipart/form-data" id="materialForm" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <div>{{ form.non_field_errors }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- Левая колонка: Основные данные -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2 text-primary"></i>
+                            Основные данные
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            {% for field in form %}
+                                {% if field.name != "image" %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold {% if field.field.required %}required{% endif %}">
+                                            {{ field.label }}
+                                        </label>
+                                        {% if field.field.widget.input_type == "select" or field.name == "suitable_for" %}
+                                            {{ field|add_class:"form-select js-select2" }}
+                                        {% elif field.field.widget.input_type == "checkbox" %}
+                                            <div class="form-check">
+                                                {{ field|add_class:"form-check-input" }}
+                                                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            </div>
+                                        {% else %}
+                                            {{ field|add_class:"form-control" }}
+                                        {% endif %}
+                                        {% if field.help_text %}<div class="form-text small">{{ field.help_text }}</div>{% endif %}
+                                        {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая колонка: Изображение и действия -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- =====================================================
+                         2. ИЗОБРАЖЕНИЕ МАТЕРИАЛА
+                         ===================================================== -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-dark border-0">
+                            <h5 class="mb-0">
+                                <i class="bi bi-image me-2 text-primary"></i>
+                                Изображение материала
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Поле загрузки изображения -->
+                            <div class="mb-3">
+                                <label for="{{ form.image.id_for_label }}" class="form-label fw-semibold">
+                                    <i class="bi bi-upload me-1"></i>
+                                    {{ form.image.label }}
+                                </label>
+
+                                <div class="input-group">
+                                    <input type="file"
+                                           name="{{ form.image.name }}"
+                                           class="form-control"
+                                           id="{{ form.image.id_for_label }}"
+                                           accept="image/*">
+                                    <button class="btn btn-outline-secondary" type="button" id="clearImageBtn">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+
+                                {% if form.image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.image.errors }}
+                                </div>
+                                {% endif %}
+
+                                <div class="form-text small">
+                                    Поддерживаемые форматы: JPG, PNG, GIF<br>
+                                    Максимальный размер: 5 MB
+                                </div>
+                            </div>
+
+                            <!-- Предпросмотр текущего изображения -->
+                            {% if not create and object.image %}
+                            <div class="mb-3">
+                                <div class="text-center border rounded p-3">
+                                    <img src="{{ object.image.url }}"
+                                         class="img-fluid rounded mb-2"
+                                         style="max-height: 180px; object-fit: contain;"
+                                         alt="Текущее изображение {{ object.name }}"
+                                         id="currentImagePreview">
+                                    <div class="small text-muted">
+                                        Текущее изображение материала
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger mt-2"
+                                            id="removeImageBtn">
+                                        <i class="bi bi-trash me-1"></i>
+                                        Удалить изображение
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Предпросмотр нового изображения -->
+                            <div class="d-none" id="newImagePreviewContainer">
+                                <div class="text-center border rounded p-3">
+                                    <img src=""
+                                         class="img-fluid rounded mb-2"
+                                         style="max-height: 180px; object-fit: contain;"
+                                         alt="Новое изображение"
+                                         id="newImagePreview">
+                                    <div class="small text-muted">
+                                        Предпросмотр нового изображения
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =====================================================
+                         3. ДЕЙСТВИЯ И КНОПКИ
+                         ===================================================== -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark border-0">
+                            <h5 class="mb-0">
+                                <i class="bi bi-lightning me-2 text-primary"></i>
+                                Действия
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <!-- Основная кнопка сохранения -->
+                                <button type="submit"
+                                        class="btn btn-primary btn-lg d-flex align-items-center justify-content-center"
+                                        id="saveBtn">
+                                    <i class="bi bi-save me-2"></i>
+                                    {% if create %}Создать материал{% else %}Сохранить изменения{% endif %}
+                                </button>
+
+                                <!-- Кнопка "Сохранить и добавить еще" -->
+                                {% if create %}
+                                <button type="button"
+                                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                                        id="saveAndAddAnotherBtn">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Сохранить и добавить еще
+                                </button>
+                                {% endif %}
+
+                                <!-- Кнопка отмены -->
+                                <a href="{% url 'inventory:material_list' %}"
+                                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    Отмена
+                                </a>
+
+                                <!-- Ссылка на просмотр (при редактировании) -->
+                                {% if not create %}
+                                <a href="{% url 'inventory:material_detail' object.pk %}"
+                                   class="btn btn-outline-info d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-eye me-2"></i>
+                                    Просмотр карточки
+                                </a>
+                                {% endif %}
+
+                                <!-- Кнопка удаления (при редактировании) -->
+                                {% if not create and perms.inventory.delete_material %}
+                                <button type="button"
+                                        class="btn btn-outline-danger d-flex align-items-center justify-content-center"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash me-2"></i>
+                                    Удалить материал
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Индикатор прогресса -->
+                    <div class="mt-3" id="progressIndicator" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <span class="small text-muted">Сохранение данных...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
-<!-- ===== Select2 init ===== -->
+<!-- =====================================================
+     МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ
+     ===================================================== -->
+{% if not create and perms.inventory.delete_material %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                    Удаление материала
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить материал <strong>"{{ object.name }}"</strong>?</p>
+                <div class="alert alert-warning small">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Это действие нельзя будет отменить. Все связанные данные также будут удалены.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="{% url 'inventory:material_delete' object.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>
+                        Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Стили для обязательных полей */
+.form-label.required::after {
+    content: " *";
+    color: var(--bs-danger);
+    font-weight: 600;
+}
+
+/* Стили для карточек */
+.card {
+    border: 1px solid var(--bs-border-color);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.card-header.bg-dark {
+    background-color: var(--bs-light-bg-subtle) !important;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Стили для preview изображений */
+#currentImagePreview,
+#newImagePreview {
+    transition: transform 0.2s ease;
+}
+
+#currentImagePreview:hover,
+#newImagePreview:hover {
+    transform: scale(1.02);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sticky-top {
+        position: static !important;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+
+/* Темная тема */
+[data-bs-theme="dark"] .card-header.bg-dark {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-  $(document).ready(function () {
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Select2
     $('.js-select2').select2({
-      width: '100%',
-      placeholder: 'Выберите',
-      allowClear: true
+        width: '100%',
+        placeholder: 'Выберите',
+        allowClear: true,
+        theme: 'bootstrap-5'
     });
-  });
+
+    // Предпросмотр нового изображения
+    const imageInput = document.getElementById('{{ form.image.id_for_label }}');
+    const newImagePreview = document.getElementById('newImagePreview');
+    const newImagePreviewContainer = document.getElementById('newImagePreviewContainer');
+    const currentImagePreview = document.getElementById('currentImagePreview');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    newImagePreview.src = e.target.result;
+                    newImagePreviewContainer.classList.remove('d-none');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                newImagePreviewContainer.classList.add('d-none');
+            }
+        });
+    }
+
+    // Очистка поля изображения
+    const clearImageBtn = document.getElementById('clearImageBtn');
+    if (clearImageBtn) {
+        clearImageBtn.addEventListener('click', function() {
+            if (imageInput) {
+                imageInput.value = '';
+                newImagePreviewContainer.classList.add('d-none');
+            }
+        });
+    }
+
+    // Удаление текущего изображения
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', function() {
+            if (confirm('Удалить текущее изображение материала?')) {
+                // Создаем скрытое поле для удаления изображения
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = '{{ form.image.name }}-clear';
+                hiddenInput.value = '1';
+                document.getElementById('materialForm').appendChild(hiddenInput);
+
+                // Скрываем превью текущего изображения
+                if (currentImagePreview) {
+                    currentImagePreview.style.display = 'none';
+                }
+                removeImageBtn.style.display = 'none';
+            }
+        });
+    }
+
+    // Проверка обязательных полей
+    function validateRequiredFields() {
+        let isValid = true;
+        const requiredLabels = document.querySelectorAll('.form-label.required');
+
+        requiredLabels.forEach(function(label) {
+            const field = document.getElementById(label.getAttribute('for'));
+            if (field && !field.value && field.offsetParent !== null) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else if (field) {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        return isValid;
+    }
+
+    // Показать/скрыть индикатор загрузки
+    function toggleLoading(show) {
+        const progressIndicator = document.getElementById('progressIndicator');
+        const saveBtn = document.getElementById('saveBtn');
+        const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
+
+        if (progressIndicator && saveBtn) {
+            if (show) {
+                progressIndicator.style.display = 'flex';
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Сохранение...';
+                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = true;
+            } else {
+                progressIndicator.style.display = 'none';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>' +
+                    ({{ create|yesno:"true,false" }} ? 'Создать материал' : 'Сохранить изменения');
+                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = false;
+            }
+        }
+    }
+
+    // Обработка отправки формы
+    const form = document.getElementById('materialForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateRequiredFields()) {
+                e.preventDefault();
+
+                // Прокрутка к первой ошибке
+                const firstError = document.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                    firstError.focus();
+                }
+
+                return false;
+            }
+
+            toggleLoading(true);
+        });
+    }
+
+    // Кнопка "Сохранить и добавить еще"
+    const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
+    if (saveAndAddAnotherBtn) {
+        saveAndAddAnotherBtn.addEventListener('click', function() {
+            if (validateRequiredFields()) {
+                // Добавляем скрытое поле для редиректа
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'save_and_add';
+                hiddenInput.value = '1';
+                form.appendChild(hiddenInput);
+
+                toggleLoading(true);
+                form.submit();
+            }
+        });
+    }
+
+    // Очистка ошибок при вводе данных
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        field.addEventListener('change', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+
+    // Сброс индикатора загрузки при ошибке валидации на сервере
+    window.addEventListener('pageshow', function() {
+        toggleLoading(false);
+    });
+});
 </script>
 {% endblock %}

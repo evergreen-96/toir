@@ -283,14 +283,10 @@
                     <div class="card-body text-center">
                         <img src="{{ object.image.url }}"
                              alt="{{ object.name }}"
-                             class="img-fluid rounded border mb-3"
-                             style="max-height: 300px; object-fit: contain;">
-
-                        <a href="{{ object.image.url }}"
-                           target="_blank"
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-zoom-in me-1"></i>Открыть оригинал
-                        </a>
+                             class="img-fluid rounded border mb-3 material-image-thumb"
+                             style="max-height: 300px; object-fit: contain;"
+                             data-bs-toggle="modal"
+                             data-bs-target="#imageModal">
                     </div>
                 </div>
                 {% else %}
@@ -342,6 +338,23 @@
     </div>
 </div>
 
+<!-- =====================================================
+     МОДАЛЬНОЕ ОКНО ИЗОБРАЖЕНИЯ
+     ===================================================== -->
+{% if object.image %}
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <img src="{{ object.image.url }}"
+                     alt="{{ object.name }}"
+                     class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Стили для улучшения отображения -->
 <style>
     /* Общие стили для карточек */
@@ -366,6 +379,16 @@
 
     .text-content p:last-child {
         margin-bottom: 0;
+    }
+
+    /* Стили для изображения материала */
+    .material-image-thumb {
+        cursor: zoom-in;
+        transition: transform 0.2s ease;
+    }
+
+    .material-image-thumb:hover {
+        transform: scale(1.02);
     }
 
     /* Стили для таблиц */
