@@ -109,40 +109,40 @@
 
                     {% if materials %}
                         <!-- Summary Cards -->
-                        <div class="row mb-4">
-                            <div class="col-md-3 mb-3">
-                                <div class="card border-0 bg-light h-100">
-                                    <div class="card-body text-center">
-                                        <div class="text-primary fs-4 fw-bold">{{ active_materials_count }}</div>
-                                        <div class="text-muted small">Активных</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="card border-0 bg-light h-100">
-                                    <div class="card-body text-center">
-                                        <div class="text-success fs-4 fw-bold">{{ in_stock_count }}</div>
-                                        <div class="text-muted small">В наличии</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="card border-0 bg-light h-100">
-                                    <div class="card-body text-center">
-                                        <div class="text-warning fs-4 fw-bold">{{ low_stock_count }}</div>
-                                        <div class="text-muted small">Низкий запас</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="card border-0 bg-light h-100">
-                                    <div class="card-body text-center">
-                                        <div class="text-danger fs-4 fw-bold">{{ out_of_stock_count }}</div>
-                                        <div class="text-muted small">Отсутствуют</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+<!--                        <div class="row mb-4">-->
+<!--                            <div class="col-md-3 mb-3">-->
+<!--                                <div class="card border-0 bg-light h-100">-->
+<!--                                    <div class="card-body text-center">-->
+<!--                                        <div class="text-primary fs-4 fw-bold">{{ active_materials_count }}</div>-->
+<!--                                        <div class="text-muted small">Активных</div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="col-md-3 mb-3">-->
+<!--                                <div class="card border-0 bg-dark h-100">-->
+<!--                                    <div class="card-body text-center">-->
+<!--                                        <div class="text-success fs-4 fw-bold">{{ in_stock_count }}</div>-->
+<!--                                        <div class="text-muted small">В наличии</div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="col-md-3 mb-3">-->
+<!--                                <div class="card border-0 bg-dark h-100">-->
+<!--                                    <div class="card-body text-center">-->
+<!--                                        <div class="text-warning fs-4 fw-bold">{{ low_stock_count }}</div>-->
+<!--                                        <div class="text-muted small">Низкий запас</div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="col-md-3 mb-3">-->
+<!--                                <div class="card border-0 bg-dark h-100">-->
+<!--                                    <div class="card-body text-center">-->
+<!--                                        <div class="text-danger fs-4 fw-bold">{{ out_of_stock_count }}</div>-->
+<!--                                        <div class="text-muted small">Отсутствуют</div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
 
                         <!-- Materials Table -->
                         <div class="table-responsive">
@@ -251,26 +251,26 @@
                     {% endif %}
                 </div>
 
-                <!-- ===== Quick Actions ===== -->
-                <div class="mt-4 pt-3 border-top">
-                    <div class="section-header">Быстрые действия</div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{% url 'inventory:material_new' %}?warehouse={{ object.pk }}"
-                           class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle me-1"></i>Добавить материал
-                        </a>
-                        <a href="{% url 'inventory:material_list' %}?warehouse={{ object.pk }}"
-                           class="btn btn-outline-secondary">
-                            <i class="bi bi-list-ul me-1"></i>Все материалы склада
-                        </a>
-                        <button class="btn btn-outline-success">
-                            <i class="bi bi-printer me-1"></i>Печать описи
-                        </button>
-                        <button class="btn btn-outline-info">
-                            <i class="bi bi-download me-1"></i>Экспорт в Excel
-                        </button>
-                    </div>
-                </div>
+<!--                &lt;!&ndash; ===== Quick Actions ===== &ndash;&gt;-->
+<!--                <div class="mt-4 pt-3 border-top">-->
+<!--                    <div class="section-header">Быстрые действия</div>-->
+<!--                    <div class="d-flex flex-wrap gap-2">-->
+<!--                        <a href="{% url 'inventory:material_new' %}?warehouse={{ object.pk }}"-->
+<!--                           class="btn btn-outline-primary">-->
+<!--                            <i class="bi bi-plus-circle me-1"></i>Добавить материал-->
+<!--                        </a>-->
+<!--                        <a href="{% url 'inventory:material_list' %}?warehouse={{ object.pk }}"-->
+<!--                           class="btn btn-outline-secondary">-->
+<!--                            <i class="bi bi-list-ul me-1"></i>Все материалы склада-->
+<!--                        </a>-->
+<!--                        <button class="btn btn-outline-success">-->
+<!--                            <i class="bi bi-printer me-1"></i>Печать описи-->
+<!--                        </button>-->
+<!--                        <button class="btn btn-outline-info">-->
+<!--                            <i class="bi bi-download me-1"></i>Экспорт в Excel-->
+<!--                        </button>-->
+<!--                    </div>-->
+<!--                </div>-->
 
             </div>
         </div>

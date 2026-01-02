@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Sum, F, Q
 from django.views.generic import CreateView, UpdateView
 from inventory.forms.warehouse import WarehouseForm, WarehouseFilterForm
 from inventory.views.base import BaseListView, BaseDetailView, BaseCreateUpdateView, BaseDeleteView
@@ -58,27 +58,39 @@ class WarehouseDetailView(BaseDetailView):
             total_reserved=Sum('qty_reserved'),
         )
 
-        # Подсчитываем статусы
-        stock_status_counts = {
-            'in_stock': materials.filter(is_active=True, qty_available__gt=0).exclude(
-                qty_available__lte=models.F('qty_reserved')
-            ).count(),
-            'low_stock': materials.filter(
-                is_active=True,
-                qty_available__gt=0,
-                qty_available__lte=models.F('min_stock_level')
-            ).count(),
-            'reserved': materials.filter(
-                is_active=True,
-                qty_available__gt=0,
-                qty_available__lte=models.F('qty_reserved')
-            ).count(),
-            'out_of_stock': materials.filter(
-                is_active=True,
-                qty_available=0
-            ).count(),
-            'inactive': materials.filter(is_active=False).count(),
-        }
+        # Подсчитываем статусы - ИСПРАВЛЕННАЯ ЛОГИКА
+        # Получаем только активные материалы для статусов
+        active_materials = materials.filter(is_active=True)
+
+        # stock_status_counts = {
+        #     # "В наличии" - есть в наличии, больше чем минимальный запас и больше чем резерв
+        #     # Объединяем все условия для in_stock
+        #     'in_stock': active_materials.filter(
+        #         Q(qty_available__gt=0) &
+        #         Q(qty_available__gt=F('min_stock_level')) &
+        #         Q(qty_available__gt=F('qty_reserved'))
+        #     ).count(),
+        #
+        #     # "Низкий запас" - есть в наличии, но меньше или равно минимальному запасу
+        #     # И не все зарезервировано (это отдельная категория)
+        #     'low_stock': active_materials.filter(
+        #         Q(qty_available__gt=0) &
+        #         Q(qty_available__lte=F('min_stock_level')) &
+        #         Q(qty_available__gt=F('qty_reserved'))  # Не зарезервировано полностью
+        #     ).count(),
+        #
+        #     # "В резерве" - все доступное количество зарезервировано
+        #     'reserved': active_materials.filter(
+        #         Q(qty_available__gt=0) &
+        #         Q(qty_available__lte=F('qty_reserved'))
+        #     ).count(),
+        #
+        #     # "Отсутствует" - нет доступного количества
+        #     'out_of_stock': active_materials.filter(qty_available=0).count(),
+        #
+        #     # "Неактивен"
+        #     'inactive': materials.filter(is_active=False).count(),
+        # }
 
         context.update({
             'materials': materials,
@@ -86,7 +98,12 @@ class WarehouseDetailView(BaseDetailView):
             'total_qty_available': summary['total_available'] or 0,
             'total_qty_reserved': summary['total_reserved'] or 0,
             'total_qty_all': (summary['total_available'] or 0) + (summary['total_reserved'] or 0),
-            'stock_status_counts': stock_status_counts,
+            # 'stock_status_counts': stock_status_counts,
+            # # Для совместимости с вашим шаблоном добавляем отдельные переменные
+            # 'active_materials_count': active_materials.count(),
+            # 'in_stock_count': stock_status_counts['in_stock'],
+            # 'low_stock_count': stock_status_counts['low_stock'],
+            # 'out_of_stock_count': stock_status_counts['out_of_stock'],
         })
 
         return context
