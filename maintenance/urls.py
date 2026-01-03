@@ -96,6 +96,8 @@ urlpatterns = [
          views.get_workstations_by_location,
          name="ajax_workstations_by_location"),
 
+    path('api/workstations/', views.api_workstations, name='api_workstations'),
+
     # Поиск материалов (AJAX для Select2)
     path('ajax/material-search/',
          views.ajax_material_search,

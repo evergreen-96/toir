@@ -48,78 +48,160 @@
     width: 100% !important;
 }
 
+/* Убираем стандартную стрелку Bootstrap */
+.form-select.js-tom-select-location,
+.form-select.js-tom-select-workstation,
+.form-select.js-tom-select-responsible {
+    background-image: none !important;
+}
+
 /* Кастомизация dropdown */
 .ts-dropdown {
     z-index: 1060 !important;
+}
+
+/* Заблокированное состояние */
+.ts-wrapper.disabled .ts-control,
+.ts-wrapper.disabled .ts-control * {
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    background-color: var(--bs-secondary-bg) !important;
+}
+
+/* Для множественного выбора (если будет нужно) */
+.ts-control.multi {
+    padding: .25rem .5rem !important;
+}
+
+.ts-control.multi .item {
+    background-color: var(--bs-secondary-bg) !important;
+    border: 1px solid var(--bs-border-color) !important;
+    border-radius: .375rem !important;
+    margin: .15rem !important;
+}
+
+/* Темная тема для Tom Select */
+[data-bs-theme="dark"] .ts-control {
+    background-color: var(--bs-dark) !important;
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option {
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .ts-wrapper.disabled .ts-control {
+    background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Стили для календаря */
 .calendar-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Кастомный скроллбар для календаря */
+.calendar-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.calendar-grid::-webkit-scrollbar-track {
+    background: var(--bs-light);
+    border-radius: 3px;
+}
+
+.calendar-grid::-webkit-scrollbar-thumb {
+    background: var(--bs-secondary);
+    border-radius: 3px;
+}
+
+.calendar-grid::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-secondary-color);
+}
+
+[data-bs-theme="dark"] .calendar-grid::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .calendar-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+[data-bs-theme="dark"] .calendar-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .mini-month {
     border: 1px solid var(--bs-border-color);
-    border-radius: .75rem;
-    padding: 1rem;
+    border-radius: .5rem;
+    padding: 0.75rem;
     background: var(--bs-body-bg);
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .mini-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: .6rem;
-    margin-bottom: 1rem;
+    gap: .5rem;
+    margin-bottom: 0.75rem;
 }
 
 .mini-title {
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.9rem;
     line-height: 1.1;
     color: var(--bs-body-color);
 }
 
 .mini-sub {
-    font-size: .75rem;
+    font-size: .7rem;
     color: var(--bs-secondary-color);
-    margin-top: .2rem;
+    margin-top: .15rem;
 }
 
 .mini-dow {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: .35rem;
-    margin-bottom: .5rem;
+    gap: .25rem;
+    margin-bottom: .4rem;
 }
 
 .mini-dow div {
-    font-size: .75rem;
+    font-size: .65rem;
     color: var(--bs-secondary-color);
     text-align: center;
-    padding: .15rem 0;
+    padding: .1rem 0;
 }
 
 .mini-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: .35rem;
+    gap: .25rem;
 }
 
 .mini-day {
-    height: 34px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: .5rem;
+    border-radius: .4rem;
     border: 1px solid var(--bs-border-color);
-    font-size: .85rem;
+    font-size: .75rem;
     user-select: none;
     background: var(--bs-body-bg);
     color: var(--bs-body-color);
     transition: all 0.15s ease;
+    min-width: 0;
 }
 
 .mini-day:hover {
@@ -170,13 +252,27 @@
     }
     .calendar-grid {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
     .mini-month {
-        padding: .75rem;
+        padding: 0.6rem;
+    }
+    .mini-day {
+        height: 26px;
+        font-size: .7rem;
+    }
+    .mini-dow div {
+        font-size: .6rem;
     }
 }
 
 @media (min-width: 992px) {
+    .calendar-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 1400px) {
     .calendar-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -257,748 +353,705 @@
         </div>
     </div>
 
-    <!-- Основная форма -->
-    <div class="row justify-content-center">
-        <div class="col-xl-10 col-lg-11">
-            <form method="post" novalidate id="planForm">
-                {% csrf_token %}
-
-                <!-- hidden interval fields -->
-                {{ form.interval_value }}
-                {{ form.interval_unit }}
-
-                <div class="row">
-                    <!-- Левая колонка: Основные данные -->
-                    <div class="col-lg-8">
-                        <div class="mb-4">
-                            <!-- =====================================================
-                                 2. ОСНОВНАЯ ИНФОРМАЦИЯ
-                                 ===================================================== -->
-                            <div class="section-header">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Основная информация
-                            </div>
-
-                            <div class="row g-3">
-                                <!-- Название -->
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-card-heading me-1"></i>
-                                        {{ form.name.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.name|add_class:"form-control" }}
-                                    {% for e in form.name.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                    <div class="form-text">Название плана для идентификации в системе</div>
-                                </div>
-
-                                <!-- Категория -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-tag me-1"></i>
-                                        {{ form.category.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.category|add_class:"form-select" }}
-                                    {% for e in form.category.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Описание -->
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-card-text me-1"></i>
-                                        {{ form.description.label }}
-                                    </label>
-                                    {{ form.description|add_class:"form-control" }}
-                                    {% for e in form.description.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                    <div class="form-text">Дополнительная информация о плановых работах</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- =====================================================
-                             3. ЛОКАЦИЯ И ОБОРУДОВАНИЕ
-                             ===================================================== -->
-                        <div class="mb-4">
-                            <div class="section-header">
-                                <i class="bi bi-gear me-2"></i>
-                                Локация и оборудование
-                            </div>
-
-                            <div class="row g-3">
-                                <!-- Локация -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-geo-alt me-1"></i>
-                                        {{ form.location.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-<select
-    name="location"
-    class="form-select js-tom-select-location"
-    id="id_location"
-    data-placeholder="Выберите локацию..."
-    data-allow-empty-option="true"
->
-    <option value=""></option>
-
-    {% if form.instance.location %}
-        <option value="{{ form.instance.location.pk }}" selected>
-            {{ form.instance.location.name }}
-        </option>
-    {% endif %}
-
-    <!-- ПРЕДЗАГРУЖАЕМ ВСЕ ЛОКАЦИИ СРАЗУ (как в hr_form.html) -->
-{% for loc in all_locations %}
-    {% if not form.instance.location or loc.id != form.instance.location.pk %}
-        <option value="{{ loc.id }}">
-            {{ loc.name }}  <!-- Вот здесь правильно -->
-        </option>
-    {% endif %}
-{% endfor %}
-</select>
-
-
-                                    {% for e in form.location.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Оборудование -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-cpu me-1"></i>
-                                        {{ form.workstation.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-<select
-    name="workstation"
-    class="form-select js-tom-select-workstation"
-    id="id_workstation"
-    data-initial="{{ form.instance.workstation.pk|default:'' }}"
-    data-placeholder="Выберите оборудование..."
-    data-allow-empty-option="true"
->
-    <option value=""></option>
-    {% if form.instance.workstation %}
-        <option value="{{ form.instance.workstation.pk }}" selected>
-            {{ form.instance.workstation.name }}
-        </option>
-    {% endif %}
-
-    <!-- ПРЕДЗАГРУЖАЕМ ВСЕ ОБОРУДОВАНИЕ -->
-    {% for ws in all_workstations %}
-        {% if not form.instance.workstation or ws.id != form.instance.workstation.pk %}
-            <option value="{{ ws.id }}" data-location="{{ ws.location_id }}">
-                {{ ws.name }}
-            </option>
-        {% endif %}
-    {% endfor %}
-</select>
-                                    <div id="workstation-empty-hint"
-                                         class="text-muted small mt-1"
-                                         style="display:none;">
-                                        <i class="bi bi-exclamation-triangle me-1"></i>
-                                        На выбранной локации нет оборудования
-                                    </div>
-                                    {% for e in form.workstation.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- =====================================================
-                             4. ОТВЕТСТВЕННЫЙ И ПАРАМЕТРЫ
-                             ===================================================== -->
-                        <div class="mb-4">
-                            <div class="section-header">
-                                <i class="bi bi-person-gear me-2"></i>
-                                Ответственный и параметры
-                            </div>
-
-                            <div class="row g-3">
-                                <!-- Ответственный -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person me-1"></i>
-                                        {{ form.responsible_default.label }}
-                                    </label>
-<select
-    name="responsible_default"
-    class="form-select js-tom-select-responsible"
-    id="id_responsible_default"
-    data-placeholder="Выберите ответственного..."
-    data-allow-empty-option="true"
->
-    <option value=""></option>
-    {% if form.instance.responsible_default %}
-        <option value="{{ form.instance.responsible_default.pk }}" selected>
-            {{ form.instance.responsible_default.name }}
-        </option>
-    {% endif %}
-
-    <!-- ПРЕДЗАГРУЖАЕМ ВСЕХ ОТВЕТСТВЕННЫХ -->
-    {% for resp in all_responsibles %}
-        {% if not form.instance.responsible_default or resp.id != form.instance.responsible_default.pk %}
-            <option value="{{ resp.id }}">
-                {{ resp.name }}
-            </option>
-        {% endif %}
-    {% endfor %}
-</select>
-                                    {% for e in form.responsible_default.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Приоритет -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-exclamation-triangle me-1"></i>
-                                        {{ form.priority.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.priority|add_class:"form-select" }}
-                                    {% for e in form.priority.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Трудоёмкость -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-clock me-1"></i>
-                                        {{ form.labor_plan_hours.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.labor_plan_hours|add_class:"form-control" }}
-                                    {% for e in form.labor_plan_hours.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ e }}
-                                    </div>
-                                    {% endfor %}
-                                    <div class="form-text">Плановая трудоёмкость в часах</div>
-                                </div>
-                            </div>
-                        </div>
+    <!-- =====================================================
+         2. ФОРМА И ПРЕВЬЮ
+         ===================================================== -->
+    <form method="post" id="planForm">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <!-- LEFT: Форма -->
+            <div class="col-xl-7 col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            Параметры плана
+                        </h5>
                     </div>
+                    <div class="card-body">
+                        <!-- НАЗВАНИЕ -->
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                {{ form.name.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.name.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
 
-                    <!-- Правая колонка: Периодичность и предпросмотр -->
-                    <div class="col-lg-4">
-                        <div class="sticky-top" style="top: 20px;">
-                            <!-- =====================================================
-                                 5. ПЕРИОДИЧНОСТЬ
-                                 ===================================================== -->
-                            <div class="mb-4">
-                                <div class="section-header">
-                                    <i class="bi bi-calendar-event me-2"></i>
-                                    Периодичность работ
+                        <!-- ОПИСАНИЕ -->
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="section-header">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            Локация и оборудование
+                        </h6>
+
+                        <!-- ЛОКАЦИЯ -->
+                        <div class="mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">
+                                {{ form.location.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.location.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- ОБОРУДОВАНИЕ -->
+                        <div class="mb-3">
+                            <label for="{{ form.workstation.id_for_label }}" class="form-label">
+                                {{ form.workstation.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.workstation }}
+                            {% if form.workstation.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.workstation.errors.0 }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Выберите локацию для загрузки списка оборудования
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="section-header">
+                            <i class="bi bi-person-check me-2"></i>
+                            Ответственность и категоризация
+                        </h6>
+
+                        <!-- ОТВЕТСТВЕННЫЙ -->
+                        <div class="mb-3">
+                            <label for="{{ form.responsible_default.id_for_label }}" class="form-label">
+                                {{ form.responsible_default.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.responsible_default }}
+                            {% if form.responsible_default.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.responsible_default.errors.0 }}
+                            </div>
+                            {% endif %}
+                            {% if form.responsible_default.help_text %}
+                            <div class="form-text">
+                                {{ form.responsible_default.help_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- КАТЕГОРИЯ И ПРИОРИТЕТ -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">
+                                    {{ form.category.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.category.errors.0 }}
                                 </div>
-
-                                <!-- Выбор типа периодичности -->
-                                <div class="mb-3">
-                                    <div class="d-flex flex-wrap gap-3 mb-3">
-                                        {% for choice in form.frequency_choice.field.choices %}
-                                        <div class="form-check">
-                                            <input class="form-check-input"
-                                                   type="radio"
-                                                   name="{{ form.frequency_choice.name }}"
-                                                   value="{{ choice.0 }}"
-                                                   id="freq_{{ choice.0 }}"
-                                                   {% if form.frequency_choice.value|default:'' == choice.0 %}checked{% endif %}>
-                                            <label class="form-check-label fw-semibold" for="freq_{{ choice.0 }}">
-                                                {{ choice.1 }}
-                                            </label>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-
-                                    <!-- DAILY -->
-                                    <div id="daily-fields" class="schedule-fields" style="display:none;">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-day me-1"></i>
-                                                {{ form.first_run_date.label }}
-                                            </label>
-                                            {{ form.first_run_date|add_class:"form-control" }}
-                                            {% for e in form.first_run_date.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ e }}
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <!-- WEEKLY -->
-                                    <div id="weekly-fields" class="schedule-fields" style="display:none;">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-week me-1"></i>
-                                                {{ form.weekday.label }}
-                                            </label>
-                                            {{ form.weekday|add_class:"form-select" }}
-                                            {% for e in form.weekday.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ e }}
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <!-- MONTHLY -->
-                                    <div id="monthly-fields" class="schedule-fields" style="display:none;">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-month me-1"></i>
-                                                {{ form.day_of_month.label }}
-                                            </label>
-                                            {{ form.day_of_month|add_class:"form-control" }}
-                                            {% for e in form.day_of_month.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ e }}
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <!-- CUSTOM -->
-                                    <div id="custom-fields" class="schedule-fields" style="display:none;">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-gear me-1"></i>
-                                                Интервал выполнения
-                                            </label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Каждые</span>
-                                                <input type="number"
-                                                       min="1"
-                                                       class="form-control"
-                                                       id="custom_interval_value"
-                                                       placeholder="1">
-                                                <select class="form-select"
-                                                        id="custom_interval_unit">
-                                                    <option value="">— выберите —</option>
-                                                    {% for unit in form.interval_unit.field.choices %}
-                                                    <option value="{{ unit.0 }}">{{ unit.1 }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    {{ form.priority.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.priority.errors.0 }}
                                 </div>
+                                {% endif %}
+                            </div>
+                        </div>
 
-                                <!-- Активность -->
-                                <div class="form-check mt-3">
-                                    {{ form.is_active }}
-                                    <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
-                                        Активный план
-                                    </label>
-                                    <div class="form-text small">
-                                        Неактивные планы не создают задачи
+                        <!-- ТРУДОЕМКОСТЬ -->
+                        <div class="mb-3">
+                            <label for="{{ form.labor_plan_hours.id_for_label }}" class="form-label">
+                                {{ form.labor_plan_hours.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.labor_plan_hours }}
+                            {% if form.labor_plan_hours.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.labor_plan_hours.errors.0 }}
+                            </div>
+                            {% endif %}
+                            {% if form.labor_plan_hours.help_text %}
+                            <div class="form-text">
+                                {{ form.labor_plan_hours.help_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="section-header">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Периодичность выполнения
+                        </h6>
+
+                        <!-- ЧАСТОТА -->
+                        <div class="mb-4">
+                            {% for value, label in form.frequency_choice.field.choices %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input frequency-choice" type="radio"
+                                    name="{{ form.frequency_choice.name }}"
+                                    id="id_frequency_choice_{{ forloop.counter0 }}"
+                                    value="{{ value }}"
+                                    {% if form.frequency_choice.value == value %}checked{% elif not form.frequency_choice.value and value == 'weekly' %}checked{% endif %}>
+                                <label class="form-check-label" for="id_frequency_choice_{{ forloop.counter0 }}">
+                                    {{ label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- ЕЖЕДНЕВНО -->
+                        <div id="frequency-daily-fields" style="display: none;">
+                            <div class="card bg-dark mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="bi bi-calendar-check me-2"></i>
+                                        Ежедневное обслуживание
+                                    </h6>
+                                    <div class="mb-0">
+                                        <label for="{{ form.first_run_date.id_for_label }}" class="form-label">
+                                            {{ form.first_run_date.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.first_run_date }}
+                                        {% if form.first_run_date.help_text %}
+                                        <div class="form-text">
+                                            {{ form.first_run_date.help_text }}
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- =====================================================
-                                 6. ПРЕВЬЮ КАЛЕНДАРЯ
-                                 ===================================================== -->
-                            <div class="mb-4">
-                                <div class="section-header">
-                                    <i class="bi bi-calendar-check me-2"></i>
-                                    Превью на 6 месяцев
-                                </div>
-
-                                <div class="d-flex justify-content-between mb-2">
-                                    <div class="small text-muted">
-                                        Первый запуск:
-                                        <div class="fw-semibold text-body" id="previewFirstRun">—</div>
-                                    </div>
-                                    <div class="small text-muted">
-                                        Запусков:
-                                        <div class="fw-semibold text-body" id="previewCount">0</div>
-                                    </div>
-                                </div>
-
-                                <div id="previewError"
-                                     class="alert alert-danger small mb-2"
-                                     style="display:none;"></div>
-
-                                <div id="previewLoading" style="display:none;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                            <span class="visually-hidden">Загрузка...</span>
+                        <!-- ЕЖЕНЕДЕЛЬНО -->
+                        <div id="frequency-weekly-fields" style="display: none;">
+                            <div class="card bg-dark mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="bi bi-calendar-week me-2"></i>
+                                        Еженедельное обслуживание
+                                    </h6>
+                                    <div class="mb-0">
+                                        <label for="{{ form.weekday.id_for_label }}" class="form-label">
+                                            {{ form.weekday.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.weekday }}
+                                        {% if form.weekday.help_text %}
+                                        <div class="form-text">
+                                            {{ form.weekday.help_text }}
                                         </div>
-                                        <span class="small text-muted">Считаю расписание…</span>
+                                        {% endif %}
                                     </div>
                                 </div>
-
-                                <div id="previewCalendar" class="calendar-grid mt-3"></div>
                             </div>
+                        </div>
 
-                            <!-- Индикатор прогресса -->
-                            <div class="mt-3" id="progressIndicator" style="display: none;">
-                                <div class="d-flex align-items-center">
-                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                        <span class="visually-hidden">Загрузка...</span>
+                        <!-- ЕЖЕМЕСЯЧНО -->
+                        <div id="frequency-monthly-fields" style="display: none;">
+                            <div class="card bg-dark mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="bi bi-calendar-month me-2"></i>
+                                        Ежемесячное обслуживание
+                                    </h6>
+                                    <div class="mb-0">
+                                        <label for="{{ form.day_of_month.id_for_label }}" class="form-label">
+                                            {{ form.day_of_month.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.day_of_month }}
+                                        {% if form.day_of_month.help_text %}
+                                        <div class="form-text">
+                                            {{ form.day_of_month.help_text }}
+                                        </div>
+                                        {% endif %}
                                     </div>
-                                    <span class="small text-muted">Сохранение данных...</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- ПРОИЗВОЛЬНЫЙ ИНТЕРВАЛ -->
+                        <div id="frequency-custom-fields" style="display: none;">
+                            <div class="card bg-dark mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="bi bi-gear me-2"></i>
+                                        Произвольный интервал
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label for="custom_interval_value" class="form-label">
+                                                Значение <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" class="form-control" id="custom_interval_value"
+                                                min="1" value="1" placeholder="1">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="custom_interval_unit" class="form-label">
+                                                Единица <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-select" id="custom_interval_unit">
+                                                {% for value, label in form.interval_unit.field.choices %}
+                                                <option value="{{ value }}">{{ label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-text mt-2">
+                                        Например: 2 недели, 3 месяца, 10 дней
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- СКРЫТЫЕ ПОЛЯ -->
+                        {{ form.interval_value }}
+                        {{ form.interval_unit }}
+
+                        <hr class="my-4">
+
+                        <!-- АКТИВНОСТЬ -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.is_active.errors.0 }}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- =====================================================
-                     7. КНОПКИ ДЕЙСТВИЙ
-                     ===================================================== -->
-                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                    <div>
-                        <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">
-                            <i class="bi bi-x-lg me-1"></i>
-                            Отмена
-                        </a>
-                        {% if not create %}
-                        <a class="btn btn-outline-info ms-2" href="{% url 'maintenance:plan_detail' object.pk %}">
-                            <i class="bi bi-eye me-1"></i>
-                            Просмотр
-                        </a>
-                        {% endif %}
-                    </div>
+                <!-- КНОПКИ СОХРАНЕНИЯ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
+                            <a href="{% url 'maintenance:plan_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Отмена
+                            </a>
+                            {% if create %}
+                            <button type="button" class="btn btn-outline-primary" id="saveAndAddAnotherBtn">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Сохранить и добавить еще
+                            </button>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary" id="saveBtn">
+                                <i class="bi bi-save me-2"></i>
+                                {% if create %}Создать план{% else %}Сохранить изменения{% endif %}
+                            </button>
+                        </div>
 
-                    <div class="d-flex gap-2">
-                        <!-- Кнопка "Сохранить и добавить еще" -->
-                        {% if create %}
-                        <button type="button"
-                                class="btn btn-outline-primary"
-                                id="saveAndAddAnotherBtn">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            Сохранить и добавить еще
-                        </button>
-                        {% endif %}
-
-                        <!-- Основная кнопка сохранения -->
-                        <button class="btn btn-primary px-4" type="submit" id="saveBtn">
-                            <i class="bi bi-save me-1"></i>
-                            {% if create %}Создать план{% else %}Сохранить изменения{% endif %}
-                        </button>
+                        <!-- Индикатор прогресса -->
+                        <div id="progressIndicator" class="mt-3 align-items-center justify-content-center" style="display: none;">
+                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <span class="text-muted">Сохранение данных...</span>
+                        </div>
                     </div>
                 </div>
-            </form>
+            </div>
+
+            <!-- RIGHT: Превью -->
+            <div class="col-xl-3 col-lg-4">
+                <div class="sticky-top" style="top: 1rem;">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-dark">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-calendar3 me-2"></i>
+                                Превью расписания
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Loader -->
+                            <div id="preview-loading" class="text-center py-3" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                <div class="text-muted small mt-2">Расчет расписания...</div>
+                            </div>
+
+                            <!-- Error -->
+                            <div id="preview-error" class="alert alert-danger small py-2 mb-3" style="display: none;"></div>
+
+                            <!-- Stats -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">Первый запуск:</span>
+                                    <strong id="preview-first-run" class="text-primary">—</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Запусков (6 мес.):</span>
+                                    <strong id="preview-count" class="text-success">—</strong>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <!-- Calendar -->
+                            <div id="preview-calendar" class="calendar-grid" style="max-height: 600px; overflow-y: auto; overflow-x: hidden;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Подсказка -->
+                    <div class="card shadow-sm border-info">
+                        <div class="card-body">
+                            <h6 class="card-title text-info mb-2">
+                                <i class="bi bi-lightbulb me-2"></i>
+                                Подсказка
+                            </h6>
+                            <p class="small mb-0">
+                                Превью показывает запланированные даты на ближайшие 6 месяцев.
+                                <span class="badge bg-danger">Красным</span> отмечена дата первого запуска,
+                                <span class="badge bg-warning text-dark">желтым</span> — последующие.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Tom Select JS -->
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // ===========================
-    // ИНИЦИАЛИЗАЦИЯ TOM SELECT
-    // ===========================
+document.addEventListener("DOMContentLoaded", function() {
+    // =============================
+    // TOM SELECT ИНИЦИАЛИЗАЦИЯ
+    // =============================
 
-// ===========================
-// ИНИЦИАЛИЗАЦИЯ TOM SELECT
-// ===========================
+    let locationSelect = null;
+    let workstationSelect = null;
+    let responsibleSelect = null;
 
-// 1. Tom-select для локации (ПРЕДЗАГРУЖЕННЫЕ ДАННЫЕ)
-const locationSelect = new TomSelect('#id_location', {
-    maxOptions: null,
-    placeholder: 'Выберите локацию...',
-    allowEmptyOption: true,
-    searchField: ['text'],
-    sortField: { field: 'text', direction: 'asc' },
-    create: false,
-    persist: false,
-
-    // Используем только предзагруженные опции
-    onInitialize: function() {
-        console.log('Локации загружены:', this.options.length);
-    }
-});
-
-// 2. Tom-select для оборудования (с фильтрацией по локации)
-const workstationSelect = new TomSelect('#id_workstation', {
-    maxOptions: null,
-    placeholder: 'Выберите оборудование...',
-    allowEmptyOption: true,
-    searchField: ['text'],
-    sortField: { field: 'text', direction: 'asc' },
-
-load: function(query, callback) {
-    const locationId = locationSelect.getValue();
-    if (!locationId) {
-        callback();
-        return;
-    }
-
-    fetch(`{% url 'maintenance:ajax_workstations_by_location' %}?location_id=${locationId}&q=${encodeURIComponent(query)}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(r => r.json())
-    .then(data => callback(data.items || []))
-    .catch(() => callback());
-},
-
-    render: {
-        option: (data, escape) => `<div>${escape(data.text)}</div>`,
-        item:   (data, escape) => `<div>${escape(data.text)}</div>`
-    }
-});
-const workstationEl = document.getElementById('id_workstation');
-const initialWorkstationId = workstationEl?.dataset.initial;
-
-if (initialWorkstationId) {
-    const initialOption = workstationEl.querySelector(
-        `option[value="${initialWorkstationId}"]`
-    );
-
-    if (initialOption) {
-        workstationSelect.addOption({
-            value: initialWorkstationId,
-            text: initialOption.textContent.trim(),
+    // Локация
+    const locationElement = document.querySelector('.js-tom-select-location');
+    if (locationElement) {
+        locationSelect = new TomSelect(locationElement, {
+            maxOptions: null,
+            placeholder: 'Выберите локацию...',
+            allowEmptyOption: true,
+            searchField: ['text'],
+            sortField: {
+                field: 'text',
+                direction: 'asc'
+            },
+            render: {
+                option: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function(data, escape) {
+                    return '<div class="no-results">Не найдено</div>';
+                }
+            },
+            onInitialize: function() {
+                const initialValue = locationElement.value;
+                if (initialValue) {
+                    this.setValue(initialValue);
+                }
+            },
+            onChange: function(value) {
+                loadWorkstations(value);
+            }
         });
-
-        workstationSelect.setValue(initialWorkstationId, true); // без trigger change
-    }
-}
-// 3. Tom-select для ответственного (теперь использует предзагруженные опции)
-const responsibleSelect = new TomSelect('#id_responsible_default', {
-    maxOptions: null,
-    placeholder: 'Выберите ответственного...',
-    allowEmptyOption: true,
-    searchField: ['text'],
-    sortField: { field: 'text', direction: 'asc' },
-    render: {
-        option: (data, escape) => `<div>${escape(data.text)}</div>`,
-        item:   (data, escape) => `<div>${escape(data.text)}</div>`
-    }
-});
-
-// ===========================
-// ФИЛЬТРАЦИЯ ОБОРУДОВАНИЯ ПО ЛОКАЦИИ
-// ===========================
-const $emptyHint = document.getElementById('workstation-empty-hint');
-const WS_URL = "{% url 'maintenance:ajax_workstations_by_location' %}";
-
-function resetWorkstations(showHint = false) {
-    workstationSelect.clear();
-    workstationSelect.clearOptions();
-    workstationSelect.disable();
-
-    if (showHint) {
-        $emptyHint.style.display = 'block';
-    } else {
-        $emptyHint.style.display = 'none';
-    }
-}
-
-function populateWorkstationsByLocation(locationId) {
-    workstationSelect.clear();
-    workstationSelect.clearOptions();
-
-    const allOptions = workstationEl.querySelectorAll('option[data-location]');
-
-    let hasItems = false;
-
-    allOptions.forEach(opt => {
-        if (opt.dataset.location === locationId) {
-            workstationSelect.addOption({
-                value: opt.value,
-                text: opt.textContent.trim()
-            });
-            hasItems = true;
-        }
-    });
-
-    if (hasItems) {
-        workstationSelect.enable();
-        $emptyHint.style.display = 'none';
-    } else {
-        workstationSelect.disable();
-        $emptyHint.style.display = 'block';
-    }
-}
-
-let isInitialLocationSync = true;
-// Обработчик изменения локации
-locationSelect.on('change', function(value) {
-
-    // ⛔ НЕ сбрасываем оборудование при первом автосрабатывании
-    if (isInitialLocationSync && workstationSelect.getValue()) {
-        isInitialLocationSync = false;
-        return;
     }
 
-    isInitialLocationSync = false;
+    // Оборудование
+    const workstationElement = document.querySelector('.js-tom-select-workstation');
+    if (workstationElement) {
+        workstationSelect = new TomSelect(workstationElement, {
+            maxOptions: null,
+            placeholder: 'Сначала выберите локацию...',
+            allowEmptyOption: true,
+            searchField: ['text'],
+            sortField: {
+                field: 'text',
+                direction: 'asc'
+            },
+            render: {
+                option: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function(data, escape) {
+                    return '<div class="no-results">Не найдено</div>';
+                }
+            },
+            onInitialize: function() {
+                const initialValue = workstationElement.value;
+                if (initialValue) {
+                    this.setValue(initialValue);
+                }
+                // Блокируем если локация не выбрана
+                if (!locationSelect || !locationSelect.getValue()) {
+                    this.disable();
+                }
+            }
+        });
+    }
 
-    resetWorkstations(false);
+    // Ответственный
+    const responsibleElement = document.querySelector('.js-tom-select-responsible');
+    if (responsibleElement) {
+        responsibleSelect = new TomSelect(responsibleElement, {
+            maxOptions: null,
+            placeholder: 'Выберите ответственного...',
+            allowEmptyOption: true,
+            searchField: ['text'],
+            sortField: {
+                field: 'text',
+                direction: 'asc'
+            },
+            render: {
+                option: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function(data, escape) {
+                    return '<div class="no-results">Не найдено</div>';
+                }
+            },
+            onInitialize: function() {
+                const initialValue = responsibleElement.value;
+                if (initialValue) {
+                    this.setValue(initialValue);
+                }
+            }
+        });
+    }
 
-    if (!value) return;
+    // Функция загрузки оборудования
+    function loadWorkstations(locationId) {
+        if (!workstationSelect) return;
 
-    fetch(`${WS_URL}?location_id=${value}`, {
-        headers: {"X-Requested-With": "XMLHttpRequest"}
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.ok || data.items.length === 0) {
-            resetWorkstations(true);
+        // ВАЖНО: сначала очищаем выбранное значение
+        workstationSelect.clear();
+
+        // Затем очищаем все опции
+        workstationSelect.clearOptions();
+
+        if (!locationId) {
+            workstationSelect.settings.placeholder = 'Сначала выберите локацию...';
+            workstationSelect.disable();  // Блокируем поле
+            workstationSelect.inputState();
             return;
         }
-        populateWorkstations(data.items);
-    })
-    .catch(() => resetWorkstations(true));
-});
 
-// Инициализация при загрузке (если есть выбранная локация)
-if (locationSelect.getValue()) {
-    locationSelect.trigger('change');
-}
+        // Показываем индикатор загрузки
+        workstationSelect.settings.placeholder = 'Загрузка...';
+        workstationSelect.disable();  // Блокируем на время загрузки
+        workstationSelect.inputState();
 
+        // Загружаем новые опции
+        const apiUrl = "{% url 'maintenance:api_workstations' %}";
+        fetch(`${apiUrl}?location=${locationId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        workstationSelect.addOption({
+                            value: item.id,
+                            text: item.name
+                        });
+                    });
+                    workstationSelect.settings.placeholder = 'Выберите оборудование...';
+                    workstationSelect.enable();  // Разблокируем после загрузки
+                } else {
+                    workstationSelect.settings.placeholder = 'Нет доступного оборудования';
+                    workstationSelect.disable();  // Оставляем заблокированным если нет оборудования
+                }
+                workstationSelect.inputState();
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки оборудования:', error);
+                workstationSelect.settings.placeholder = 'Ошибка загрузки';
+                workstationSelect.disable();  // Блокируем при ошибке
+                workstationSelect.inputState();
+            });
+    }
 
+    // Загружаем оборудование при инициализации, если локация уже выбрана
+    if (locationSelect && locationSelect.getValue()) {
+        const currentLocation = locationSelect.getValue();
+        const currentWorkstation = workstationElement ? workstationElement.value : null;
 
-    // ===========================
-    // УПРАВЛЕНИЕ ПЕРИОДИЧНОСТЬЮ
-    // ===========================
-    const radios = document.querySelectorAll('input[name="frequency_choice"]');
-    const blocks = {
-        daily: document.getElementById('daily-fields'),
-        weekly: document.getElementById('weekly-fields'),
-        monthly: document.getElementById('monthly-fields'),
-        custom: document.getElementById('custom-fields'),
-    };
+        // Загружаем оборудование для текущей локации
+        const apiUrl = "{% url 'maintenance:api_workstations' %}";
+        fetch(`${apiUrl}?location=${currentLocation}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    workstationSelect.clearOptions();
+                    data.forEach(item => {
+                        workstationSelect.addOption({
+                            value: item.id,
+                            text: item.name
+                        });
+                    });
+                    // Восстанавливаем выбранное оборудование
+                    if (currentWorkstation) {
+                        workstationSelect.setValue(currentWorkstation);
+                    }
+                    workstationSelect.settings.placeholder = 'Выберите оборудование...';
+                    workstationSelect.enable();  // Разблокируем
+                } else {
+                    workstationSelect.settings.placeholder = 'Нет доступного оборудования';
+                    workstationSelect.disable();  // Оставляем заблокированным
+                }
+                workstationSelect.inputState();
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки оборудования при инициализации:', error);
+                workstationSelect.disable();  // Блокируем при ошибке
+            });
+    }
 
-    const hiddenValue = document.querySelector('[name="interval_value"]');
-    const hiddenUnit = document.querySelector('[name="interval_unit"]');
-    const customValue = document.getElementById('custom_interval_value');
-    const customUnit = document.getElementById('custom_interval_unit');
+    // =============================
+    // УПРАВЛЕНИЕ ЧАСТОТОЙ
+    // =============================
+
+    const radios = document.querySelectorAll(".frequency-choice");
+    const dailyFields = document.getElementById("frequency-daily-fields");
+    const weeklyFields = document.getElementById("frequency-weekly-fields");
+    const monthlyFields = document.getElementById("frequency-monthly-fields");
+    const customFields = document.getElementById("frequency-custom-fields");
+
+    const hiddenValue = document.querySelector(".interval-value-field");
+    const hiddenUnit = document.querySelector(".interval-unit-field");
+
+    const customValue = document.getElementById("custom_interval_value");
+    const customUnit = document.getElementById("custom_interval_unit");
 
     function updateFrequencyUI() {
-        Object.values(blocks).forEach(b => {
-            if (b) b.style.display = 'none';
-        });
-        const selected = Array.from(radios).find(r => r.checked)?.value;
-        if (blocks[selected]) blocks[selected].style.display = 'block';
+        const freq = getSelectedFrequency();
 
-        if (selected !== 'custom') {
-            if (hiddenValue) hiddenValue.value = '';
-            if (hiddenUnit) hiddenUnit.value = '';
+        // Скрываем все блоки
+        if (dailyFields) dailyFields.style.display = "none";
+        if (weeklyFields) weeklyFields.style.display = "none";
+        if (monthlyFields) monthlyFields.style.display = "none";
+        if (customFields) customFields.style.display = "none";
+
+        // Показываем нужный блок
+        switch (freq) {
+            case "daily":
+                if (dailyFields) dailyFields.style.display = "block";
+                if (hiddenValue) hiddenValue.value = "1";
+                if (hiddenUnit) hiddenUnit.value = "day";
+                break;
+            case "weekly":
+                if (weeklyFields) weeklyFields.style.display = "block";
+                if (hiddenValue) hiddenValue.value = "1";
+                if (hiddenUnit) hiddenUnit.value = "week";
+                break;
+            case "monthly":
+                if (monthlyFields) monthlyFields.style.display = "block";
+                if (hiddenValue) hiddenValue.value = "1";
+                if (hiddenUnit) hiddenUnit.value = "month";
+                break;
+            case "custom":
+                if (customFields) customFields.style.display = "block";
+                if (hiddenValue && customValue) hiddenValue.value = customValue.value;
+                if (hiddenUnit && customUnit) hiddenUnit.value = customUnit.value;
+                break;
         }
     }
 
-    radios.forEach(r => r.addEventListener('change', () => {
-        updateFrequencyUI();
-        schedulePreviewRefresh();
-    }));
-
-    if (customValue) {
-        customValue.addEventListener('input', () => {
-            if (hiddenValue) hiddenValue.value = customValue.value;
-            schedulePreviewRefresh();
-        });
-    }
-
-    if (customUnit) {
-        customUnit.addEventListener('change', () => {
-            if (hiddenUnit) hiddenUnit.value = customUnit.value;
-            schedulePreviewRefresh();
-        });
-    }
-
-    // Восстановление значений
-    if (hiddenValue && customValue) customValue.value = hiddenValue.value;
-    if (hiddenUnit && customUnit) customUnit.value = hiddenUnit.value;
-
+    // Инициализация UI
     updateFrequencyUI();
 
-    // ===========================
-    // ПРЕВЬЮ КАЛЕНДАРЯ (AJAX)
-    // ===========================
-    const previewFirstRun = document.getElementById("previewFirstRun");
-    const previewCount = document.getElementById("previewCount");
-    const previewError = document.getElementById("previewError");
-    const previewCalendar = document.getElementById("previewCalendar");
-    const previewLoading = document.getElementById("previewLoading");
+    // =============================
+    // ПРЕВЬЮ КАЛЕНДАРЯ
+    // =============================
 
-    const DOW = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-    const MONTHS_RU = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-                      "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+    const MONTHS_AHEAD = 6;
+    const previewCalendar = document.getElementById("preview-calendar");
+    const previewLoading = document.getElementById("preview-loading");
+    const previewError = document.getElementById("preview-error");
+    const previewFirstRun = document.getElementById("preview-first-run");
+    const previewCount = document.getElementById("preview-count");
 
-    const MONTHS_AHEAD = 5;
+    const MONTH_NAMES = [
+        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ];
+    const DOW_SHORT = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-    function pad2(n) {
-        return String(n).padStart(2, "0");
+    function monthsInRange(start, end) {
+        const arr = [];
+        let d = new Date(start);
+        while (d <= end) {
+            arr.push([d.getFullYear(), d.getMonth()]);
+            d.setMonth(d.getMonth() + 1);
+        }
+        return arr;
+    }
+
+    function firstDayOfMonth(y, m0) {
+        const d = new Date(y, m0, 1);
+        let wd = d.getDay();
+        return wd === 0 ? 6 : wd - 1;
     }
 
     function daysInMonth(y, m0) {
         return new Date(y, m0 + 1, 0).getDate();
     }
 
-    function monthsInRange(startDate, endDate) {
-        const res = [];
-        let y = startDate.getFullYear(), m0 = startDate.getMonth();
-        const ey = endDate.getFullYear(), em0 = endDate.getMonth();
-        while (true) {
-            res.push([y, m0]);
-            if (y === ey && m0 === em0) break;
-            if (m0 === 11) {
-                y += 1;
-                m0 = 0;
-            } else {
-                m0 += 1;
-            }
-        }
-        return res;
-    }
-
-    function buildMonthNode(year, month0, todayISO, firstDayISO, nextDaysSet) {
+    function buildMonthNode(y, m0, todayISO, firstDayISO, nextDaysSet) {
         const wrap = document.createElement("div");
         wrap.className = "mini-month";
 
         const head = document.createElement("div");
         head.className = "mini-head";
-
-        const left = document.createElement("div");
-        const title = document.createElement("div");
-        title.className = "mini-title";
-        title.textContent = `${MONTHS_RU[month0]} ${year}`;
-        const sub = document.createElement("div");
-        sub.className = "mini-sub";
-        sub.textContent = "Плановые даты выделены цветом";
-        left.appendChild(title);
-        left.appendChild(sub);
-
-        head.appendChild(left);
+        head.innerHTML = `
+            <div>
+                <div class="mini-title">${MONTH_NAMES[m0]}</div>
+                <div class="mini-sub">${y}</div>
+            </div>
+        `;
         wrap.appendChild(head);
 
         const dow = document.createElement("div");
         dow.className = "mini-dow";
-        DOW.forEach(x => {
+        DOW_SHORT.forEach(nm => {
             const cell = document.createElement("div");
-            cell.textContent = x;
+            cell.textContent = nm;
             dow.appendChild(cell);
         });
         wrap.appendChild(dow);
@@ -1006,25 +1059,25 @@ if (locationSelect.getValue()) {
         const grid = document.createElement("div");
         grid.className = "mini-days";
 
-        const firstOfMonth = new Date(year, month0, 1, 0, 0, 0, 0);
-        const jsDow = firstOfMonth.getDay();
-        const firstWeekday = (jsDow + 6) % 7;
-        const dim = daysInMonth(year, month0);
-
-        for (let i = 0; i < firstWeekday; i++) {
-            const cell = document.createElement("div");
-            cell.className = "mini-day empty";
-            grid.appendChild(cell);
+        const offset = firstDayOfMonth(y, m0);
+        for (let i = 0; i < offset; i++) {
+            const emp = document.createElement("div");
+            emp.className = "mini-day empty";
+            grid.appendChild(emp);
         }
 
-        for (let day = 1; day <= dim; day++) {
+        const total = daysInMonth(y, m0);
+        for (let day = 1; day <= total; day++) {
             const cell = document.createElement("div");
             cell.className = "mini-day";
 
-            const iso = `${year}-${pad2(month0 + 1)}-${pad2(day)}`;
+            const iso = `${y}-${String(m0 + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-            if (iso === firstDayISO) cell.classList.add("first");
-            else if (nextDaysSet.has(iso)) cell.classList.add("next");
+            if (iso === firstDayISO) {
+                cell.classList.add("first");
+            } else if (nextDaysSet.has(iso)) {
+                cell.classList.add("next");
+            }
 
             if (iso === todayISO) cell.classList.add("today");
 
@@ -1199,6 +1252,33 @@ if (locationSelect.getValue()) {
         return isValid;
     }
 
+    // Валидация соответствия оборудования локации
+    function validateWorkstationLocation() {
+        if (!locationSelect || !workstationSelect) return true;
+
+        const locationId = locationSelect.getValue();
+        const workstationId = workstationSelect.getValue();
+
+        // Если оборудование выбрано, но локация не выбрана
+        if (workstationId && !locationId) {
+            alert('Выберите локацию перед выбором оборудования');
+            return false;
+        }
+
+        // Если выбрано оборудование, проверяем что оно в списке опций
+        // (список опций загружается только для текущей локации)
+        if (workstationId && locationId) {
+            const workstationOption = workstationSelect.options[workstationId];
+            if (!workstationOption) {
+                alert('Выбранное оборудование не принадлежит текущей локации. Пожалуйста, выберите оборудование заново.');
+                workstationSelect.clear();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Показать/скрыть индикатор загрузки
      */
@@ -1227,7 +1307,7 @@ if (locationSelect.getValue()) {
     const form = document.getElementById('planForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            if (!validateRequiredFields()) {
+            if (!validateRequiredFields() || !validateWorkstationLocation()) {
                 e.preventDefault();
 
                 // Прокрутка к первой ошибке
@@ -1251,7 +1331,7 @@ if (locationSelect.getValue()) {
     const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
     if (saveAndAddAnotherBtn) {
         saveAndAddAnotherBtn.addEventListener('click', function() {
-            if (validateRequiredFields()) {
+            if (validateRequiredFields() && validateWorkstationLocation()) {
                 // Добавляем скрытое поле для редиректа
                 const hiddenInput = document.createElement('input');
                 hiddenInput.type = 'hidden';

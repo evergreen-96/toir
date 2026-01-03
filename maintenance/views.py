@@ -1067,6 +1067,35 @@ def ajax_responsibles(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def api_workstations(request):
+    """
+    API endpoint для получения списка оборудования по локации.
+    Используется Tom Select для динамической загрузки опций.
+
+    GET параметры:
+        location (int): ID локации для фильтрации
+
+    Возвращает:
+        JSON список объектов: [{"id": 1, "name": "Станок 1"}, ...]
+    """
+    location_id = request.GET.get('location')
+
+    if not location_id:
+        return JsonResponse([], safe=False)
+
+    try:
+        location_id = int(location_id)
+    except (TypeError, ValueError):
+        return JsonResponse([], safe=False)
+
+    # Получаем оборудование для выбранной локации
+    workstations = Workstation.objects.filter(
+        location_id=location_id
+    ).order_by('name').values('id', 'name')
+
+    return JsonResponse(list(workstations), safe=False)
+
+@require_GET
 def ajax_all_job_titles(request: HttpRequest) -> JsonResponse:
     """AJAX получение всех уникальных должностей для автодополнения."""
     job_titles = HumanResource.objects.filter(
