@@ -110,14 +110,13 @@ class WorkOrderForm(forms.ModelForm):
                 "class": "form-select"
             }),
             "responsible": forms.Select(attrs={
-                "class": "form-select"
+                "class": "form-select js-tom-select-responsible"  # ✅ Добавили класс
             }),
             "location": forms.Select(attrs={
-                "class": "form-select",
-                "data-action": "change->workorder#onLocationChange"
+                "class": "form-select js-tom-select-location"  # ✅ Добавили класс
             }),
             "workstation": forms.Select(attrs={
-                "class": "form-select"
+                "class": "form-select js-tom-select-workstation"  # ✅ Добавили класс
             }),
             "date_start": forms.DateInput(attrs={
                 "type": "date",
@@ -489,12 +488,10 @@ class PlannedOrderForm(forms.ModelForm):
                 "placeholder": "Описание плановых работ..."
             }),
             "workstation": forms.Select(attrs={
-                "class": "form-select js-tom-select-workstation",
-                "data-placeholder": "Выберите оборудование..."
+                "class": "form-select js-tom-select-workstation"
             }),
             "location": forms.Select(attrs={
-                "class": "form-select js-tom-select-location",
-                "data-placeholder": "Выберите локацию..."
+                "class": "form-select js-tom-select-location"
             }),
             "responsible_default": forms.Select(attrs={
                 "class": "form-select js-tom-select-responsible",

@@ -133,7 +133,7 @@
                                                 <i class="bi bi-geo-alt me-1"></i>
                                                 {{ form.location.label }}
                                             </label>
-                                            {{ form.location|add_class:"form-select" }}
+                                            {{ form.location }}
                                             {% for error in form.location.errors %}
                                                 <div class="invalid-feedback d-block">
                                                     {{ error }}
@@ -150,7 +150,7 @@
                                                 <i class="bi bi-cpu me-1"></i>
                                                 {{ form.workstation.label }}
                                             </label>
-                                            {{ form.workstation|add_class:"form-select" }}
+                                            {{ form.workstation }}
                                             {% for error in form.workstation.errors %}
                                                 <div class="invalid-feedback d-block">
                                                     {{ error }}
@@ -197,7 +197,7 @@
                                                 <i class="bi bi-person me-1"></i>
                                                 {{ form.responsible.label }}
                                             </label>
-                                            {{ form.responsible|add_class:"form-select" }}
+                                            {{ form.responsible }}
                                             {% for error in form.responsible.errors %}
                                                 <div class="invalid-feedback d-block">
                                                     {{ error }}
@@ -598,7 +598,7 @@
 
 {% endblock %}
 
-{% block extra_css %}
+{% block extra_head %}
 <style>
 /* Стили для превью файлов */
 .file-thumb-container {
@@ -702,12 +702,195 @@
     color: var(--bs-secondary-color);
 }
 </style>
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+
+<style>
+/* Стили для Tom-select */
+.ts-wrapper {
+    width: 100% !important;
+}
+
+/* Убираем стандартную стрелку Bootstrap */
+.form-select.js-tom-select-location,
+.form-select.js-tom-select-workstation,
+.form-select.js-tom-select-responsible {
+    background-image: none !important;
+}
+
+
+/* Кастомизация dropdown */
+.ts-dropdown {
+    z-index: 1060 !important;
+}
+
+/* Заблокированное состояние */
+.ts-wrapper.disabled .ts-control,
+.ts-wrapper.disabled .ts-control * {
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    background-color: var(--bs-secondary-bg) !important;
+}
+
+/* Для множественного выбора (если будет нужно) */
+.ts-control.multi {
+    padding: .25rem .5rem !important;
+}
+
+.ts-control.multi .item {
+    background-color: var(--bs-secondary-bg) !important;
+    border: 1px solid var(--bs-border-color) !important;
+    border-radius: .375rem !important;
+    margin: .15rem !important;
+}
+
+/* Темная тема для Tom Select */
+[data-bs-theme="dark"] .ts-control {
+    background-color: var(--bs-dark) !important;
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option {
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .ts-wrapper.disabled .ts-control {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+</style>
 {% endblock %}
 
 {% block extra_js %}
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+
     document.addEventListener("DOMContentLoaded", function () {
-        // =====================================================
+        // =============================
+        // TOM SELECT ИНИЦИАЛИЗАЦИЯ
+        // =============================
+
+        let locationSelect = null;
+        let workstationSelect = null;
+        let responsibleSelect = null;
+
+        const locationElement = document.querySelector('.js-tom-select-location');
+        if (locationElement) {
+            locationSelect = new TomSelect(locationElement, {
+                maxOptions: null,
+                placeholder: 'Выберите локацию...',
+                allowEmptyOption: true,
+                searchField: ['text'],
+                sortField: { field: 'text', direction: 'asc' },
+                render: {
+                    option: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+                    item: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+                    no_results: function() { return '<div class="no-results">Не найдено</div>'; }
+                },
+                onChange: function(value) { loadWorkstationsTomSelect(value); }
+            });
+        }
+
+        const workstationElement = document.querySelector('.js-tom-select-workstation');
+        if (workstationElement) {
+            workstationSelect = new TomSelect(workstationElement, {
+                maxOptions: null,
+                placeholder: 'Сначала выберите локацию...',
+                allowEmptyOption: true,
+                searchField: ['text'],
+                sortField: { field: 'text', direction: 'asc' },
+                render: {
+                    option: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+                    item: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+                    no_results: function() { return '<div class="no-results">Не найдено</div>'; }
+                }
+            });
+            if (!locationSelect || !locationSelect.getValue()) {
+                workstationSelect.disable();
+            }
+        }
+
+        const responsibleElement = document.querySelector('.js-tom-select-responsible');
+        if (responsibleElement) {
+            responsibleSelect = new TomSelect(responsibleElement, {
+                maxOptions: null,
+                placeholder: 'Выберите ответственного...',
+                allowEmptyOption: true,
+                searchField: ['text'],
+                sortField: { field: 'text', direction: 'asc' },
+                render: {
+                    option: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+                    item: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+                    no_results: function() { return '<div class="no-results">Не найдено</div>'; }
+                }
+            });
+        }
+
+        function loadWorkstationsTomSelect(locationId) {
+            if (!workstationSelect) return;
+            workstationSelect.clear();
+            workstationSelect.clearOptions();
+            if (!locationId) {
+                workstationSelect.settings.placeholder = 'Сначала выберите локацию...';
+                workstationSelect.disable();
+                workstationSelect.inputState();
+                return;
+            }
+            workstationSelect.settings.placeholder = 'Загрузка...';
+            workstationSelect.disable();
+            workstationSelect.inputState();
+            const apiUrl = '{% url "maintenance:api_workstations" %}';
+            fetch(apiUrl + '?location=' + locationId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            workstationSelect.addOption({ value: item.id, text: item.name });
+                        });
+                        workstationSelect.settings.placeholder = 'Выберите оборудование...';
+                        workstationSelect.enable();
+                    } else {
+                        workstationSelect.settings.placeholder = 'Нет оборудования';
+                        workstationSelect.disable();
+                    }
+                    workstationSelect.inputState();
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    workstationSelect.settings.placeholder = 'Ошибка загрузки';
+                    workstationSelect.disable();
+                    workstationSelect.inputState();
+                });
+        }
+
+        if (locationSelect && locationSelect.getValue() && workstationElement) {
+            const currentLocation = locationSelect.getValue();
+            const currentWorkstation = workstationElement.value;
+            const apiUrl = '{% url "maintenance:api_workstations" %}';
+            fetch(apiUrl + '?location=' + currentLocation)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        workstationSelect.clearOptions();
+                        data.forEach(item => {
+                            workstationSelect.addOption({ value: item.id, text: item.name });
+                        });
+                        if (currentWorkstation) {
+                            workstationSelect.setValue(currentWorkstation);
+                        }
+                        workstationSelect.enable();
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
+        }
+
+
         // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
         // =====================================================
         const CSRF_TOKEN = getCsrfToken();
@@ -1143,84 +1326,6 @@
             });
         }
 
-        // =====================================================
-        // ЗАВИСИМОСТЬ МЕЖДУ ЛОКАЦИЕЙ И ОБОРУДОВАНИЕМ
-        // =====================================================
-        const locationSelect = $("#id_location");
-        const workstationSelect = $("#id_workstation");
-
-        if (locationSelect.length && workstationSelect.length) {
-            // Инициализация Select2 для локаций
-            locationSelect.select2({ width: "100%" });
-
-            // Инициализация Select2 для оборудования
-            workstationSelect.select2({
-                width: "100%",
-                allowClear: true,
-                placeholder: "Выберите оборудование"
-            });
-
-            const initialWorkstationValue = workstationSelect.val();
-
-            /**
-             * Загружает оборудование для выбранной локации
-             */
-            function loadWorkstations(locationId, restoreValue = null) {
-                disableWorkstationSelect(true);
-
-                if (!locationId) return;
-
-                fetch(`${WS_URL}?location_id=${locationId}`, {
-                    headers: { "X-Requested-With": "XMLHttpRequest" }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.ok || !data.items.length) {
-                            disableWorkstationSelect(true);
-                            return;
-                        }
-
-                        // Очищаем и заполняем список оборудования
-                        workstationSelect.empty().append(new Option("", "", false, false));
-
-                        data.items.forEach(item => {
-                            const isSelected = restoreValue && item.id == restoreValue;
-                            workstationSelect.append(
-                                new Option(item.text, item.id, isSelected, isSelected)
-                            );
-                        });
-
-                        disableWorkstationSelect(false);
-                        workstationSelect.trigger("change");
-                    })
-                    .catch(error => {
-                        console.error("Ошибка загрузки оборудования:", error);
-                        disableWorkstationSelect(true);
-                    });
-            }
-
-            /**
-             * Включает/отключает выбор оборудования
-             */
-            function disableWorkstationSelect(disable = true) {
-                workstationSelect.prop("disabled", disable);
-                if (disable) {
-                    workstationSelect.val(null).trigger("change");
-                }
-            }
-
-            // Обработчик изменения локации
-            locationSelect.on("change", function () {
-                loadWorkstations(this.value);
-            });
-
-            // Загрузка начального оборудования если локация выбрана
-            if (locationSelect.val()) {
-                loadWorkstations(locationSelect.val(), initialWorkstationValue);
-            } else {
-                disableWorkstationSelect(true);
-            }
-        }
 
         // =====================================================
         // МОДАЛЬНОЕ ОКНО ДЛЯ ПРЕДПРОСМОТРА ИЗОБРАЖЕНИЙ
@@ -1297,9 +1402,9 @@
         // Обработка отправки формы
         const form = document.getElementById('wo-form');
         if (form) {
-            form.addEventListener('submit', function(e) {
-                if (!validateRequiredFields()) {
-                    e.preventDefault();
+                    form.addEventListener('submit', function(e) {
+                        if (!validateRequiredFields() || !validateWorkstationLocation()) {  // <-- Добавить
+                            e.preventDefault();
 
                     // Прокрутка к первой ошибке
                     const firstError = document.querySelector('.is-invalid');

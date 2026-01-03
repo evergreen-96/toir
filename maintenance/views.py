@@ -386,60 +386,6 @@ def workorder_create(request: HttpRequest):
     )
 
 
-def workorder_update(request: HttpRequest, pk: int):
-    """Редактирование существующей рабочей задачи."""
-    work_order = get_object_or_404(WorkOrder, pk=pk)
-
-    if request.method == "POST":
-        form = WorkOrderForm(request.POST, request.FILES, instance=work_order)
-        formset = WorkOrderMaterialFormSet(request.POST, instance=work_order)
-
-        if form.is_valid() and formset.is_valid():
-            # Сохранение рабочей задачи
-            work_order = form.save(commit=False)
-
-            # Аудит - только для аутентифицированных пользователей
-            if request.user.is_authenticated:
-                work_order._history_user = request.user
-            work_order._change_reason = build_change_reason(
-                "редактирование задачи обслуживания"
-            )
-            work_order.save()
-
-            # Обработка файлов
-            _handle_work_order_files(request, work_order)
-
-            # Сохранение материалов
-            formset.instance = work_order
-            formset.save()
-
-            messages.success(request, "Изменения сохранены.")
-            return redirect("maintenance:wo_detail", pk=work_order.pk)
-    else:
-        form = WorkOrderForm(instance=work_order)
-        formset = WorkOrderMaterialFormSet(instance=work_order)
-
-    # Получение доступных файлов
-    attached_file_ids = work_order.attachments.values_list("file_id", flat=True)
-    all_files = (
-        File.objects
-        .exclude(id__in=attached_file_ids)
-        .order_by("-uploaded_at")
-    )
-
-    return render(
-        request,
-        "maintenance/wo_form.html",
-        {
-            "form": form,
-            "formset": formset,
-            "create": False,
-            "wo": work_order,
-            "all_files": all_files,
-        },
-    )
-
-
 class WorkOrderDeleteView(View):
     """Удаление рабочей задачи."""
 

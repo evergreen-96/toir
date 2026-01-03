@@ -493,6 +493,7 @@ def ajax_update_workstation_status(request):
     """Обновление статуса оборудования"""
     ws_id = request.POST.get("id")
     status = request.POST.get("status")
+    new_status = request.POST.get("status")
 
     if not ws_id or not status:
         return JsonResponse({
