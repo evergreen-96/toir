@@ -1,146 +1,103 @@
+import csv
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Count, Q
-from django.http import JsonResponse
-from django.views import View
-from django.views.generic import ListView, DetailView
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models.deletion import ProtectedError
-from django.utils.decorators import method_decorator
-from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.http import require_GET, require_POST
+from django.views import View
+from django.views.decorators.http import require_GET
 
+from core.views import BaseListView, BaseDetailView, BaseDeleteView
+from core.mixins import AuditMixin
 from .models import HumanResource
 from .forms import HumanResourceForm
-from core.audit import build_change_reason
 
 
-# =======================
-# Mixins
-# =======================
+# =============================================================================
+# LIST VIEW
+# =============================================================================
 
-class HRContextMixin:
-    """Миксин для добавления общего контекста"""
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
-
-
-class HRPermissionMixin(PermissionRequiredMixin):
-    """Миксин для проверки прав доступа к сотрудникам"""
-
-    def get_permission_required(self):
-        if self.request.method == 'GET':
-            return ['hr.view_humanresource']
-        elif self.request.method == 'POST':
-            return ['hr.add_humanresource']
-        elif self.request.method in ['PUT', 'PATCH']:
-            return ['hr.change_humanresource']
-        elif self.request.method == 'DELETE':
-            return ['hr.delete_humanresource']
-        return []
-
-
-class HRAuditMixin:
-    """Миксин для аудита изменений сотрудников"""
-
-    def add_audit_info(self, obj, action):
-        """Добавляет информацию для аудита"""
-        obj._history_user = self.request.user
-        obj._change_reason = build_change_reason(
-            f"{action} сотрудника"
-        )
-        return obj
-
-
-# =======================
-# List View
-# =======================
-
-class HRListView(LoginRequiredMixin, HRContextMixin, ListView):
-    """Список сотрудников с фильтрацией"""
+class HRListView(BaseListView):
+    """Список сотрудников с поиском, фильтрацией и статистикой."""
 
     model = HumanResource
     template_name = "hr/hr_list.html"
+    context_object_name = "employees"
     paginate_by = 20
     ordering = ["name"]
-    context_object_name = "employees"
+
+    # Поиск
+    search_fields = ['name', 'job_title']
+
+    # Оптимизация
+    select_related = ['manager']
 
     def get_queryset(self):
-        """Фильтрация и оптимизация queryset"""
-        queryset = HumanResource.objects.all().select_related('manager')
+        """Queryset с аннотацией количества подчинённых."""
+        qs = super().get_queryset()
 
-        # Аннотируем количество подчиненных (ДО фильтрации!)
-        queryset = queryset.annotate(
-            sub_count=Count('subordinates')
-        )
+        # Аннотируем количество подчинённых
+        qs = qs.annotate(sub_count=Count('subordinates'))
 
-        # Применяем фильтры
-        queryset = self.apply_filters(queryset)
+        # Дополнительные фильтры
+        qs = self._apply_extra_filters(qs)
 
         # Сортировка
+        qs = self._apply_sorting(qs)
+
+        return qs
+
+    def _apply_extra_filters(self, qs):
+        """Применяет дополнительные фильтры."""
+        # Руководитель
+        manager_id = self.request.GET.get("manager")
+        if manager_id:
+            qs = qs.filter(manager_id=manager_id)
+
+        # Должность
+        job_title = self.request.GET.get("job_title")
+        if job_title:
+            qs = qs.filter(job_title__icontains=job_title)
+
+        # Активность
+        is_active = self.request.GET.get("is_active")
+        if is_active:
+            qs = qs.filter(is_active=(is_active == 'true'))
+
+        # Только руководители
+        only_managers = self.request.GET.get("only_managers")
+        if only_managers:
+            qs = qs.filter(sub_count__gt=0)
+
+        # Есть подчинённые
+        has_subordinates = self.request.GET.get("has_subordinates")
+        if has_subordinates:
+            qs = qs.filter(sub_count__gt=0)
+
+        return qs
+
+    def _apply_sorting(self, qs):
+        """Применяет сортировку."""
         sort_by = self.request.GET.get('sort', 'name')
         order = self.request.GET.get('order', 'asc')
 
         if sort_by in ['name', 'job_title']:
             if order == 'desc':
                 sort_by = f'-{sort_by}'
-            queryset = queryset.order_by(sort_by)
+            qs = qs.order_by(sort_by)
 
-        return queryset
-
-    def apply_filters(self, queryset):
-        """Применение фильтров из GET-параметров"""
-        filters = Q()
-
-        # Поиск по тексту
-        q = self.request.GET.get("q")
-        if q:
-            filters &= Q(
-                Q(name__icontains=q) |
-                Q(job_title__icontains=q)
-            )
-
-        # Руководитель
-        manager = self.request.GET.get("manager")
-        if manager:
-            filters &= Q(manager_id=manager)
-
-        # Должность
-        job_title = self.request.GET.get("job_title")
-        if job_title:
-            filters &= Q(job_title__icontains=job_title)
-
-        # Активность
-        is_active = self.request.GET.get("is_active")
-        if is_active:
-            filters &= Q(is_active=(is_active == 'true'))
-
-        # Применяем все фильтры кроме only_managers
-        if filters:
-            queryset = queryset.filter(filters)
-
-        # Только руководители (отдельно, т.к. используем аннотированное поле)
-        only_managers = self.request.GET.get("only_managers")
-        if only_managers:
-            queryset = queryset.filter(sub_count__gt=0)
-
-        # Добавляем фильтр "Есть подчиненные" если есть такой параметр
-        has_subordinates = self.request.GET.get("has_subordinates")
-        if has_subordinates:
-            queryset = queryset.filter(sub_count__gt=0)
-
-        return queryset
+        return qs
 
     def get_context_data(self, **kwargs):
-        """Добавление дополнительного контекста"""
+        """Добавляет фильтры и статистику."""
         context = super().get_context_data(**kwargs)
 
-        # Параметры фильтров
+        # Параметры фильтров для формы
         context["filter_params"] = {
             "q": self.request.GET.get("q", ""),
             "manager": self.request.GET.get("manager", ""),
@@ -157,87 +114,86 @@ class HRListView(LoginRequiredMixin, HRContextMixin, ListView):
             is_active=True
         ).order_by('name')
 
-        # Список уникальных должностей для фильтра
-        job_titles = HumanResource.objects.exclude(
+        # Список уникальных должностей
+        context["job_titles"] = HumanResource.objects.exclude(
             job_title=""
         ).values_list('job_title', flat=True).distinct()
-        context["job_titles"] = job_titles
 
         # Статистика
+        context["stats"] = self._get_stats()
+
+        return context
+
+    def _get_stats(self):
+        """Возвращает статистику по сотрудникам."""
         total = HumanResource.objects.count()
         active = HumanResource.objects.filter(is_active=True).count()
 
-        # Подсчет руководителей (у кого есть подчиненные)
         managers_count = HumanResource.objects.annotate(
             sub_cnt=Count('subordinates')
         ).filter(sub_cnt__gt=0).count()
 
-        context["stats"] = {
+        job_titles_count = HumanResource.objects.exclude(
+            job_title=""
+        ).values_list('job_title', flat=True).distinct().count()
+
+        return {
             "total": total,
             "active": active,
             "managers": managers_count,
-            "job_titles": job_titles.count(),
+            "job_titles": job_titles_count,
         }
 
-        return context
 
+# =============================================================================
+# DETAIL VIEW
+# =============================================================================
 
-# =======================
-# Detail View
-# =======================
-
-class HRDetailView(LoginRequiredMixin, HRContextMixin, DetailView):
-    """Детальная информация о сотруднике"""
+class HRDetailView(BaseDetailView):
+    """Детальная информация о сотруднике."""
 
     model = HumanResource
     template_name = "hr/hr_detail.html"
     context_object_name = "employee"
-
-    def get_queryset(self):
-        """Оптимизация запросов для детального просмотра"""
-        return super().get_queryset().select_related('manager')
+    select_related = ['manager']
 
     def get_context_data(self, **kwargs):
-        """Добавление дополнительного контекста"""
+        """Добавляет подчинённых и историю."""
         context = super().get_context_data(**kwargs)
 
-        # Добавляем количество подчиненных
         context['subordinates_count'] = self.object.subordinates.count()
 
-        # Получаем историю изменений
-        if self.object:
+        # История изменений (последние 10)
+        if hasattr(self.object, 'history'):
             context['history'] = self.object.history.all()[:10]
 
         return context
 
 
-# =======================
-# Create View
-# =======================
+# =============================================================================
+# CREATE VIEW
+# =============================================================================
 
-class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
-                   HRContextMixin, HRAuditMixin, View):
-    """Создание нового сотрудника"""
+class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin, AuditMixin, View):
+    """Создание нового сотрудника."""
 
     permission_required = ['hr.add_humanresource']
     template_name = "hr/hr_form.html"
+    audit_action = "создание сотрудника"
 
     def get(self, request):
-        """Отображение формы создания"""
+        """Отображение формы."""
         form = HumanResourceForm()
 
-        # Получаем manager из GET параметра
+        # Предзаполнение руководителя из GET
         manager_id = request.GET.get('manager')
-        manager_instance = None
         manager_info = None
-        initial_manager = None  # Для хранения выбранного значения руководителя
+        initial_manager = None
 
-        # Если передан manager, предзаполняем форму и получаем информацию о руководителе
         if manager_id:
             try:
                 manager_instance = HumanResource.objects.get(pk=manager_id)
                 initial_manager = manager_instance
-                # Правильное предзаполнение формы
                 form = HumanResourceForm(initial={'manager': manager_instance})
                 manager_info = {
                     'id': manager_instance.pk,
@@ -245,100 +201,45 @@ class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
                     'job_title': manager_instance.job_title or 'нет должности'
                 }
             except HumanResource.DoesNotExist:
-                manager_info = {
-                    'id': manager_id,
-                    'name': f'Руководитель #{manager_id} (не найден)',
-                    'job_title': 'не найден'
-                }
-                initial_manager = None
-            except HumanResource.MultipleObjectsReturned:
-                # Если несколько объектов, берем первый
-                manager_instance = HumanResource.objects.filter(pk=manager_id).first()
-                if manager_instance:
-                    initial_manager = manager_instance
-                    form = HumanResourceForm(initial={'manager': manager_instance})
-                    manager_info = {
-                        'id': manager_instance.pk,
-                        'name': manager_instance.name,
-                        'job_title': manager_instance.job_title or 'нет должности'
-                    }
-                else:
-                    initial_manager = None
+                pass
 
-        # Получаем ВСЕХ активных руководителей для предзагрузки
-        all_managers = HumanResource.objects.filter(
-            is_active=True
-        ).order_by('name').values('id', 'name', 'job_title')[:100]
-
-        # Получаем ВСЕ должности для предзагрузки
-        all_job_titles = HumanResource.objects.exclude(
-            job_title=""
-        ).values_list('job_title', flat=True).distinct().order_by('job_title')[:100]
-
-        # Список должностей для автодополнения
-        job_titles = HumanResource.objects.exclude(
-            job_title__isnull=True
-        ).exclude(
-            job_title=""
-        ).values_list('job_title', flat=True).distinct().order_by('job_title')
-
-        return render(request, self.template_name, {
-            'form': form,
-            'create': True,
-            'job_titles': job_titles,
+        context = self._get_form_context(form, create=True)
+        context.update({
             'parent_manager': manager_id,
             'manager_info': manager_info,
-            'initial_manager': initial_manager,  # Передаем выбранного руководителя
-            'all_managers': list(all_managers),
-            'all_job_titles': list(all_job_titles),
+            'initial_manager': initial_manager,
         })
 
+        return render(request, self.template_name, context)
+
     def post(self, request):
-        """Обработка отправки формы"""
+        """Обработка формы."""
         form = HumanResourceForm(request.POST)
 
         if form.is_valid():
             try:
-                # Создаем объект, но не сохраняем пока
                 obj = form.save(commit=False)
-
-                # Добавляем информацию для аудита
-                obj = self.add_audit_info(obj, "создание")
-
-                # Сохраняем объект
+                self.add_audit_info(obj)
                 obj.save()
 
-                # Обработка "Сохранить и добавить еще"
-                save_and_add = request.POST.get('save_and_add')
+                # Обработка "Сохранить и добавить ещё"
+                if request.POST.get('save_and_add'):
+                    messages.success(request, _('Сотрудник "{}" создан').format(obj.name))
+                    return redirect(f"{reverse('hr:hr_new')}?manager={obj.pk}")
 
-                if save_and_add:
-                    messages.success(
-                        request,
-                        _('Сотрудник "{}" успешно создан').format(obj.name)
-                    )
-                    return redirect('{}?manager={}'.format(
-                        reverse('hr:hr_new'),
-                        obj.pk  # Делаем нового сотрудника руководителем по умолчанию
-                    ))
-                else:
-                    messages.success(
-                        request,
-                        _('Сотрудник "{}" успешно создан').format(obj.name)
-                    )
-                    return redirect('hr:hr_detail', pk=obj.pk)
+                messages.success(request, _('Сотрудник "{}" создан').format(obj.name))
+                return redirect('hr:hr_detail', pk=obj.pk)
 
             except Exception as e:
-                messages.error(
-                    request,
-                    _('Ошибка при создании сотрудника: {}').format(str(e))
-                )
+                messages.error(request, _('Ошибка: {}').format(str(e)))
         else:
-            messages.error(
-                request,
-                _('Пожалуйста, исправьте ошибки в форме')
-            )
+            messages.error(request, _('Исправьте ошибки в форме'))
 
-        # Если форма невалидна или есть ошибки, показываем форму снова
+        context = self._get_form_context(form, create=True)
+        return render(request, self.template_name, context)
+
+    def _get_form_context(self, form, create=True):
+        """Возвращает контекст для формы."""
         all_managers = HumanResource.objects.filter(
             is_active=True
         ).order_by('name').values('id', 'name', 'job_title')[:100]
@@ -353,82 +254,58 @@ class HRCreateView(LoginRequiredMixin, PermissionRequiredMixin,
             job_title=""
         ).values_list('job_title', flat=True).distinct().order_by('job_title')
 
-        return render(request, self.template_name, {
+        return {
             'form': form,
-            'create': True,
+            'create': create,
             'job_titles': job_titles,
             'all_managers': list(all_managers),
             'all_job_titles': list(all_job_titles),
-        })
+        }
 
-class HRUpdateView(LoginRequiredMixin, PermissionRequiredMixin,
-                   HRContextMixin, HRAuditMixin, View):
-    """Редактирование сотрудника"""
+
+# =============================================================================
+# UPDATE VIEW
+# =============================================================================
+
+class HRUpdateView(LoginRequiredMixin, PermissionRequiredMixin, AuditMixin, View):
+    """Редактирование сотрудника."""
 
     permission_required = ['hr.change_humanresource']
     template_name = "hr/hr_form.html"
+    audit_action = "редактирование сотрудника"
 
     def get(self, request, pk):
-        """Отображение формы редактирования"""
+        """Отображение формы."""
         obj = get_object_or_404(HumanResource, pk=pk)
         form = HumanResourceForm(instance=obj)
 
-        # Получаем ВСЕХ активных руководителей для предзагрузки
-        all_managers = HumanResource.objects.filter(
-            is_active=True
-        ).exclude(pk=obj.pk).order_by('name').values('id', 'name', 'job_title')[:100]
-
-        # Получаем ВСЕ должности для предзагрузки
-        all_job_titles = HumanResource.objects.exclude(
-            job_title=""
-        ).values_list('job_title', flat=True).distinct().order_by('job_title')[:100]
-
-        # Список должностей для автодополнения
-        job_titles = HumanResource.objects.exclude(
-            job_title=""
-        ).values_list('job_title', flat=True).distinct()
-
-        return render(request, self.template_name, {
-            'form': form,
-            'create': False,
-            'object': obj,
-            'job_titles': job_titles,
-            'all_managers': list(all_managers),  # Добавляем всех руководителей
-            'all_job_titles': list(all_job_titles),  # Добавляем все должности
-        })
+        context = self._get_form_context(form, obj, create=False)
+        return render(request, self.template_name, context)
 
     def post(self, request, pk):
-        """Обработка отправки формы редактирования"""
+        """Обработка формы."""
         obj = get_object_or_404(HumanResource, pk=pk)
         form = HumanResourceForm(request.POST, instance=obj)
 
         if form.is_valid():
             try:
                 obj = form.save(commit=False)
-
-                # Добавляем информацию для аудита
-                obj = self.add_audit_info(obj, "редактирование")
-
+                self.add_audit_info(obj)
                 obj.save()
 
-                messages.success(
-                    request,
-                    _('Изменения сотрудника "{}" сохранены').format(obj.name)
-                )
+                messages.success(request, _('Изменения сохранены'))
                 return redirect('hr:hr_detail', pk=obj.pk)
 
             except Exception as e:
-                messages.error(
-                    request,
-                    _('Ошибка при сохранении изменений: {}').format(str(e))
-                )
+                messages.error(request, _('Ошибка: {}').format(str(e)))
         else:
-            messages.error(
-                request,
-                _('Пожалуйста, исправьте ошибки в форме')
-            )
+            messages.error(request, _('Исправьте ошибки в форме'))
 
-        # Если форма невалидна, показываем форму снова
+        context = self._get_form_context(form, obj, create=False)
+        return render(request, self.template_name, context)
+
+    def _get_form_context(self, form, obj, create=False):
+        """Возвращает контекст для формы."""
         all_managers = HumanResource.objects.filter(
             is_active=True
         ).exclude(pk=obj.pk).order_by('name').values('id', 'name', 'job_title')[:100]
@@ -441,72 +318,39 @@ class HRUpdateView(LoginRequiredMixin, PermissionRequiredMixin,
             job_title=""
         ).values_list('job_title', flat=True).distinct()
 
-        return render(request, self.template_name, {
+        return {
             'form': form,
-            'create': False,
+            'create': create,
             'object': obj,
             'job_titles': job_titles,
             'all_managers': list(all_managers),
             'all_job_titles': list(all_job_titles),
-        })
+        }
 
-# =======================
-# Delete View
-# =======================
 
-class HumanResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
-                              HRAuditMixin, View):
-    """Удаление сотрудника"""
+# =============================================================================
+# DELETE VIEW
+# =============================================================================
 
+class HumanResourceDeleteView(PermissionRequiredMixin, BaseDeleteView):
+    """Удаление сотрудника."""
+
+    model = HumanResource
     permission_required = ['hr.delete_humanresource']
-    http_method_names = ['post']
-
-    def post(self, request, pk):
-        """Обработка POST-запроса на удаление"""
-        obj = get_object_or_404(HumanResource, pk=pk)
-
-        try:
-            # Добавляем информацию для аудита
-            obj = self.add_audit_info(obj, "удаление")
-
-            # Удаляем объект
-            obj.delete()
-
-            # Добавляем сообщение об успехе
-            messages.success(
-                request,
-                _('Сотрудник "{}" успешно удален').format(obj.name)
-            )
-
-            return JsonResponse({
-                "ok": True,
-                "redirect": reverse("hr:hr_list")
-            })
-
-        except ProtectedError as e:
-            return JsonResponse({
-                "ok": False,
-                "error": _("Нельзя удалить сотрудника: есть связанные объекты"),
-                "related": [str(o) for o in e.protected_objects],
-            }, status=400)
-
-        except Exception as e:
-            return JsonResponse({
-                "ok": False,
-                "error": str(e),
-            }, status=500)
+    audit_action = "удаление сотрудника"
+    success_url = reverse_lazy('hr:hr_list')
 
 
-# =======================
-# AJAX Views
-# =======================
+# =============================================================================
+# AJAX VIEWS
+# =============================================================================
 
 @require_GET
 @login_required
 @permission_required('hr.view_humanresource', raise_exception=True)
 def hr_manager_autocomplete(request):
-    """Автодополнение для поиска руководителей"""
-    q = request.GET.get("q", "")
+    """Автодополнение для поиска руководителей (TomSelect)."""
+    q = request.GET.get("q", "").strip()
 
     qs = HumanResource.objects.filter(is_active=True)
 
@@ -530,21 +374,19 @@ def hr_manager_autocomplete(request):
 @login_required
 @permission_required('hr.view_humanresource', raise_exception=True)
 def hr_job_title_autocomplete(request):
-    """Автодополнение для должностей (формат для Tom-select)"""
-    q = request.GET.get("q", "")
+    """Автодополнение для должностей (TomSelect)."""
+    q = request.GET.get("q", "").strip()
     load_all = request.GET.get("load_all", "")
 
     qs = HumanResource.objects.exclude(job_title="")
 
-    # Если запрос load_all=true или пустой запрос - загружаем все должности
     if load_all == "true" or not q:
         titles = (
             qs.values_list("job_title", flat=True)
             .distinct()
-            .order_by("job_title")[:100]  # Ограничим 100 записей
+            .order_by("job_title")[:100]
         )
     else:
-        # Поиск по запросу
         qs = qs.filter(job_title__icontains=q)
         titles = (
             qs.values_list("job_title", flat=True)
@@ -552,39 +394,28 @@ def hr_job_title_autocomplete(request):
             .order_by("job_title")[:20]
         )
 
-    # Формат для Tom-select
-    results = []
-    for title in titles:
-        results.append({
-            "value": title,
-            "text": title
-        })
-
-    return JsonResponse({"results": results})
+    return JsonResponse({
+        "results": [{"value": title, "text": title} for title in titles]
+    })
 
 
-# =======================
-# Export Views
-# =======================
+# =============================================================================
+# EXPORT VIEW
+# =============================================================================
 
 @require_GET
 @login_required
 @permission_required('hr.view_humanresource', raise_exception=True)
 def export_hr_csv(request):
-    """Экспорт сотрудников в CSV"""
-    import csv
-    from django.http import HttpResponse
-    from django.utils import timezone
-
-    # Применяем фильтры из запроса
+    """Экспорт сотрудников в CSV."""
+    # Базовый queryset
     queryset = HumanResource.objects.all().select_related('manager')
 
-    # Фильтрация
+    # Применяем фильтры из запроса
     q = request.GET.get("q")
     if q:
         queryset = queryset.filter(
-            Q(name__icontains=q) |
-            Q(job_title__icontains=q)
+            Q(name__icontains=q) | Q(job_title__icontains=q)
         )
 
     manager = request.GET.get("manager")
@@ -595,11 +426,12 @@ def export_hr_csv(request):
     if job_title:
         queryset = queryset.filter(job_title__icontains=job_title)
 
-    # Создаем HTTP ответ
+    # HTTP Response
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-    response['Content-Disposition'] = f'attachment; filename="hr_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    response['Content-Disposition'] = (
+        f'attachment; filename="hr_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    )
 
-    # Создаем CSV writer
     writer = csv.writer(response, delimiter=';')
 
     # Заголовки
@@ -608,9 +440,9 @@ def export_hr_csv(request):
         _("Должность"),
         _("Руководитель"),
         _("Активен"),
-        _("Количество подчиненных"),
-        _("Дата создания"),
-        _("Дата обновления"),
+        _("Подчинённых"),
+        _("Создан"),
+        _("Обновлён"),
     ])
 
     # Данные

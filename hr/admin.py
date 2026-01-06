@@ -1,13 +1,30 @@
+"""
+hr/admin.py
+
+Рефакторинг с использованием базовых классов из core.
+"""
+
 from django.contrib import admin
 from django.db import models
-from simple_history.admin import SimpleHistoryAdmin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+
+from core.admin_base import BaseModelAdminWithActive
 from .models import HumanResource
 
 
 @admin.register(HumanResource)
-class HumanResourceAdmin(SimpleHistoryAdmin):
+class HumanResourceAdmin(BaseModelAdminWithActive):
+    """
+    Админка сотрудников.
+    
+    Наследует от BaseModelAdminWithActive:
+    - Автоматический аудит (last_change, _history_user, _change_reason)
+    - Оптимизация запросов (select_related)
+    - История изменений (SimpleHistoryAdmin)
+    - Бейдж активности (is_active_badge)
+    """
+
     # =========================
     # LIST
     # =========================
@@ -16,7 +33,7 @@ class HumanResourceAdmin(SimpleHistoryAdmin):
         "job_title",
         "manager",
         "subordinates_count",
-        "is_active_display",
+        "is_active_badge",
         "last_change",
     )
 
@@ -30,11 +47,10 @@ class HumanResourceAdmin(SimpleHistoryAdmin):
         "job_title",
     )
 
-    list_select_related = (
-        "manager",
-    )
-
     ordering = ("name",)
+
+    # Оптимизация (из BaseModelAdmin)
+    select_related_fields = ['manager']
 
     # =========================
     # DETAIL
@@ -69,66 +85,29 @@ class HumanResourceAdmin(SimpleHistoryAdmin):
     )
 
     # =========================
-    # QUERYSET OPTIMIZATION
+    # AUDIT (из BaseModelAdmin)
+    # =========================
+    audit_create_message = "создание сотрудника"
+    audit_change_message = "изменение сотрудника"
+
+    # =========================
+    # QUERYSET
     # =========================
     def get_queryset(self, request):
+        """Аннотируем количество подчинённых."""
         qs = super().get_queryset(request)
-        return qs.annotate(
-            _sub_cnt=models.Count("subordinates")
-        )
+        return qs.annotate(_sub_cnt=models.Count("subordinates"))
 
     # =========================
     # CUSTOM COLUMNS
     # =========================
     @admin.display(description=_("Подчинённые"))
     def subordinates_count(self, obj):
-        return obj._sub_cnt or "—"
-
-    @admin.display(description=_("Активен"))
-    def is_active_display(self, obj):
-        if obj.is_active:
+        """Количество подчинённых."""
+        count = getattr(obj, '_sub_cnt', 0)
+        if count:
             return format_html(
-                '<span style="color: green;">●</span> {}',
-                _("Да")
+                '<span class="badge bg-primary">{}</span>',
+                count
             )
-        return format_html(
-            '<span style="color: red;">●</span> {}',
-            _("Нет")
-        )
-
-    @admin.display(description=_("Последнее изменение"))
-    def last_change(self, obj):
-        h = obj.history.first()
-        if not h:
-            return "—"
-        return format_html(
-            "{}<br><small>{}</small>",
-            h.history_date.strftime("%d.%m.%Y %H:%M"),
-            h.history_user or "system",
-        )
-
-    # =========================
-    # FORM LOGIC
-    # =========================
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if (
-                db_field.name == "manager"
-                and request.resolver_match
-                and request.resolver_match.kwargs.get("object_id")
-        ):
-            obj_id = request.resolver_match.kwargs["object_id"]
-            kwargs["queryset"] = HumanResource.objects.exclude(pk=obj_id)
-
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    # =========================
-    # SAVE
-    # =========================
-    def save_model(self, request, obj, form, change):
-        if change:
-            obj._change_reason = "admin: изменение сотрудника"
-        else:
-            obj._change_reason = "admin: создание сотрудника"
-
-        obj._history_user = request.user
-        super().save_model(request, obj, form, change)
+        return "—"

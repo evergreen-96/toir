@@ -1,70 +1,113 @@
+"""
+hr/forms.py
+
+Рефакторинг с использованием базовых классов из core.
+"""
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
+
+from core.forms import BaseModelForm, BaseFilterForm
 from .models import HumanResource
 
 
-class HumanResourceForm(forms.ModelForm):
-    """Форма для создания/редактирования сотрудника"""
+class HumanResourceForm(BaseModelForm):
+    """
+    Форма для создания/редактирования сотрудника.
+    
+    Наследует от BaseModelForm:
+    - Автоматическая Bootstrap стилизация
+    - Доступ к request
+    - Методы валидации
+    """
 
     class Meta:
         model = HumanResource
         fields = ["name", "job_title", "manager", "is_active"]
         widgets = {
-            'manager': forms.Select(
-                attrs={
-                    'class': 'form-select js-tom-select',
-                    'data-placeholder': _('Выберите руководителя...')
-                }
-            ),
-            'job_title': forms.TextInput(
-                attrs={
-                    'class': 'form-control js-tom-select',
-                    'data-placeholder': _('Введите должность...'),
-                    'data-create': 'true',  # Разрешить создание новых
-                    'data-create-on-blur': 'true'
-                }
-            ),
+            'manager': forms.Select(attrs={
+                'class': 'form-select js-tom-select-manager',
+                'data-placeholder': _('Выберите руководителя...')
+            }),
         }
         help_texts = {
             'manager': _('Выберите руководителя из списка'),
             'job_title': _('Введите должность или выберите из списка'),
         }
 
+    # Не стилизовать автоматически (стили заданы явно)
+    exclude_fields = ['manager', 'is_active']
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Для менеджера - обычный select с поиском
+        # Queryset для руководителей
         self.fields['manager'].queryset = HumanResource.objects.filter(
             is_active=True
         ).order_by('name')
 
+        # Исключаем себя из списка руководителей при редактировании
         if self.instance.pk:
             self.fields['manager'].queryset = self.fields['manager'].queryset.exclude(
                 pk=self.instance.pk
             )
 
-        # Для должности - создаем свой field
+        # Должность — текстовое поле с TomSelect
         self.fields['job_title'] = forms.CharField(
             label=_("Должность"),
             required=False,
             widget=forms.TextInput(attrs={
                 'class': 'form-control js-tom-select-job',
-                'data-placeholder': _('Выберите или введите новую должность...'),
+                'data-placeholder': _('Выберите или введите должность...'),
             })
         )
 
-        # Классы Bootstrap для остальных полей
-        for field_name, field in self.fields.items():
-            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
-                base = field.widget.attrs.get('class', '')
-                if 'form-control' not in base and 'form-select' not in base:
-                    field.widget.attrs['class'] = (base + ' form-control').strip()
-
+        # Имя обязательное
         self.fields['name'].required = True
+        self.fields['name'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': _('Введите ФИО'),
+            'autofocus': True,
+        })
+
+        # Чекбокс активности
+        self.fields['is_active'].widget.attrs.update({
+            'class': 'form-check-input',
+        })
+
+    def clean_name(self):
+        """Валидация имени."""
+        name = self.cleaned_data.get('name', '').strip()
+        if len(name) < 2:
+            raise forms.ValidationError(_("ФИО должно содержать минимум 2 символа"))
+        return name
+
+    def clean_manager(self):
+        """Проверка на циклическую иерархию."""
+        manager = self.cleaned_data.get('manager')
+
+        if manager and self.instance.pk:
+            # Проверяем, что не назначаем себя руководителем
+            if manager.pk == self.instance.pk:
+                raise forms.ValidationError(_("Сотрудник не может быть руководителем самого себя"))
+
+            # Проверяем циклическую зависимость
+            current = manager
+            visited = {self.instance.pk}
+            while current:
+                if current.pk in visited:
+                    raise forms.ValidationError(_("Обнаружена циклическая иерархия"))
+                visited.add(current.pk)
+                current = current.manager
+
+        return manager
 
 
-class HumanResourceSearchForm(forms.Form):
-    """Форма поиска сотрудников"""
+class HumanResourceSearchForm(BaseFilterForm):
+    """
+    Форма поиска/фильтрации сотрудников.
+    Все поля автоматически необязательные (BaseFilterForm).
+    """
 
     q = forms.CharField(
         label=_("Поиск"),
@@ -79,6 +122,7 @@ class HumanResourceSearchForm(forms.Form):
         label=_("Руководитель"),
         required=False,
         queryset=None,
+        empty_label=_("Все руководители"),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
@@ -115,21 +159,23 @@ class HumanResourceSearchForm(forms.Form):
         ).values_list('job_title', flat=True).distinct()
 
         self.fields['job_title'].choices = [
-                                               ('', _("Все должности"))
-                                           ] + [(title, title) for title in job_titles]
+            ('', _("Все должности"))
+        ] + [(title, title) for title in job_titles]
 
+        # Queryset для руководителей
         self.fields['manager'].queryset = HumanResource.objects.filter(
             is_active=True
         ).order_by('name')
 
 
-class HumanResourceBulkUpdateForm(forms.Form):
-    """Форма массового обновления сотрудников"""
+class HumanResourceBulkUpdateForm(BaseFilterForm):
+    """Форма массового обновления сотрудников."""
 
     manager = forms.ModelChoiceField(
         label=_("Руководитель"),
         required=False,
         queryset=None,
+        empty_label=_("Не изменять"),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
@@ -151,8 +197,8 @@ class HumanResourceBulkUpdateForm(forms.Form):
         ).order_by('name')
 
 
-class HumanResourceImportForm(forms.Form):
-    """Форма импорта сотрудников из CSV"""
+class HumanResourceImportForm(BaseFilterForm):
+    """Форма импорта сотрудников из CSV."""
 
     csv_file = forms.FileField(
         label=_("CSV файл"),
@@ -164,7 +210,7 @@ class HumanResourceImportForm(forms.Form):
     )
 
     encoding = forms.ChoiceField(
-        label=_("Кодировка файла"),
+        label=_("Кодировка"),
         choices=[
             ('utf-8', 'UTF-8'),
             ('windows-1251', 'Windows-1251'),
@@ -186,8 +232,13 @@ class HumanResourceImportForm(forms.Form):
     )
 
     update_existing = forms.BooleanField(
-        label=_("Обновлять существующие записи"),
+        label=_("Обновлять существующие"),
         required=False,
-        help_text=_("Обновлять записи с совпадающим табельным номером"),
+        help_text=_("Обновлять записи с совпадающим именем"),
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # csv_file обязательное
+        self.fields['csv_file'].required = True
