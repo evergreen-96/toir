@@ -25,3 +25,5 @@ docker-compose.override.yml
 
 # Backups/exports
 backup/
+
+celerybeat-schedule/

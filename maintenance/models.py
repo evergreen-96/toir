@@ -11,6 +11,8 @@ from hr.models import HumanResource
 from locations.models import Location
 from assets.models import Workstation, WorkstationStatus
 from inventory.models import Material
+from decimal import Decimal
+from django.core.validators import MinValueValidator
 
 # ============================================================================
 # КОНСТАНТЫ
@@ -570,13 +572,36 @@ class WorkOrderMaterial(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Материал"
     )
-    qty_planned = models.FloatField("Запланировано", default=0)
-    qty_used = models.FloatField("Использовано", default=0)
+
+    qty_planned = models.DecimalField(
+        "Запланировано",
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
+    )
+    qty_used = models.DecimalField(
+        "Использовано",
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
+    )
 
     class Meta:
         verbose_name = "Материал задачи"
         verbose_name_plural = "Материалы задач"
         unique_together = ("work_order", "material")
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(qty_planned__gte=0),
+                name='maintenance_wom_qty_planned_non_negative',
+            ),
+            models.CheckConstraint(
+                check=models.Q(qty_used__gte=0),
+                name='maintenance_wom_qty_used_non_negative',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.material} для {self.work_order}"

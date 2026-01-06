@@ -1,15 +1,36 @@
-from celery import shared_task
-from django.utils import timezone
-from django.db import transaction
-from datetime import timedelta
-from dateutil.relativedelta import relativedelta
-from datetime import datetime
-from .models import PlannedOrder, WorkOrder, WorkCategory, Priority, IntervalUnit, RUN_TIME
-from hr.models import HumanResource
+"""
+Celery tasks для модуля maintenance.
+"""
+
 import logging
+from datetime import timedelta
+
+from celery import shared_task
+from dateutil.relativedelta import relativedelta
+from django.db import transaction
+from django.utils import timezone
+
+from .models import (
+    PlannedOrder,
+    WorkOrder,
+    IntervalUnit,
+)
+
 logger = logging.getLogger(__name__)
 
+
 def _add_interval(dt, val, unit):
+    """
+    Добавляет интервал к дате.
+
+    Args:
+        dt: Исходная дата
+        val: Значение интервала
+        unit: Единица измерения (IntervalUnit)
+
+    Returns:
+        Новая дата с добавленным интервалом
+    """
     if unit == IntervalUnit.MINUTE:
         return dt + timedelta(minutes=val)
     if unit == IntervalUnit.DAY:
@@ -21,72 +42,112 @@ def _add_interval(dt, val, unit):
     return dt
 
 
-@shared_task(name="maintenance.tasks.generate_planned_orders_task")
-def generate_planned_orders_task():
+@shared_task(
+    bind=True,
+    name="maintenance.tasks.generate_planned_orders_task",
+    autoretry_for=(Exception,),
+    retry_backoff=60,
+    max_retries=3,
+)
+def generate_planned_orders_task(self):
     """
+    Периодическая задача для создания WorkOrder из PlannedOrder.
+
     Раз в минуту:
-    - берём активные планы с next_run <= now
-    - создаём WorkOrder
-    - двигаем next_run ровно на один интервал ОТ предыдущего next_run
-      (не «догоняем» пропуски, не привязываемся к now)
+    - Берёт активные планы с next_run <= now
+    - Создаёт WorkOrder
+    - Двигает next_run на один интервал от предыдущего next_run
     """
-    logger.error("=== PLANNED TASK HIT | version=diag-2025-12-20 ===")
+    logger.info("Starting planned orders generation task")
+
     now = timezone.now()
-    qs = (PlannedOrder.objects
-          .select_related("workstation", "location", "responsible_default")
-          .filter(is_active=True, next_run__isnull=False, next_run__lte=now))
-    logger.error(
-        "PLANNED TASK QS | count=%s | now=%s",
-        qs.count(),
-        timezone.now()
+
+    qs = (
+        PlannedOrder.objects
+        .select_related("workstation", "location", "responsible_default")
+        .filter(is_active=True, next_run__isnull=False, next_run__lte=now)
     )
+
+    plans_count = qs.count()
+    logger.info("Found %d plans ready to execute", plans_count)
+
+    if plans_count == 0:
+        return {"created": 0, "skipped": 0}
+
     created = 0
-    for p in qs:
-        logger.error(
-            "PLAN id=%s next_run=%s interval=%s value=%s resp=%s",
-            p.id,
-            p.next_run,
-            p.interval_unit,
-            p.interval_value,
-            p.responsible_default_id,
+    skipped = 0
+
+    for plan in qs:
+        logger.debug(
+            "Processing plan id=%s, next_run=%s, interval=%s %s",
+            plan.id,
+            plan.next_run,
+            plan.interval_value,
+            plan.interval_unit,
         )
-        with transaction.atomic():
-            resp = p.responsible_default
-            if not resp:
-                logger.error("PLAN %s SKIPPED: no responsible_default", p.id)
-                continue  # или логировать и пропускать
-            if resp:
+
+        # Проверяем наличие ответственного
+        if not plan.responsible_default:
+            logger.warning(
+                "Plan id=%s skipped: no responsible_default assigned",
+                plan.id
+            )
+            skipped += 1
+            continue
+
+        try:
+            with transaction.atomic():
+                # Создаём рабочую задачу
                 today = timezone.localdate()
-                WorkOrder.objects.create(
-                    name=p.name,
-                    responsible=resp,
-                    workstation=p.workstation,
-                    location=p.location,
-                    description=p.description,
-                    category=p.category or WorkCategory.PM,
-                    labor_plan_hours=p.labor_plan_hours,
-                    priority=p.priority or Priority.MED,
-                    created_at=timezone.now(),
-                    date_start=today,  # ← логично для плановой
+
+                work_order = WorkOrder.objects.create(
+                    name=plan.name,
+                    responsible=plan.responsible_default,
+                    workstation=plan.workstation,
+                    location=plan.location,
+                    category=plan.category,
+                    priority=plan.priority,
+                    description=plan.description,
+                    labor_plan_hours=plan.labor_plan_hours,
+                    date_start=today,
+                    created_from_plan=plan,
                 )
+
+                logger.info(
+                    "Created WorkOrder id=%s from plan id=%s",
+                    work_order.id,
+                    plan.id
+                )
+
+                # Вычисляем следующий запуск
+                plan.next_run = _add_interval(
+                    plan.next_run,
+                    plan.interval_value,
+                    plan.interval_unit
+                )
+                plan.save(update_fields=["next_run"])
+
+                logger.debug(
+                    "Plan id=%s next_run updated to %s",
+                    plan.id,
+                    plan.next_run
+                )
+
                 created += 1
 
-            # сдвиг на ОДИН интервал от предыдущего времени срабатывания
-            next_due = _add_interval(p.next_run, p.interval_value, p.interval_unit)
+        except Exception as e:
+            logger.exception(
+                "Error processing plan id=%s: %s",
+                plan.id,
+                str(e)
+            )
+            skipped += 1
+            # Транзакция откатится автоматически
 
-            # нормализация времени запуска
-            if p.interval_unit == IntervalUnit.MINUTE:
-                next_due = next_due.replace(second=0, microsecond=0)
-            else:
-                # day / week / month — всегда в RUN_TIME
-                next_due = timezone.make_aware(
-                    datetime.combine(
-                        timezone.localdate(next_due),
-                        RUN_TIME
-                    ),
-                    timezone.get_default_timezone()
-                )
-            p.next_run = next_due
-            p.save(update_fields=["next_run"])
+    logger.info(
+        "Planned orders task completed: created=%d, skipped=%d",
+        created,
+        skipped
+    )
 
-    return created
+    return {"created": created, "skipped": skipped}

@@ -1,6 +1,9 @@
+from decimal import Decimal
+
 from django.db import models
 from django.urls import reverse
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
 from assets.models import Workstation
@@ -20,6 +23,8 @@ class BaseInventoryModel(models.Model):
 
 
 class Warehouse(BaseInventoryModel):
+    """Склад для хранения материалов"""
+
     history = HistoricalRecords()
 
     name = models.CharField("Название склада", max_length=255)
@@ -66,21 +71,21 @@ class Warehouse(BaseInventoryModel):
     @property
     def materials_count(self):
         """Количество материалов на складе"""
-        return self.materials.count()  # ИЗМЕНЕНО: materials вместо material_set
+        return self.materials.count()
 
     def get_materials_summary(self):
         """Сводная информация по материалам"""
         from django.db.models import Sum
-        materials = self.materials.all()  # ИЗМЕНЕНО: materials вместо material_set
+        materials = self.materials.all()
 
         return {
             'total_count': materials.count(),
             'total_available': materials.aggregate(
                 total=Sum('qty_available')
-            )['total'] or 0,
+            )['total'] or Decimal('0'),
             'total_reserved': materials.aggregate(
                 total=Sum('qty_reserved')
-            )['total'] or 0,
+            )['total'] or Decimal('0'),
         }
 
 
@@ -98,55 +103,74 @@ class MaterialUoM(models.TextChoices):
 
 
 class Material(BaseInventoryModel):
+    """Материал (номенклатура)"""
+
     history = HistoricalRecords()
 
+    # Основная информация
     name = models.CharField("Полное наименование", max_length=255)
     group = models.CharField("Группа", max_length=255, blank=True)
     article = models.CharField("Артикул", max_length=255, blank=True)
     part_number = models.CharField("Номер детали", max_length=255, blank=True)
+    vendor = models.CharField("Производитель", max_length=255, blank=True)
+
+    # Единица измерения
     uom = models.CharField(
         "Ед. изм.",
         max_length=10,
         choices=MaterialUoM.choices,
         default=MaterialUoM.PCS
     )
-    qty_available = models.FloatField(
+
+    # Количества - DECIMAL для точных вычислений
+    qty_available = models.DecimalField(
         "Количество (свободно)",
-        default=0,
-        validators=[MinValueValidator(0)]
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
-    qty_reserved = models.FloatField(
+    qty_reserved = models.DecimalField(
         "Количество (резерв)",
-        default=0,
-        validators=[MinValueValidator(0)]
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
     )
+    min_stock_level = models.DecimalField(
+        "Минимальный запас",
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0'))]
+    )
+
+    # Связи
     warehouse = models.ForeignKey(
         Warehouse,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         verbose_name="Склад",
-        related_name="materials"  # УСТАНОВЛЕН related_name
+        related_name="materials"
     )
-    vendor = models.CharField("Производитель", max_length=255, blank=True)
     suitable_for = models.ManyToManyField(
         Workstation,
         blank=True,
         related_name="compatible_materials",
         verbose_name="Подходит для оборудования",
     )
-    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    # Медиа
     image = models.ImageField(
         "Фото",
         upload_to="materials/%Y/%m/%d/",
         null=True,
         blank=True
     )
-    min_stock_level = models.FloatField(
-        "Минимальный запас",
-        default=0,
-        validators=[MinValueValidator(0)]
-    )
+
+    # Статус и примечания
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
     notes = models.TextField("Примечания", blank=True)
 
     class Meta:
@@ -160,6 +184,20 @@ class Material(BaseInventoryModel):
             models.Index(fields=['is_active']),
             models.Index(fields=['warehouse']),
             models.Index(fields=['group']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(qty_available__gte=0),
+                name='inventory_material_qty_available_non_negative',
+            ),
+            models.CheckConstraint(
+                check=models.Q(qty_reserved__gte=0),
+                name='inventory_material_qty_reserved_non_negative',
+            ),
+            models.CheckConstraint(
+                check=models.Q(min_stock_level__gte=0),
+                name='inventory_material_min_stock_non_negative',
+            ),
         ]
 
     def __str__(self):
@@ -213,18 +251,10 @@ class Material(BaseInventoryModel):
 
     def clean(self):
         """Валидация на уровне модели"""
-        from django.core.exceptions import ValidationError
-
         # Проверка, что резерв не превышает доступное количество
         if self.qty_reserved > self.qty_total:
             raise ValidationError({
                 'qty_reserved': 'Резерв не может превышать общее количество'
-            })
-
-        # Проверка минимального запаса
-        if self.min_stock_level < 0:
-            raise ValidationError({
-                'min_stock_level': 'Минимальный запас не может быть отрицательным'
             })
 
     def save(self, *args, **kwargs):
