@@ -487,12 +487,20 @@ body {
     <a class="brand text-decoration-none text-body" href="{% url 'home' %}">
         <i class="bi bi-wrench-adjustable-circle me-1"></i> ТОиР
     </a>
-    <div class="ms-auto d-flex align-items-center gap-1">
-        <a class="btn btn-outline-secondary btn-sm" href="/admin/" target="_blank" rel="noopener" title="Админка"><i
-                class="bi bi-speedometer2"></i></a>
-        <button class="btn btn-outline-secondary btn-sm" id="themeToggleMobile" title="Тема"><i
-                class="bi bi-circle-half"></i></button>
-    </div>
+        <div class="ms-auto d-flex align-items-center gap-1">
+            {% if user.is_authenticated %}
+            <span class="small text-muted me-2">{{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm" title="Выйти">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+            {% endif %}
+            <a class="btn btn-outline-secondary btn-sm" href="/admin/" target="_blank" rel="noopener" title="Админка">
+                <i class="bi bi-speedometer2"></i>
+            </a>
+            <button class="btn btn-outline-secondary btn-sm" id="themeToggleMobile" title="Тема">
+                <i class="bi bi-circle-half"></i>
+            </button>
+        </div>
 </nav>
 
 <div class="layout container-fluid">
@@ -503,10 +511,42 @@ body {
                 <a class="brand text-decoration-none text-body" href="{% url 'home' %}">
                     <i class="bi bi-wrench-adjustable-circle"></i> ТОиР
                 </a>
-                <button class="btn btn-outline-secondary btn-sm" id="themeToggle" title="Тема">
-                    <i class="bi bi-circle-half"></i>
-                </button>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-outline-secondary btn-sm" id="themeToggle" title="Тема">
+                        <i class="bi bi-circle-half"></i>
+                    </button>
+                </div>
             </div>
+
+<!-- Информация о пользователе -->
+<div class="d-flex align-items-center justify-content-between mb-3 p-2 bg-body-secondary rounded">
+    {% if user.is_authenticated %}
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle me-2 text-primary"></i>
+            <div>
+                <div class="fw-semibold small">{{ user.username }}</div>
+                {% if user.is_staff %}
+                <div class="text-muted" style="font-size: 0.7rem;">Администратор</div>
+                {% endif %}
+            </div>
+        </div>
+        <form method="post" action="{% url 'logout' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Выйти">
+                <i class="bi bi-box-arrow-right"></i>
+            </button>
+        </form>
+    {% else %}
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle me-2 text-muted"></i>
+            <div class="fw-semibold small">Гость</div>
+        </div>
+        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm" title="Войти">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span class="ms-1">Войти</span>
+        </a>
+    {% endif %}
+</div>
 
             <!-- Быстрый поиск задач -->
             <form class="mb-3" method="get" action="{% url 'maintenance:wo_list' %}">

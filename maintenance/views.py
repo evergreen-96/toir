@@ -545,7 +545,7 @@ def planned_order_create(request: HttpRequest):
     else:
         form = PlannedOrderForm()
 
-    # Получение ВСЕХ данных для предзагрузки (как в HR)
+    # Получение ВСЕХ данных для предзагрузки
     all_locations = list(Location.objects.all().order_by('name')[:100])
     all_responsibles = list(HumanResource.objects.filter(is_active=True)
                             .order_by('name')[:100])
