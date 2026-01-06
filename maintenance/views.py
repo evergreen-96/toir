@@ -5,6 +5,8 @@ import calendar
 from typing import Any
 
 from dateutil.relativedelta import relativedelta
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db.models import Count, Q
@@ -59,7 +61,7 @@ def _get_work_order_counts(**filters) -> int:
 # ============================================================================
 # ГЛАВНАЯ СТРАНИЦА (DASHBOARD)
 # ============================================================================
-
+@login_required
 def home(request: HttpRequest):
     """Главная страница системы технического обслуживания."""
     today = timezone.localdate()
@@ -199,7 +201,7 @@ def home(request: HttpRequest):
 # РАБОЧИЕ ЗАДАЧИ (WORK ORDERS)
 # ============================================================================
 
-class WorkOrderListView(ListView):
+class WorkOrderListView(LoginRequiredMixin, ListView):
     """Список рабочих задач."""
 
     model = WorkOrder
@@ -256,7 +258,7 @@ class WorkOrderListView(ListView):
         return context
 
 
-class WorkOrderDetailView(DetailView):
+class WorkOrderDetailView(LoginRequiredMixin, DetailView):
     """Детальная страница рабочей задачи."""
 
     model = WorkOrder
@@ -386,7 +388,7 @@ def workorder_create(request: HttpRequest):
     )
 
 
-class WorkOrderDeleteView(View):
+class WorkOrderDeleteView(LoginRequiredMixin, View):
     """Удаление рабочей задачи."""
 
     def post(self, request: HttpRequest, pk: int):
@@ -499,7 +501,7 @@ def get_workstations_by_location(request: HttpRequest) -> JsonResponse:
 # ПЛАНОВЫЕ РАБОТЫ (PLANNED ORDERS)
 # ============================================================================
 
-class PlannedOrderListView(ListView):
+class PlannedOrderListView(LoginRequiredMixin, ListView):
     """Список плановых работ."""
 
     model = PlannedOrder

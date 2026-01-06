@@ -110,7 +110,7 @@ class Workstation(models.Model):
         choices=WorkstationCategory.choices,
         default=WorkstationCategory.MAIN,
     )
-    type_name = models.CharField(_("Тип оборудования"), max_length=255)
+    type_name = models.CharField(_("Тип оборудования"), max_length=255, blank=True)
     manufacturer = models.CharField(_("Производитель"), max_length=255, blank=True)
     model = models.CharField(_("Модель"), max_length=255, blank=True)
 
