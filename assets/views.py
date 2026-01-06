@@ -541,46 +541,46 @@ def ajax_update_workstation_status(request):
         }, status=404)
 
 
-@require_GET
-@login_required
-@permission_required('assets.view_workstation', raise_exception=True)
-def ajax_get_workstation_info(request):
-    """Получение краткой информации об оборудовании"""
-    ws_id = request.GET.get("id")
-
-    if not ws_id:
-        return JsonResponse({
-            "ok": False,
-            "error": _("Не указан ID оборудования")
-        }, status=400)
-
-    try:
-        ws = Workstation.objects.select_related(
-            'location', 'responsible'  # Убираем responsible__user
-        ).get(pk=ws_id)
-
-        data = {
-            "ok": True,
-            "id": ws.id,
-            "name": ws.name,
-            "type_name": ws.type_name,
-            "category": ws.get_category_display(),
-            "status": ws.get_status_display(),
-            "location": str(ws.location),
-            "responsible": str(ws.responsible) if ws.responsible else None,
-            "photo_url": ws.photo.url if ws.photo else None,
-            "warranty_until": ws.warranty_until.isoformat() if ws.warranty_until else None,
-            "is_under_warranty": ws.is_under_warranty,
-            "age": ws.age_in_years,
-        }
-
-        return JsonResponse(data)
-
-    except Workstation.DoesNotExist:
-        return JsonResponse({
-            "ok": False,
-            "error": _("Оборудование не найдено")
-        }, status=404)
+# @require_GET
+# @login_required
+# @permission_required('assets.view_workstation', raise_exception=True)
+# def ajax_get_workstation_info(request):
+#     """Получение краткой информации об оборудовании"""
+#     ws_id = request.GET.get("id")
+#
+#     if not ws_id:
+#         return JsonResponse({
+#             "ok": False,
+#             "error": _("Не указан ID оборудования")
+#         }, status=400)
+#
+#     try:
+#         ws = Workstation.objects.select_related(
+#             'location', 'responsible'  # Убираем responsible__user
+#         ).get(pk=ws_id)
+#
+#         data = {
+#             "ok": True,
+#             "id": ws.id,
+#             "name": ws.name,
+#             "type_name": ws.type_name,
+#             "category": ws.get_category_display(),
+#             "status": ws.get_status_display(),
+#             "location": str(ws.location),
+#             "responsible": str(ws.responsible) if ws.responsible else None,
+#             "photo_url": ws.photo.url if ws.photo else None,
+#             "warranty_until": ws.warranty_until.isoformat() if ws.warranty_until else None,
+#             "is_under_warranty": ws.is_under_warranty,
+#             "age": ws.age_in_years,
+#         }
+#
+#         return JsonResponse(data)
+#
+#     except Workstation.DoesNotExist:
+#         return JsonResponse({
+#             "ok": False,
+#             "error": _("Оборудование не найдено")
+#         }, status=404)
 
 
 # =======================
