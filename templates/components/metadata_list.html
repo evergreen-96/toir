@@ -1,0 +1,52 @@
+{% comment %}
+templates/components/metadata_list.html
+
+Список метаданных (дата создания, обновления и т.д.)
+
+Использование:
+    {% include "components/metadata_list.html" with object=employee %}
+
+    С дополнительными полями:
+    {% include "components/metadata_list.html" with object=employee extra_fields=extra %}
+
+    Где extra = [{"label": "Подчинённых", "value": "5 чел."}]
+
+Параметры:
+    object       - Объект с полями created_at, updated_at
+    extra_fields - Дополнительные поля: [{"label": "...", "value": "..."}]
+    show_id      - Показывать ID объекта
+{% endcomment %}
+
+<div class="list-group list-group-flush">
+    {% if show_id and object.pk %}
+    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <span class="text-muted small">ID</span>
+        <span class="fw-semibold small">#{{ object.pk }}</span>
+    </div>
+    {% endif %}
+
+    {% if object.created_at %}
+    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <span class="text-muted small">Дата создания</span>
+        <span class="fw-semibold small">
+            {{ object.created_at|date:"d.m.Y H:i" }}
+        </span>
+    </div>
+    {% endif %}
+
+    {% if object.updated_at %}
+    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <span class="text-muted small">Последнее изменение</span>
+        <span class="fw-semibold small">
+            {{ object.updated_at|date:"d.m.Y H:i" }}
+        </span>
+    </div>
+    {% endif %}
+
+    {% for field in extra_fields %}
+    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <span class="text-muted small">{{ field.label }}</span>
+        <span class="fw-semibold small">{{ field.value|default:"—" }}</span>
+    </div>
+    {% endfor %}
+</div>

@@ -28,7 +28,7 @@ class HRListView(BaseListView):
     model = HumanResource
     template_name = "hr/hr_list.html"
     context_object_name = "employees"
-    paginate_by = 20
+    paginate_by = 1
     ordering = ["name"]
 
     # Поиск

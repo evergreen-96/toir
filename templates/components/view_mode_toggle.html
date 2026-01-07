@@ -1,0 +1,35 @@
+{% comment %}
+templates/components/view_mode_toggle.html
+
+Переключатель вида: карточки / таблица.
+
+Использование:
+    {% include "components/view_mode_toggle.html" with storage_key="hr_view_mode" %}
+
+Параметры:
+    storage_key  - Ключ для localStorage (по умолчанию: view_mode)
+    cards_label  - Текст для карточек (по умолчанию: Карточки)
+    table_label  - Текст для таблицы (по умолчанию: Таблица)
+    default_mode - Режим по умолчанию: cards или table (по умолчанию: cards)
+
+Требует:
+    - Элемент с id="cards-view" для отображения карточек
+    - Элемент с id="table-view" для отображения таблицы
+    - Подключение view_mode_toggle_js.html в конце страницы
+{% endcomment %}
+
+<div class="btn-group" role="group" aria-label="Переключение вида">
+    <input type="radio" class="btn-check" name="viewMode" id="view-cards" autocomplete="off" 
+           {% if default_mode != 'table' %}checked{% endif %}>
+    <label class="btn btn-outline-secondary" for="view-cards">
+        <i class="bi bi-grid-3x3-gap me-1"></i>
+        {{ cards_label|default:"Карточки" }}
+    </label>
+    
+    <input type="radio" class="btn-check" name="viewMode" id="view-table" autocomplete="off"
+           {% if default_mode == 'table' %}checked{% endif %}>
+    <label class="btn btn-outline-secondary" for="view-table">
+        <i class="bi bi-table me-1"></i>
+        {{ table_label|default:"Таблица" }}
+    </label>
+</div>

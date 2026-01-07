@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% load static form_extras %}
+
 {% block title %}
-  {% if create %}Новый сотрудник{% else %}Редактирование сотрудника{% endif %}
+{% if create %}Новый сотрудник{% else %}Редактирование сотрудника{% endif %}
 {% endblock %}
+
 {% block extra_head %}
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
 <style>
@@ -24,14 +26,6 @@
     display: block !important;
 }
 
-.card {
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
 .form-switch .form-check-input {
     width: 3em;
     height: 1.5em;
@@ -42,32 +36,13 @@
     border-color: var(--bs-success);
 }
 
-/* Стили для Tom-select */
-.ts-wrapper {
-    width: 100% !important;
-}
+/* Tom-select стили */
+.ts-wrapper { width: 100% !important; }
+.ts-dropdown { z-index: 1060 !important; }
 
-/* Убираем стандартную стрелку Bootstrap, если есть */
 .form-select.js-tom-select-manager,
 .form-select.js-tom-select-job {
     background-image: none !important;
-}
-
-/* Кастомизация dropdown */
-.ts-dropdown {
-    z-index: 1060 !important;
-}
-
-/* Для множественного выбора (если будет нужно) */
-.ts-control.multi {
-    padding: .25rem .5rem !important;
-}
-
-.ts-control.multi .item {
-    background-color: var(--bs-secondary-bg) !important;
-    border: 1px solid var(--bs-border-color) !important;
-    border-radius: .375rem !important;
-    margin: .15rem !important;
 }
 
 /* Темная тема */
@@ -75,12 +50,10 @@
     background-color: var(--bs-dark) !important;
     color: #e9ecef !important;
 }
-
 [data-bs-theme="dark"] .ts-dropdown {
     background-color: var(--bs-dark) !important;
     border-color: var(--bs-border-color) !important;
 }
-
 [data-bs-theme="dark"] .ts-dropdown .option {
     color: #e9ecef !important;
 }
@@ -88,485 +61,278 @@
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-xl-8 col-lg-9">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <!-- =====================================================
-             1. HEADER
-             ===================================================== -->
-        <div class="mb-3">
-          <h1 class="h4 mb-1">
-            {% if create %}
-            <i class="bi bi-person-plus me-2 text-success"></i>
-            Новый сотрудник
-            {% else %}
-            <i class="bi bi-person-gear me-2 text-primary"></i>
-            Редактирование сотрудника
-            {% endif %}
-          </h1>
-          <div class="text-muted small">
-            {% if create %}
-            Добавление нового сотрудника в систему
-            {% else %}
-            Основная информация и подчинённость
-            {% endif %}
-          </div>
-        </div>
-
-        <form method="post" novalidate id="hrForm">
-          {% csrf_token %}
-
-          {% if form.non_field_errors %}
-          <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            {{ form.non_field_errors }}
-          </div>
-          {% endif %}
-
-          <!-- =====================================================
-               2. ОСНОВНАЯ ИНФОРМАЦИЯ
-               ===================================================== -->
-          <div class="mb-4">
-            <div class="section-header">
-              <i class="bi bi-person-badge me-2"></i>
-              Основная информация
-            </div>
-
-            <div class="row g-3">
-              <!-- ФИО -->
-              <div class="col-md-8">
-                <label class="form-label fw-semibold">
-                  <i class="bi bi-person me-1"></i>
-                  {{ form.name.label }}
-                  <span class="text-danger">*</span>
-                </label>
-                {{ form.name|add_class:"form-control" }}
-                {% if form.name.errors %}
-                <div class="invalid-feedback d-block">
-                  {{ form.name.errors }}
-                </div>
-                {% endif %}
-                <div class="form-text">Полное имя сотрудника</div>
-              </div>
-
-              <!-- Статус -->
-              <div class="col-md-4">
-                <label class="form-label fw-semibold">
-                  <i class="bi bi-power me-1"></i>
-                  {{ form.is_active.label }}
-                </label>
-                <div class="form-check form-switch mt-2">
-                  {{ form.is_active|add_class:"form-check-input" }}
-                  <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                    Активный сотрудник
-                  </label>
-                </div>
-                {% if form.is_active.errors %}
-                <div class="invalid-feedback d-block">
-                  {{ form.is_active.errors }}
-                </div>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-
-          <!-- =====================================================
-     3. ДОЛЖНОСТЬ
-     ===================================================== -->
-<div class="mb-4">
-    <div class="section-header">
-        <i class="bi bi-briefcase me-2"></i>
-        Должность
-    </div>
-
-    <div class="row g-3">
-        <div class="col-md-12">
-            <label class="form-label fw-semibold">
-                <i class="bi bi-person-vcard me-1"></i>
-                {{ form.job_title.label }}
-            </label>
-            <select
-              name="job_title"
-              class="form-select js-tom-select-job"
-              id="id_job_title"
-              data-placeholder="Введите или выберите должность..."
-              data-allow-empty-option="true"
-            >
-                <option value=""></option> <!-- Пустая опция для очистки -->
-                {% if form.instance.job_title %}
-                    <option value="{{ form.instance.job_title }}" selected>
-                        {{ form.instance.job_title }}
-                    </option>
-                {% endif %}
-                <!-- Предзагружаем ВСЕ варианты должностей -->
-                {% for title in all_job_titles %}
-                    {% if title != form.instance.job_title %}
-                        <option value="{{ title }}">{{ title }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-            {% if form.job_title.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.job_title.errors }}
-            </div>
-            {% endif %}
-            <div class="form-text">Введите должность или выберите из списка</div>
-        </div>
-    </div>
-</div>
-
-<!-- =====================================================
-     4. ПОДЧИНЁННОСТЬ
-     ===================================================== -->
-<div class="mb-4">
-    <div class="section-header">
-        <i class="bi bi-diagram-3 me-2"></i>
-        Подчинённость
-    </div>
-
-    <div class="row g-3">
-        <div class="col-md-12">
-            <label class="form-label fw-semibold">
-                <i class="bi bi-person-raised-hand me-1"></i>
-                {{ form.manager.label }}
-            </label>
-            <select
-              name="manager"
-              class="form-select js-tom-select-manager"
-              id="id_manager"
-              data-placeholder="Выберите руководителя..."
-              data-allow-empty-option="true"
-            >
-                <option value=""></option> <!-- Пустая опция для очистки -->
-
-                {% if initial_manager %}
-                    <!-- Для создания с GET-параметром manager -->
-                    <option value="{{ initial_manager.pk }}" selected>
-                        {{ initial_manager.name }}
-                        {% if initial_manager.job_title %}
-                            — {{ initial_manager.job_title }}
-                        {% endif %}
-                    </option>
-                {% elif form.instance.manager %}
-                    <!-- Для редактирования (если есть текущий руководитель) -->
-                    <option value="{{ form.instance.manager.pk }}" selected>
-                        {{ form.instance.manager.name }}
-                        {% if form.instance.manager.job_title %}
-                            — {{ form.instance.manager.job_title }}
-                        {% endif %}
-                    </option>
-                {% endif %}
-
-                <!-- Предзагружаем ВСЕХ руководителей -->
-                {% for manager in all_managers %}
-                    {% comment %}
-                    Исключаем уже выбранного руководителя из общего списка,
-                    чтобы не было дублирования
-                    {% endcomment %}
-                    {% if not initial_manager or manager.id != initial_manager.pk %}
-                        {% if not form.instance.manager or manager.id != form.instance.manager.pk %}
-                            <option value="{{ manager.id }}">
-                                {{ manager.name }}
-                                {% if manager.job_title %}
-                                    — {{ manager.job_title }}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-9">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <!-- =====================================================
+                         HEADER
+                         ===================================================== -->
+                    <div class="mb-4">
+                        <!-- Breadcrumbs -->
+                        <nav aria-label="breadcrumb" class="mb-2">
+                            <ol class="breadcrumb small mb-0">
+                                <li class="breadcrumb-item">
+                                    <a href="{% url 'hr:hr_list' %}" class="text-decoration-none">Персонал</a>
+                                </li>
+                                {% if not create and object %}
+                                <li class="breadcrumb-item">
+                                    <a href="{% url 'hr:hr_detail' object.pk %}" class="text-decoration-none">{{ object.name|truncatechars:20 }}</a>
+                                </li>
                                 {% endif %}
-                            </option>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    {% if create %}Новый сотрудник{% else %}Редактирование{% endif %}
+                                </li>
+                            </ol>
+                        </nav>
+
+                        <h1 class="h4 mb-1">
+                            {% if create %}
+                            <i class="bi bi-person-plus me-2 text-success"></i>
+                            Новый сотрудник
+                            {% else %}
+                            <i class="bi bi-person-gear me-2 text-primary"></i>
+                            Редактирование сотрудника
+                            {% endif %}
+                        </h1>
+                        <div class="text-muted small">
+                            {% if create %}
+                            Добавление нового сотрудника в систему
+                            {% else %}
+                            Изменение данных сотрудника
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- =====================================================
+                         ФОРМА
+                         ===================================================== -->
+                    <form method="post" novalidate id="hrForm">
+                        {% csrf_token %}
+
+                        <!-- Ошибки формы -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            {{ form.non_field_errors }}
+                        </div>
                         {% endif %}
-                    {% endif %}
-                {% endfor %}
-            </select>
-            {% if form.manager.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.manager.errors }}
+
+                        <!-- Секция: Основная информация -->
+                        <div class="mb-4">
+                            <div class="section-header">
+                                <i class="bi bi-person-badge me-2"></i>
+                                Основная информация
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- ФИО -->
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold" for="{{ form.name.id_for_label }}">
+                                        <i class="bi bi-person me-1"></i>
+                                        {{ form.name.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.name|add_class:"form-control" }}
+                                    {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Полное имя сотрудника (ФИО)</div>
+                                </div>
+
+                                <!-- Статус активности -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-power me-1"></i>
+                                        {{ form.is_active.label }}
+                                    </label>
+                                    <div class="form-check form-switch mt-2">
+                                        {{ form.is_active|add_class:"form-check-input" }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            Активный сотрудник
+                                        </label>
+                                    </div>
+                                    {% if form.is_active.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.is_active.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Секция: Должность и подчинённость -->
+                        <div class="mb-4">
+                            <div class="section-header">
+                                <i class="bi bi-diagram-3 me-2"></i>
+                                Должность и подчинённость
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- Должность -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="{{ form.job_title.id_for_label }}">
+                                        <i class="bi bi-briefcase me-1"></i>
+                                        {{ form.job_title.label }}
+                                    </label>
+                                    {{ form.job_title }}
+                                    {% if form.job_title.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.job_title.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Выберите из списка или введите новую должность</div>
+                                </div>
+
+                                <!-- Руководитель -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="{{ form.manager.id_for_label }}">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        {{ form.manager.label }}
+                                    </label>
+                                    {{ form.manager }}
+                                    {% if form.manager.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.manager.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Выберите непосредственного руководителя</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Кнопки действий -->
+                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center pt-3 border-top">
+                            <a href="{% if create %}{% url 'hr:hr_list' %}{% else %}{% url 'hr:hr_detail' object.pk %}{% endif %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>
+                                Отмена
+                            </a>
+
+                            <div class="d-flex gap-2">
+                                {% if create %}
+                                <button type="submit" name="save_and_add" value="1" class="btn btn-outline-success">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Сохранить и добавить ещё
+                                </button>
+                                {% endif %}
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i>
+                                    {% if create %}Создать сотрудника{% else %}Сохранить изменения{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Подсказка для редактирования -->
+            {% if not create and object %}
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center text-muted small">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Редактирование сотрудника: <strong class="ms-1">{{ object.name }}</strong>
+                        <span class="mx-2">·</span>
+                        Последнее изменение: {{ object.updated_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
             </div>
             {% endif %}
-            <div class="form-text">Выберите руководителя из списка сотрудников</div>
         </div>
     </div>
-</div>
-
-          <!-- =====================================================
-               5. ACTIONS
-               ===================================================== -->
-          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <div>
-              <a class="btn btn-outline-secondary" href="{% url 'hr:hr_list' %}">
-                <i class="bi bi-x-lg me-1"></i>
-                Отмена
-              </a>
-              {% if not create %}
-              <a class="btn btn-outline-info ms-2" href="{% url 'hr:hr_detail' object.pk %}">
-                <i class="bi bi-eye me-1"></i>
-                Просмотр
-              </a>
-              {% endif %}
-            </div>
-
-            <div class="d-flex gap-2">
-              <button class="btn btn-outline-primary" type="button" id="saveAndAddAnother">
-                <i class="bi bi-plus-lg me-1"></i>
-                Сохранить и добавить
-              </button>
-              <button class="btn btn-primary px-4" type="submit" id="saveBtn">
-                <i class="bi bi-save me-1"></i>
-                Сохранить
-              </button>
-            </div>
-          </div>
-
-        </form>
-
-      </div>
-    </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Tom Select JS (загружаем только здесь) -->
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Функция для получения значения руководителя
-    function getInitialManagerValue() {
-        const managerSelectEl = document.getElementById('id_manager');
-
-        // Ищем выбранную опцию в select
-        const selectedOption = managerSelectEl.querySelector('option[selected]');
-        if (selectedOption && selectedOption.value) {
-            return selectedOption.value;
-        }
-
-        // Пытаемся получить из скрытого поля Django (если есть)
-        const djangoHiddenField = document.querySelector('input[name="manager"]');
-        if (djangoHiddenField && djangoHiddenField.value) {
-            return djangoHiddenField.value;
-        }
-
-        // Пытаемся получить из GET параметра в URL (для создания нового)
-        const urlParams = new URLSearchParams(window.location.search);
-        const managerId = urlParams.get('manager');
-        if (managerId) {
-            return managerId;
-        }
-
-        return null;
-    }
-
-    // Функция для получения текста выбранного руководителя
-    function getInitialManagerText() {
-        const managerSelectEl = document.getElementById('id_manager');
-        const selectedOption = managerSelectEl.querySelector('option[selected]');
-        if (selectedOption) {
-            return selectedOption.textContent;
-        }
-        return null;
-    }
-
-    // Функция для получения значения должности
-    function getInitialJobTitleValue() {
-        const jobSelectEl = document.getElementById('id_job_title');
-        const selectedOption = jobSelectEl.querySelector('option[selected]');
-        if (selectedOption && selectedOption.value) {
-            return selectedOption.value;
-        }
-
-        const djangoHiddenField = document.querySelector('input[name="job_title"]');
-        if (djangoHiddenField && djangoHiddenField.value) {
-            return djangoHiddenField.value;
-        }
-
-        return null;
-    }
-
-    // 1. Tom-select для руководителя
-    const managerSelect = new TomSelect('#id_manager', {
-        maxOptions: null,
-        placeholder: 'Выберите руководителя...',
-        allowEmptyOption: true,
-
-        // Устанавливаем начальное значение
-        onInitialize: function() {
-            const initialValue = getInitialManagerValue();
-            const initialText = getInitialManagerText();
-
-            if (initialValue) {
-                this.addItem(initialValue);
-            }
-        },
-
-        searchField: ['text'],
-        sortField: {
-            field: 'text',
-            direction: 'asc'
-        },
-
-        load: function(query, callback) {
-            if (query.length > 0) {
-                fetch(`{% url 'hr:hr_manager_autocomplete' %}?q=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    callback(data.results || data);
-                })
-                .catch(() => {
-                    callback();
-                });
-            } else {
-                callback();
-            }
-        },
-
-        render: {
-            option: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
+    // =====================================================
+    // TOM-SELECT: Руководитель
+    // =====================================================
+    const managerSelect = document.querySelector('.js-tom-select-manager');
+    if (managerSelect) {
+        new TomSelect(managerSelect, {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: ['text'],
+            placeholder: 'Выберите руководителя...',
+            allowEmptyOption: true,
+            load: function(query, callback) {
+                fetch('{% url "hr:hr_manager_autocomplete" %}?q=' + encodeURIComponent(query))
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
             },
-            item: function(data, escape) {
-                return `<div>${escape(data.text)}</div>`;
+            render: {
+                option: function(data, escape) {
+                    return '<div class="py-1">' + escape(data.text) + '</div>';
+                },
+                item: function(data, escape) {
+                    return '<div>' + escape(data.text) + '</div>';
+                }
             },
-            no_results: function(data, escape) {
-                return '<div class="no-results">Не найдено</div>';
-            }
-        }
-    });
-
-    // 2. Tom-select для должности
-    const jobSelect = new TomSelect('#id_job_title', {
-        maxOptions: null,
-        placeholder: 'Введите или выберите должность...',
-        create: true,
-        createOnBlur: true,
-        createFilter: function(input) {
-            return input.length >= 2;
-        },
-        persist: false,
-
-        // Устанавливаем начальное значение
-        onInitialize: function() {
-            const initialValue = getInitialJobTitleValue();
-            if (initialValue) {
-                this.addItem(initialValue);
-            }
-        },
-
-        sortField: {
-            field: 'text',
-            direction: 'asc'
-        },
-        searchField: ['text'],
-
-        load: function(query, callback) {
-            if (query.length > 0) {
-                fetch(`{% url 'hr:hr_job_title_autocomplete' %}?q=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    callback(data.results || data);
-                })
-                .catch(() => {
-                    callback();
-                });
-            } else {
-                callback();
-            }
-        },
-
-        render: {
-            no_results: function(data, escape) {
-                return '<div class="no-results">Нажмите Enter для создания новой должности</div>';
-            },
-            option_create: function(data, escape) {
-                return `<div class="create">Создать <strong>"${escape(data.input)}"</strong></div>`;
-            }
-        }
-    });
-
-    // 3. Проверка обязательных полей
-    function validateRequiredFields() {
-        let isValid = true;
-        const nameField = document.getElementById('id_name');
-        if (!nameField.value.trim()) {
-            nameField.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            nameField.classList.remove('is-invalid');
-        }
-        return isValid;
-    }
-
-    // 4. Проверка циклических ссылок
-    function checkCircularReference() {
-        const employeeId = {% if object %}{{ object.pk }}{% else %}null{% endif %};
-        const managerId = managerSelect.getValue();
-
-        if (employeeId && managerId && employeeId.toString() === managerId.toString()) {
-            alert('Сотрудник не может быть своим руководителем!');
-            managerSelect.clear();
-            return false;
-        }
-
-        return true;
-    }
-
-    // 5. Обработка отправки формы
-    const hrForm = document.getElementById('hrForm');
-    const saveBtn = document.getElementById('saveBtn');
-
-    hrForm.addEventListener('submit', function(e) {
-        if (!validateRequiredFields() || !checkCircularReference()) {
-            e.preventDefault();
-            return false;
-        }
-
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Сохранение...';
-    });
-
-    // 6. Сохранить и добавить еще
-    const saveAndAddBtn = document.getElementById('saveAndAddAnother');
-    saveAndAddBtn.addEventListener('click', function() {
-        if (validateRequiredFields() && checkCircularReference()) {
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'save_and_add';
-            hiddenInput.value = '1';
-            hrForm.appendChild(hiddenInput);
-            hrForm.dispatchEvent(new Event('submit'));
-            hrForm.submit();
-        }
-    });
-
-    // 7. Улучшение UX для полей с ошибками
-    document.querySelectorAll('.is-invalid').forEach(function(field) {
-        field.addEventListener('input', function() {
-            this.classList.remove('is-invalid');
+            // Предзагрузка текущего значения
+            {% if form.manager.value %}
+            items: ['{{ form.manager.value }}'],
+            options: [
+                {% for m in all_managers %}
+                {% if m.id == form.manager.value %}
+                { id: '{{ m.id }}', text: '{{ m.name }}{% if m.job_title %} — {{ m.job_title }}{% endif %}' },
+                {% endif %}
+                {% endfor %}
+            ]
+            {% endif %}
         });
-    });
-
-    // 8. Фокус на первое поле с ошибкой
-    const firstError = document.querySelector('.is-invalid');
-    if (firstError) {
-        firstError.focus();
     }
 
-    // 9. Отладочная информация
-    console.log('Manager select options:',
-        Array.from(document.getElementById('id_manager').options).map(opt => ({
-            value: opt.value,
-            text: opt.textContent,
-            selected: opt.selected
-        }))
-    );
-    console.log('Initial manager value from function:', getInitialManagerValue());
-    console.log('Current employee ID:', {% if object %}{{ object.pk }}{% else %}null{% endif %});
+    // =====================================================
+    // TOM-SELECT: Должность (с возможностью создания)
+    // =====================================================
+    const jobTitleInput = document.querySelector('.js-tom-select-job');
+    if (jobTitleInput) {
+        new TomSelect(jobTitleInput, {
+            valueField: 'value',
+            labelField: 'text',
+            searchField: ['text'],
+            placeholder: 'Выберите или введите должность...',
+            create: true,
+            createOnBlur: true,
+            maxItems: 1,
+            load: function(query, callback) {
+                fetch('{% url "hr:hr_job_title_autocomplete" %}?q=' + encodeURIComponent(query))
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
+            },
+            render: {
+                option_create: function(data, escape) {
+                    return '<div class="create py-2 px-3 text-primary">' +
+                           '<i class="bi bi-plus-circle me-1"></i>Создать: <strong>' + escape(data.input) + '</strong>' +
+                           '</div>';
+                }
+            },
+            // Предзагрузка значений
+            options: [
+                {% for jt in all_job_titles %}
+                { value: '{{ jt }}', text: '{{ jt }}' },
+                {% endfor %}
+            ],
+            {% if form.job_title.value %}
+            items: ['{{ form.job_title.value }}']
+            {% endif %}
+        });
+    }
+
+    // =====================================================
+    // ВАЛИДАЦИЯ ФОРМЫ
+    // =====================================================
+    const form = document.getElementById('hrForm');
+    form.addEventListener('submit', function(e) {
+        const nameInput = document.querySelector('[name="name"]');
+        if (nameInput && nameInput.value.trim().length < 2) {
+            e.preventDefault();
+            nameInput.classList.add('is-invalid');
+            nameInput.focus();
+        }
+    });
 });
 </script>
 {% endblock %}

@@ -1,0 +1,32 @@
+{% comment %}
+templates/components/empty_state.html
+
+Компонент пустого состояния когда нет данных.
+
+Использование:
+    {% include "components/empty_state.html" with message="Сотрудники не найдены" icon="bi-people" %}
+    {% include "components/empty_state.html" with message="Нет записей" action_url="/create/" action_text="Создать" %}
+
+Параметры:
+    message     - Текст сообщения
+    icon        - Bootstrap Icon класс (по умолчанию: bi-inbox)
+    action_url  - URL для кнопки действия (опционально)
+    action_text - Текст кнопки (опционально)
+    subtitle    - Дополнительный текст (опционально)
+{% endcomment %}
+
+<div class="text-center py-5">
+    <div class="text-muted mb-3">
+        <i class="bi {{ icon|default:'bi-inbox' }} display-4"></i>
+    </div>
+    <h5 class="text-muted">{{ message|default:"Данные отсутствуют" }}</h5>
+    {% if subtitle %}
+    <p class="text-muted small mb-3">{{ subtitle }}</p>
+    {% endif %}
+    {% if action_url and action_text %}
+    <a href="{{ action_url }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>
+        {{ action_text }}
+    </a>
+    {% endif %}
+</div>

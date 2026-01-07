@@ -1,0 +1,31 @@
+{% comment %}
+templates/components/filter_results_info.html
+
+Информация о результатах фильтрации с кнопкой сброса.
+
+Использование:
+    {% include "components/filter_results_info.html" with count=paginator.count query=filter_params.q reset_url=reset_url %}
+
+Параметры:
+    count     - Количество найденных записей
+    query     - Поисковый запрос (опционально)
+    reset_url - URL для сброса фильтров
+    has_filters - Есть ли активные фильтры (для показа кнопки сброса)
+{% endcomment %}
+
+<div class="d-flex justify-content-between align-items-center">
+    <div class="text-muted small">
+        Найдено: <span class="fw-semibold">{{ count|default:0 }}</span>
+        {% if count == 1 %}запись{% elif count < 5 %}записи{% else %}записей{% endif %}
+        {% if query %}
+        по запросу "<span class="fw-semibold">{{ query }}</span>"
+        {% endif %}
+    </div>
+    
+    {% if has_filters and reset_url %}
+    <a href="{{ reset_url }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-x-lg me-1"></i>
+        Сбросить фильтры
+    </a>
+    {% endif %}
+</div>

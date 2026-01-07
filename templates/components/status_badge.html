@@ -1,0 +1,50 @@
+{% comment %}
+templates/components/status_badge.html
+
+Бейдж статуса.
+
+Использование:
+    {% include "components/status_badge.html" with status="active" display="Активен" %}
+    {% include "components/status_badge.html" with is_active=object.is_active %}
+
+Параметры:
+    status  - Код статуса (active, inactive, new, in_progress, done, failed, etc.)
+    display - Текст для отображения
+    
+    Или:
+    is_active - Булево значение (True/False)
+    active_text   - Текст для активного (по умолчанию: Активен)
+    inactive_text - Текст для неактивного (по умолчанию: Неактивен)
+
+    size - sm для маленького бейджа
+{% endcomment %}
+
+{% if is_active is not None %}
+    {# Режим булевого значения #}
+    {% if is_active %}
+    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle {% if size == 'sm' %}small{% endif %}">
+        <i class="bi bi-check-circle me-1"></i>{{ active_text|default:"Активен" }}
+    </span>
+    {% else %}
+    <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle {% if size == 'sm' %}small{% endif %}">
+        <i class="bi bi-x-circle me-1"></i>{{ inactive_text|default:"Неактивен" }}
+    </span>
+    {% endif %}
+{% else %}
+    {# Режим статуса #}
+    {% if status == 'new' %}
+    <span class="badge bg-secondary-subtle text-secondary-emphasis border {% if size == 'sm' %}small{% endif %}">{{ display|default:"Новый" }}</span>
+    {% elif status == 'active' or status == 'in_progress' %}
+    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle {% if size == 'sm' %}small{% endif %}">{{ display|default:"В работе" }}</span>
+    {% elif status == 'done' or status == 'completed' %}
+    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle {% if size == 'sm' %}small{% endif %}">{{ display|default:"Выполнено" }}</span>
+    {% elif status == 'failed' or status == 'error' %}
+    <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle {% if size == 'sm' %}small{% endif %}">{{ display|default:"Ошибка" }}</span>
+    {% elif status == 'cancelled' or status == 'canceled' %}
+    <span class="badge bg-dark-subtle text-dark-emphasis border {% if size == 'sm' %}small{% endif %}">{{ display|default:"Отменено" }}</span>
+    {% elif status == 'warning' or status == 'pending' %}
+    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle {% if size == 'sm' %}small{% endif %}">{{ display|default:"Ожидание" }}</span>
+    {% else %}
+    <span class="badge bg-secondary {% if size == 'sm' %}small{% endif %}">{{ display|default:status }}</span>
+    {% endif %}
+{% endif %}

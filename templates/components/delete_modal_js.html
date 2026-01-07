@@ -1,0 +1,107 @@
+{% comment %}
+templates/components/delete_modal_js.html
+
+JavaScript для модального окна удаления.
+
+Использование:
+    {% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
+
+Кнопка удаления должна иметь атрибуты:
+    data-delete-url  - URL для DELETE запроса
+    data-delete-name - Название объекта для отображения
+{% endcomment %}
+
+<script>
+(function() {
+    const modalId = '{{ modal_id|default:"deleteModal" }}';
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    const confirmBtn = document.getElementById(modalId + 'Confirm');
+    const nameEl = document.getElementById(modalId + 'Name');
+    const errorEl = document.getElementById(modalId + 'Error');
+    const errorTextEl = document.getElementById(modalId + 'ErrorText');
+    const relatedEl = document.getElementById(modalId + 'Related');
+    const relatedListEl = document.getElementById(modalId + 'RelatedList');
+    const spinnerEl = document.getElementById(modalId + 'Spinner');
+    const iconEl = document.getElementById(modalId + 'Icon');
+
+    let deleteUrl = null;
+
+    // При открытии модального окна
+    modal.addEventListener('show.bs.modal', function(e) {
+        const trigger = e.relatedTarget;
+        if (!trigger) return;
+
+        deleteUrl = trigger.dataset.deleteUrl;
+        const name = trigger.dataset.deleteName || '';
+
+        // Сброс состояния
+        nameEl.textContent = name;
+        errorEl.classList.add('d-none');
+        relatedEl.classList.add('d-none');
+        relatedListEl.innerHTML = '';
+        confirmBtn.disabled = false;
+    });
+
+    // При клике на подтверждение
+    confirmBtn.addEventListener('click', async function() {
+        if (!deleteUrl) return;
+
+        // Показываем загрузку
+        confirmBtn.disabled = true;
+        spinnerEl.classList.remove('d-none');
+        iconEl.classList.add('d-none');
+        errorEl.classList.add('d-none');
+        relatedEl.classList.add('d-none');
+
+        try {
+            const response = await fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                // Успех - редирект или перезагрузка
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                // Ошибка
+                errorTextEl.textContent = data.error || 'Ошибка при удалении';
+                errorEl.classList.remove('d-none');
+
+                // Показываем связанные объекты
+                if (data.related && data.related.length > 0) {
+                    relatedListEl.innerHTML = data.related
+                        .slice(0, 5)
+                        .map(item => `<li class="list-group-item py-1">${item}</li>`)
+                        .join('');
+                    
+                    if (data.related.length > 5) {
+                        relatedListEl.innerHTML += `<li class="list-group-item py-1 text-muted">и ещё ${data.related.length - 5}...</li>`;
+                    }
+                    relatedEl.classList.remove('d-none');
+                }
+
+                confirmBtn.disabled = false;
+            }
+        } catch (err) {
+            errorTextEl.textContent = 'Ошибка сети. Попробуйте ещё раз.';
+            errorEl.classList.remove('d-none');
+            confirmBtn.disabled = false;
+        } finally {
+            spinnerEl.classList.add('d-none');
+            iconEl.classList.remove('d-none');
+        }
+    });
+})();
+</script>

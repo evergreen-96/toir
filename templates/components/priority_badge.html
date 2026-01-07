@@ -1,0 +1,34 @@
+{% comment %}
+templates/components/priority_badge.html
+
+Бейдж приоритета.
+
+Использование:
+    {% include "components/priority_badge.html" with priority="high" display="Высокий" %}
+    {% include "components/priority_badge.html" with priority=object.priority display=object.get_priority_display %}
+
+Параметры:
+    priority - Код приоритета: low, med/medium, high, critical
+    display  - Текст для отображения
+    size     - sm для маленького бейджа
+{% endcomment %}
+
+{% if priority == 'low' %}
+<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle {% if size == 'sm' %}small{% endif %}">
+    <i class="bi bi-arrow-down me-1"></i>{{ display|default:"Низкий" }}
+</span>
+{% elif priority == 'med' or priority == 'medium' %}
+<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle {% if size == 'sm' %}small{% endif %}">
+    <i class="bi bi-dash me-1"></i>{{ display|default:"Средний" }}
+</span>
+{% elif priority == 'high' %}
+<span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle {% if size == 'sm' %}small{% endif %}">
+    <i class="bi bi-arrow-up me-1"></i>{{ display|default:"Высокий" }}
+</span>
+{% elif priority == 'critical' %}
+<span class="badge bg-danger text-white {% if size == 'sm' %}small{% endif %}">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ display|default:"Критический" }}
+</span>
+{% else %}
+<span class="badge bg-secondary {% if size == 'sm' %}small{% endif %}">{{ display|default:priority|default:"—" }}</span>
+{% endif %}

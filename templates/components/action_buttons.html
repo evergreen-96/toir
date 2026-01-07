@@ -1,0 +1,54 @@
+{% comment %}
+templates/components/action_buttons.html
+
+Кнопки действий для карточки или строки таблицы.
+
+Использование:
+    {% include "components/action_buttons.html" with detail_url=detail_url edit_url=edit_url delete_url=delete_url %}
+
+Параметры:
+    detail_url - URL для просмотра
+    edit_url   - URL для редактирования
+    delete_url - URL для удаления
+    delete_name - Название объекта для модального окна
+    
+    can_view   - Есть право на просмотр (по умолчанию True)
+    can_edit   - Есть право на редактирование
+    can_delete - Есть право на удаление
+    
+    size       - sm для маленьких кнопок
+    style      - icons (только иконки) или buttons (кнопки с текстом)
+{% endcomment %}
+
+<div class="d-flex gap-1 {% if style != 'icons' %}flex-wrap{% endif %}">
+    {% if detail_url and can_view != False %}
+    <a href="{{ detail_url }}" 
+       class="btn btn-{{ size|default:'sm' }} btn-outline-primary"
+       title="Просмотр">
+        <i class="bi bi-eye{% if style != 'icons' %} me-1{% endif %}"></i>
+        {% if style != 'icons' %}Просмотр{% endif %}
+    </a>
+    {% endif %}
+
+    {% if edit_url and can_edit %}
+    <a href="{{ edit_url }}" 
+       class="btn btn-{{ size|default:'sm' }} btn-outline-secondary"
+       title="Редактировать">
+        <i class="bi bi-pencil{% if style != 'icons' %} me-1{% endif %}"></i>
+        {% if style != 'icons' %}Редактировать{% endif %}
+    </a>
+    {% endif %}
+
+    {% if delete_url and can_delete %}
+    <button type="button" 
+            class="btn btn-{{ size|default:'sm' }} btn-outline-danger"
+            title="Удалить"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteModal"
+            data-delete-url="{{ delete_url }}"
+            data-delete-name="{{ delete_name|default:'' }}">
+        <i class="bi bi-trash{% if style != 'icons' %} me-1{% endif %}"></i>
+        {% if style != 'icons' %}Удалить{% endif %}
+    </button>
+    {% endif %}
+</div>

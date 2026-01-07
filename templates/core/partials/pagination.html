@@ -1,0 +1,88 @@
+{% comment %}
+core/templates/core/partials/pagination.html
+
+Компонент пагинации для использования через {% pagination page_obj %}
+{% endcomment %}
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Навигация по страницам">
+    <ul class="pagination justify-content-center mb-0">
+        {# Кнопка "Первая" #}
+        {% if show_first %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" title="Первая страница">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>
+        {% endif %}
+
+        {# Кнопка "Предыдущая" #}
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+        </li>
+        {% endif %}
+
+        {# Многоточие в начале #}
+        {% if show_first %}
+        <li class="page-item disabled">
+            <span class="page-link">...</span>
+        </li>
+        {% endif %}
+
+        {# Номера страниц #}
+        {% for page_num in page_range %}
+        {% if page_num == page_obj.number %}
+        <li class="page-item active" aria-current="page">
+            <span class="page-link">{{ page_num }}</span>
+        </li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ page_num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {# Многоточие в конце #}
+        {% if show_last %}
+        <li class="page-item disabled">
+            <span class="page-link">...</span>
+        </li>
+        {% endif %}
+
+        {# Кнопка "Следующая" #}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+        </li>
+        {% endif %}
+
+        {# Кнопка "Последняя" #}
+        {% if show_last %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" title="Последняя страница">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{# Информация о текущей позиции #}
+<div class="text-center text-muted small mt-2">
+    Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+    ({{ page_obj.paginator.count }} записей)
+</div>
+{% endif %}

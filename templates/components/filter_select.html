@@ -1,0 +1,36 @@
+{% comment %}
+templates/components/filter_select.html
+
+Select для фильтрации.
+
+Использование:
+    {% include "components/filter_select.html" with name="status" label="Статус" choices=status_choices current=current.status empty_label="Все статусы" %}
+
+Параметры:
+    name        - Имя поля
+    label       - Label (опционально)
+    icon        - Bootstrap Icon класс (опционально)
+    choices     - Список choices: [(value, display), ...]
+    current     - Текущее выбранное значение
+    empty_label - Текст для пустого варианта (по умолчанию: Все)
+    input_id    - ID поля (опционально)
+    css_class   - Дополнительные CSS классы
+{% endcomment %}
+
+{% if label %}
+<label for="{{ input_id|default:name }}" class="form-label small mb-1">
+    {% if icon %}<i class="bi {{ icon }} me-1"></i>{% endif %}
+    {{ label }}
+</label>
+{% endif %}
+
+<select id="{{ input_id|default:name }}"
+        name="{{ name }}"
+        class="form-select {{ css_class }}">
+    <option value="">{{ empty_label|default:"Все" }}</option>
+    {% for value, display in choices %}
+    <option value="{{ value }}" {% if current == value %}selected{% endif %}>
+        {{ display }}
+    </option>
+    {% endfor %}
+</select>

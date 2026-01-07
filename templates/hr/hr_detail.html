@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}{{ employee.name }}{% endblock %}
 
 {% block content %}
@@ -9,12 +10,11 @@
          ===================================================== -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
         <div class="mb-3 mb-md-0">
+            <!-- Breadcrumbs -->
             <nav aria-label="breadcrumb" class="mb-2">
-                <ol class="breadcrumb small">
+                <ol class="breadcrumb small mb-0">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'hr:hr_list' %}" class="text-decoration-none">
-                            Персонал
-                        </a>
+                        <a href="{% url 'hr:hr_list' %}" class="text-decoration-none">Персонал</a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">
                         {{ employee.name|truncatechars:40 }}
@@ -22,15 +22,12 @@
                 </ol>
             </nav>
 
-            <h1 class="h2 mb-1 d-flex align-items-center">
+            <!-- Заголовок с бейджем статуса -->
+            <h1 class="h2 mb-1 d-flex align-items-center flex-wrap">
                 <i class="bi bi-person-circle me-2 text-primary"></i>
                 {{ employee.name }}
-                <span class="badge {% if employee.is_active %}bg-success-subtle text-success-emphasis{% else %}bg-secondary-subtle text-secondary-emphasis{% endif %} border ms-2">
-                    {% if employee.is_active %}
-                    <i class="bi bi-check-circle me-1"></i>Активен
-                    {% else %}
-                    <i class="bi bi-x-circle me-1"></i>Неактивен
-                    {% endif %}
+                <span class="ms-2">
+                    {% include "components/status_badge.html" with is_active=employee.is_active %}
                 </span>
             </h1>
 
@@ -39,6 +36,7 @@
             </div>
         </div>
 
+        <!-- Кнопки действий -->
         <div class="d-flex flex-wrap gap-2">
             <a class="btn btn-outline-secondary" href="{% url 'hr:hr_list' %}">
                 <i class="bi bi-arrow-left me-1"></i>Назад
@@ -49,15 +47,25 @@
                 <i class="bi bi-pencil me-1"></i>Редактировать
             </a>
             {% endif %}
+
+            {% if perms.hr.delete_humanresource %}
+            <button type="button" class="btn btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteModal"
+                    data-delete-url="{% url 'hr:hr_delete' employee.pk %}"
+                    data-delete-name="{{ employee.name }}">
+                <i class="bi bi-trash me-1"></i>Удалить
+            </button>
+            {% endif %}
         </div>
     </div>
 
     <div class="row">
-        <!-- Левая колонка: Основная информация -->
+        <!-- =====================================================
+             ЛЕВАЯ КОЛОНКА: Основная информация
+             ===================================================== -->
         <div class="col-lg-8">
-            <!-- =====================================================
-                 ОСНОВНАЯ ИНФОРМАЦИЯ
-                 ===================================================== -->
+            <!-- Основная информация -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-dark border-0">
                     <h5 class="mb-0">
@@ -71,7 +79,13 @@
                         <div class="col-md-6">
                             <div class="text-muted small mb-1">Должность</div>
                             <div class="fw-semibold">
-                                {{ employee.job_title|default:"—" }}
+                                {% if employee.job_title %}
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-briefcase me-1"></i>{{ employee.job_title }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -79,15 +93,7 @@
                         <div class="col-md-6">
                             <div class="text-muted small mb-1">Статус</div>
                             <div class="fw-semibold">
-                                {% if employee.is_active %}
-                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
-                                    <i class="bi bi-check-circle me-1"></i>Активен
-                                </span>
-                                {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                                    <i class="bi bi-x-circle me-1"></i>Неактивен
-                                </span>
-                                {% endif %}
+                                {% include "components/status_badge.html" with is_active=employee.is_active %}
                             </div>
                         </div>
 
@@ -96,29 +102,28 @@
                             <div class="text-muted small mb-1">Руководитель</div>
                             <div class="fw-semibold">
                                 {% if employee.manager %}
-                                <a href="{% url 'hr:hr_detail' employee.manager.pk %}"
-                                   class="text-decoration-none d-inline-flex align-items-center gap-1">
-                                    <i class="bi bi-person-badge text-muted"></i>
-                                    {{ employee.manager.name|truncatechars:30 }}
-                                    {% if employee.manager.job_title %}
-                                    <small class="text-muted">({{ employee.manager.job_title|truncatechars:20 }})</small>
-                                    {% endif %}
+                                <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">
+                                    <i class="bi bi-person me-1"></i>{{ employee.manager.name }}
                                 </a>
+                                {% if employee.manager.job_title %}
+                                <div class="text-muted small">{{ employee.manager.job_title }}</div>
+                                {% endif %}
                                 {% else %}
-                                <span class="text-muted fst-italic">Не назначен</span>
+                                <span class="text-muted">— (нет руководителя)</span>
                                 {% endif %}
                             </div>
                         </div>
 
                         <!-- Подчинённые -->
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Подчинённые</div>
+                            <div class="text-muted small mb-1">Подчинённых</div>
                             <div class="fw-semibold">
-                                <span class="badge {% if employee.subordinates_count %}bg-primary-subtle text-primary-emphasis border border-primary-subtle{% else %}bg-light text-dark border{% endif %}">
-                                    {{ employee.subordinates_count|default:"0" }} чел.
+                                {% if subordinates_count %}
+                                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                                    <i class="bi bi-people me-1"></i>{{ subordinates_count }} чел.
                                 </span>
-                                {% if employee.subordinates_count > 0 %}
-                                <small class="text-muted ms-2">в подчинении</small>
+                                {% else %}
+                                <span class="text-muted">— (нет подчинённых)</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -154,61 +159,28 @@
                             <tbody>
                                 {% for sub in employee.subordinates.all %}
                                 <tr>
-                                    <!-- Сотрудник -->
                                     <td>
                                         <div class="fw-semibold">
-                                            <a href="{% url 'hr:hr_detail' sub.pk %}"
-                                               class="text-decoration-none">
+                                            <a href="{% url 'hr:hr_detail' sub.pk %}" class="text-decoration-none">
                                                 {{ sub.name|truncatechars:40 }}
                                             </a>
                                         </div>
-                                        <div class="text-muted small">
-                                            ID: #{{ sub.id }}
-                                        </div>
+                                        <div class="text-muted small">ID: #{{ sub.id }}</div>
                                     </td>
-
-                                    <!-- Должность -->
                                     <td>
                                         {% if sub.job_title %}
-                                        <span class="badge bg-light text-dark border">
-                                            {{ sub.job_title|truncatechars:30 }}
-                                        </span>
+                                        <span class="badge bg-light text-dark border">{{ sub.job_title|truncatechars:30 }}</span>
                                         {% else %}
                                         <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
-
-                                    <!-- Статус -->
                                     <td>
-                                        {% if sub.is_active %}
-                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle small">
-                                            Активен
-                                        </span>
-                                        {% else %}
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle small">
-                                            Неактивен
-                                        </span>
-                                        {% endif %}
+                                        {% include "components/status_badge.html" with is_active=sub.is_active size="sm" %}
                                     </td>
-
-                                    <!-- Действия -->
                                     <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'hr:hr_detail' sub.pk %}"
-                                               class="btn btn-outline-secondary"
-                                               data-bs-toggle="tooltip"
-                                               title="Просмотр">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if perms.hr.change_humanresource %}
-                                            <a href="{% url 'hr:hr_edit' sub.pk %}"
-                                               class="btn btn-outline-secondary"
-                                               data-bs-toggle="tooltip"
-                                               title="Редактировать">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            {% endif %}
-                                        </div>
+                                        <a href="{% url 'hr:hr_detail' sub.pk %}" class="btn btn-sm btn-outline-primary" title="Просмотр">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -220,7 +192,7 @@
             {% endif %}
 
             <!-- =====================================================
-                 ИСТОРИЯ ИЗМЕНЕНИЙ (если есть)
+                 ИСТОРИЯ ИЗМЕНЕНИЙ
                  ===================================================== -->
             {% if history %}
             <div class="card border-0 shadow-sm">
@@ -229,43 +201,122 @@
                         <i class="bi bi-clock-history me-2 text-primary"></i>
                         История изменений
                     </h5>
-                    <button class="btn btn-sm btn-outline-secondary"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#historyCollapse"
-                            aria-expanded="false"
-                            aria-controls="historyCollapse">
+                    <button class="btn btn-sm btn-link text-muted p-0" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#historyCollapse">
                         <i class="bi bi-chevron-down"></i>
                     </button>
                 </div>
-
                 <div class="collapse" id="historyCollapse">
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            {% for h in history|slice:":5" %}
-                            <div class="list-group-item d-flex justify-content-between align-items-start px-0">
-                                <div>
-                                    <div class="fw-semibold small">
-                                        {{ h.history_change_reason|default:"Изменение данных" }}
+                            {% for h in history %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold small">
+                                            {{ h.history_change_reason|default:"Изменение данных" }}
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="bi bi-person me-1"></i>
+                                            {{ h.history_user|default:"Система" }}
+                                        </div>
                                     </div>
-                                    <div class="text-muted small d-flex align-items-center">
-                                        <i class="bi bi-clock me-1"></i>
+                                    <div class="text-muted small">
                                         {{ h.history_date|date:"d.m.Y H:i" }}
                                     </div>
-                                </div>
-                                <div class="text-muted small">
-                                    {{ h.history_user|default:"Система" }}
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
 
-                        {% if history.count > 5 %}
-                        <div class="text-center mt-3">
-                            <a href="#" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-arrow-down me-1"></i>
-                                Показать все ({{ history.count }})
-                            </a>
+        <!-- =====================================================
+             ПРАВАЯ КОЛОНКА: Метаданные и действия
+             ===================================================== -->
+        <div class="col-lg-4">
+            <!-- Быстрые действия -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2 text-primary"></i>
+                        Быстрые действия
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if perms.hr.add_humanresource %}
+                        <a href="{% url 'hr:hr_new' %}?manager={{ employee.pk }}" class="btn btn-outline-success">
+                            <i class="bi bi-person-plus me-2"></i>
+                            Добавить подчинённого
+                        </a>
+                        {% endif %}
+
+                        {% if perms.hr.change_humanresource %}
+                        <a href="{% url 'hr:hr_edit' employee.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>
+                            Редактировать
+                        </a>
+                        {% endif %}
+
+                        {% if perms.hr.delete_humanresource %}
+                        <button type="button" class="btn btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal"
+                                data-delete-url="{% url 'hr:hr_delete' employee.pk %}"
+                                data-delete-name="{{ employee.name }}">
+                            <i class="bi bi-trash me-2"></i>
+                            Удалить
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Метаданные -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+                        Метаданные
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% include "components/metadata_list.html" with object=employee show_id=True %}
+                </div>
+            </div>
+
+            <!-- Связанное оборудование (если есть) -->
+            {% if equipment_assignments %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cpu me-2 text-primary"></i>
+                        Ответственный за
+                    </h5>
+                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                        {{ equipment_assignments.count }}
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for eq in equipment_assignments|slice:":5" %}
+                        <a href="{% url 'assets:asset_detail' eq.pk %}"
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold small">{{ eq.name|truncatechars:30 }}</div>
+                                <div class="text-muted small">{{ eq.get_category_display }}</div>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </a>
+                        {% endfor %}
+
+                        {% if equipment_assignments.count > 5 %}
+                        <div class="list-group-item text-center text-muted small py-2">
+                            и ещё {{ equipment_assignments.count|add:"-5" }} единиц
                         </div>
                         {% endif %}
                     </div>
@@ -273,378 +324,13 @@
             </div>
             {% endif %}
         </div>
-
-        <!-- Правая колонка: Метаданные и действия -->
-        <div class="col-lg-4">
-            <div class="sticky-top" style="top: 20px;">
-                <!-- =====================================================
-                     БЫСТРЫЕ ДЕЙСТВИЯ
-                     ===================================================== -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-dark border-0">
-                        <h5 class="mb-0">
-                            <i class="bi bi-lightning me-2 text-primary"></i>
-                            Быстрые действия
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <!-- Создать задачу для сотрудника -->
-                            {% if perms.maintenance.add_workorder %}
-                            <a href="{% url 'maintenance:wo_new' %}?responsible={{ employee.id }}"
-                               class="btn btn-outline-primary d-flex align-items-center justify-content-start">
-                                <i class="bi bi-clipboard-plus me-2"></i>
-                                <span>Создать задачу</span>
-                            </a>
-                            {% endif %}
-
-                            <!-- Редактировать -->
-                            {% if perms.hr.change_humanresource %}
-                            <a href="{% url 'hr:hr_edit' employee.pk %}"
-                               class="btn btn-outline-secondary d-flex align-items-center justify-content-start">
-                                <i class="bi bi-pencil me-2"></i>
-                                <span>Редактировать данные</span>
-                            </a>
-                            {% endif %}
-
-                            <!-- Создать нового подчиненного -->
-                            {% if perms.hr.add_humanresource %}
-                            <a href="{% url 'hr:hr_new' %}?manager={{ employee.id }}"
-                               class="btn btn-outline-info d-flex align-items-center justify-content-start">
-                                <i class="bi bi-person-plus me-2"></i>
-                                <span>Добавить подчинённого</span>
-                            </a>
-                            {% endif %}
-
-                            <!-- Удалить -->
-                            {% if perms.hr.delete_humanresource %}
-                            <button class="btn btn-outline-danger d-flex align-items-center justify-content-start"
-                                    data-confirm-delete
-                                    data-delete-url="{% url 'hr:hr_delete' employee.pk %}"
-                                    data-delete-name="{{ employee.name }}"
-                                    data-redirect-url="{% url 'hr:hr_list' %}">
-                                <i class="bi bi-trash me-2"></i>
-                                <span>Удалить сотрудника</span>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- =====================================================
-                     МЕТАДАННЫЕ
-                     ===================================================== -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-dark border-0">
-                        <h5 class="mb-0">
-                            <i class="bi bi-file-earmark-text me-2 text-primary"></i>
-                            Метаданные
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                <span class="text-muted small">Дата создания</span>
-                                <span class="fw-semibold small">
-                                    {{ employee.created_at|date:"d.m.Y H:i" }}
-                                </span>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                <span class="text-muted small">Последнее изменение</span>
-                                <span class="fw-semibold small">
-                                    {{ employee.updated_at|date:"d.m.Y H:i" }}
-                                </span>
-                            </div>
-                            {% if employee.subordinates_count %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                <span class="text-muted small">Подчинённых</span>
-                                <span class="fw-semibold small">
-                                    {{ employee.subordinates_count }} чел.
-                                </span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- =====================================================
-                     СВЯЗАННОЕ ОБОРУДОВАНИЕ (опционально)
-                     ===================================================== -->
-                {% if equipment_assignments %}
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-cpu me-2 text-primary"></i>
-                            Ответственный за оборудование
-                        </h5>
-                        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
-                            {{ equipment_assignments.count }}
-                        </span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            {% for assignment in equipment_assignments|slice:":5" %}
-                            <a href="{% url 'assets:asset_detail' assignment.pk %}"
-                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold">{{ assignment.name|truncatechars:40 }}</div>
-                                    <div class="text-muted small">{{ assignment.get_category_display }}</div>
-                                </div>
-                                <div class="text-muted small">
-                                    {{ assignment.type_name|truncatechars:20|default:"—" }}
-                                </div>
-                            </a>
-                            {% endfor %}
-
-                            {% if equipment_assignments.count > 5 %}
-                            <div class="list-group-item text-center py-2">
-                                <small class="text-muted">
-                                    и ещё {{ equipment_assignments.count|add:"-5" }} единиц
-                                </small>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- =====================================================
-     МОДАЛКА УДАЛЕНИЯ
-     ===================================================== -->
-{% if perms.hr.delete_humanresource %}
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form method="post"
-              action="{% url 'hr:hr_delete' employee.pk %}"
-              class="modal-content">
-            {% csrf_token %}
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
-                    Удаление сотрудника
-                </h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Вы уверены, что хотите удалить сотрудника?</p>
-                <div class="alert alert-warning">
-                    <strong>{{ employee.name }}</strong>
-                    {% if employee.job_title %}
-                    <br><small>{{ employee.job_title }}</small>
-                    {% endif %}
-                </div>
-                {% if employee.subordinates.exists %}
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-circle me-2"></i>
-                    Внимание! У сотрудника есть {{ employee.subordinates.count }} подчинённых.
-                    При удалении их руководитель будет сброшен.
-                </div>
-                {% endif %}
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    Отмена
-                </button>
-                <button class="btn btn-danger">
-                    <i class="bi bi-trash me-1"></i>
-                    Удалить
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
-
-{% endblock %}
-
-{% block extra_css %}
-<style>
-/* Общие стили для карточек */
-.card {
-    border: 1px solid var(--bs-border-color);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-    transform: translateY(-1px);
-}
-
-.card-header.bg-dark {
-    background-color: var(--bs-light-bg-subtle) !important;
-    border-bottom: 1px solid var(--bs-border-color);
-    padding: 1rem 1.25rem;
-}
-
-.card-body {
-    padding: 1.25rem;
-}
-
-/* Стили для таблиц */
-.table td, .table th {
-    vertical-align: middle;
-    padding: 0.75rem 1rem;
-}
-
-.table-hover tbody tr:hover {
-    background-color: var(--bs-tertiary-bg);
-}
-
-.table-light {
-    background-color: var(--bs-light-bg-subtle) !important;
-}
-
-/* Стили для списков */
-.list-group-item {
-    border-color: var(--bs-border-color-translucent);
-    background-color: transparent;
-    padding: 0.75rem 1rem;
-}
-
-.list-group-item-action:hover {
-    background-color: var(--bs-tertiary-bg);
-}
-
-/* Стили для кнопок */
-.btn-outline-primary,
-.btn-outline-secondary,
-.btn-outline-info,
-.btn-outline-danger {
-    border-width: 1px;
-    padding: 0.5rem 1rem;
-}
-
-.btn-group-sm .btn {
-    padding: 0.25rem 0.5rem;
-}
-
-/* Стили для badge */
-.badge {
-    font-weight: 500;
-    letter-spacing: 0.02em;
-}
-
-/* Адаптивность */
-@media (max-width: 992px) {
-    .sticky-top {
-        position: static !important;
-    }
-
-    .card-header, .card-body {
-        padding: 0.75rem 1rem;
-    }
-
-    .table td, .table th {
-        padding: 0.5rem 0.75rem;
-    }
-}
-
-/* Темная тема */
-[data-bs-theme="dark"] .card-header.bg-dark {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .table-light {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .badge.bg-light {
-    background-color: var(--bs-secondary-bg) !important;
-    color: var(--bs-body-color) !important;
-}
-
-[data-bs-theme="dark"] .card {
-    border-color: var(--bs-border-color-translucent);
-}
-
-/* Анимации для collapse */
-.collapsing {
-    transition: height 0.3s ease;
-}
-
-[aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg);
-    transition: transform 0.3s ease;
-}
-
-[aria-expanded="false"] .bi-chevron-down {
-    transform: rotate(0deg);
-    transition: transform 0.3s ease;
-}
-
-/* Улучшение читаемости текста */
-.text-muted.small {
-    font-size: 0.8125rem;
-}
-
-.fw-semibold {
-    font-weight: 500;
-}
-
-/* Выравнивание иконок в заголовках карточек */
-.card-header h5 .bi {
-    width: 1.25rem;
-    text-align: center;
-}
-</style>
+<!-- Модальное окно удаления -->
+{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить сотрудника?" %}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация тултипов
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-
-    // Плавная прокрутка
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
-
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-
-    // Обработка collapse для истории
-    const historyCollapseEl = document.getElementById('historyCollapse');
-    const historyToggleBtn = document.querySelector('[data-bs-target="#historyCollapse"]');
-
-    if (historyCollapseEl && historyToggleBtn) {
-        const historyCollapse = new bootstrap.Collapse(historyCollapseEl, {
-            toggle: false
-        });
-
-        historyToggleBtn.addEventListener('click', function() {
-            historyCollapse.toggle();
-        });
-
-        // Обновление иконки
-        historyCollapseEl.addEventListener('show.bs.collapse', function () {
-            const icon = historyToggleBtn.querySelector('i');
-            if (icon) {
-                icon.className = 'bi bi-chevron-up';
-            }
-        });
-
-        historyCollapseEl.addEventListener('hide.bs.collapse', function () {
-            const icon = historyToggleBtn.querySelector('i');
-            if (icon) {
-                icon.className = 'bi bi-chevron-down';
-            }
-        });
-    }
-});
-</script>
+{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
 {% endblock %}

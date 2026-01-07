@@ -1,0 +1,39 @@
+{% comment %}
+templates/components/view_mode_toggle_js.html
+
+JavaScript для переключателя вида карточки/таблица.
+
+Использование:
+    {% include "components/view_mode_toggle_js.html" with storage_key="hr_view_mode" %}
+{% endcomment %}
+
+<script>
+(function() {
+    const KEY = '{{ storage_key|default:"view_mode" }}';
+    const cardsView = document.getElementById('cards-view');
+    const tableView = document.getElementById('table-view');
+    const cardsRadio = document.getElementById('view-cards');
+    const tableRadio = document.getElementById('view-table');
+
+    if (!cardsView || !tableView || !cardsRadio || !tableRadio) return;
+
+    function applyViewMode(mode) {
+        const isTable = mode === 'table';
+        cardsView.classList.toggle('d-none', isTable);
+        tableView.classList.toggle('d-none', !isTable);
+        tableRadio.checked = isTable;
+        cardsRadio.checked = !isTable;
+
+        try {
+            localStorage.setItem(KEY, mode);
+        } catch (e) {}
+    }
+
+    cardsRadio.addEventListener('change', () => applyViewMode('cards'));
+    tableRadio.addEventListener('change', () => applyViewMode('table'));
+
+    // Применяем сохранённый режим или дефолтный
+    const savedMode = localStorage.getItem(KEY) || '{{ default_mode|default:"cards" }}';
+    applyViewMode(savedMode);
+})();
+</script>

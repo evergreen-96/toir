@@ -66,7 +66,6 @@ class FormAuditMixin(AuditMixin):
         self.object = form.save(commit=False)
         self.add_audit_info(self.object)
         self.object.save()
-        
         # Сохраняем M2M поля если есть
         if hasattr(form, 'save_m2m'):
             form.save_m2m()
