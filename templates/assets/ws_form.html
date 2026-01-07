@@ -1,556 +1,194 @@
 {% extends "base.html" %}
 {% load static form_extras %}
-{% block title %}
-{% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}
-{% endblock %}
+
+{% block title %}{% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3">
-    <!-- =====================================================
-         1. HEADER
-         ===================================================== -->
+    <!-- HEADER -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
         <div class="mb-3 mb-md-0">
             <nav aria-label="breadcrumb" class="mb-2">
-                <ol class="breadcrumb small">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'assets:asset_list' %}" class="text-decoration-none">
-                            Оборудование
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        {% if create %}Новое оборудование{% else %}Редактирование{% endif %}
-                    </li>
+                <ol class="breadcrumb small mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'assets:asset_list' %}" class="text-decoration-none">Оборудование</a></li>
+                    {% if not create and object %}<li class="breadcrumb-item"><a href="{% url 'assets:asset_detail' object.pk %}" class="text-decoration-none">{{ object.name|truncatechars:20 }}</a></li>{% endif %}
+                    <li class="breadcrumb-item active">{% if create %}Новое{% else %}Редактирование{% endif %}</li>
                 </ol>
             </nav>
-
             <h1 class="h2 mb-1">
-                {% if create %}
-                <i class="bi bi-plus-circle me-2 text-success"></i>
-                Новое оборудование
-                {% else %}
-                <i class="bi bi-pencil-square me-2 text-primary"></i>
-                Редактирование оборудования
-                {% endif %}
+                {% if create %}<i class="bi bi-plus-circle me-2 text-success"></i>Новое оборудование
+                {% else %}<i class="bi bi-pencil-square me-2 text-primary"></i>Редактирование{% endif %}
             </h1>
-
             <div class="text-muted small">
-                {% if create %}
-                Добавление нового оборудования в систему ТОиР
-                {% else %}
-                ID: {{ object.id }} · Последнее изменение: {{ object.updated_at|date:"d.m.Y H:i" }}
-                {% endif %}
+                {% if create %}Добавление нового оборудования в систему{% else %}ID: {{ object.pk }} · {{ object.updated_at|date:"d.m.Y H:i" }}{% endif %}
             </div>
         </div>
-
         <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" href="{% url 'assets:asset_list' %}">
-                <i class="bi bi-arrow-left me-1"></i>Назад
-            </a>
-
-            {% if not create %}
-            <a class="btn btn-outline-info" href="{% url 'assets:asset_detail' object.pk %}">
-                <i class="bi bi-eye me-1"></i>Просмотр
-            </a>
-            {% endif %}
+            <a class="btn btn-outline-secondary" href="{% url 'assets:asset_list' %}"><i class="bi bi-arrow-left me-1"></i>Назад</a>
+            {% if not create %}<a class="btn btn-outline-info" href="{% url 'assets:asset_detail' object.pk %}"><i class="bi bi-eye me-1"></i>Просмотр</a>{% endif %}
         </div>
     </div>
 
-    <!-- Основная форма -->
-    <form method="post" enctype="multipart/form-data" id="workstationForm" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <div class="alert alert-danger mb-4">
-            <div class="d-flex align-items-center">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <div>{{ form.non_field_errors }}</div>
-            </div>
-        </div>
+        <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-triangle me-2"></i>{{ form.non_field_errors }}</div>
         {% endif %}
 
         <div class="row">
-            <!-- Левая колонка: Основные данные -->
+            <!-- ЛЕВАЯ КОЛОНКА -->
             <div class="col-lg-8">
-                <div class="row g-3">
-                    <!-- =====================================================
-                         2. ОСНОВНЫЕ ХАРАКТЕРИСТИКИ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-info-circle me-2 text-primary"></i>
-                                    Основные характеристики
-                                </h5>
+                <!-- Основная информация -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold" for="{{ form.name.id_for_label }}">{{ form.name.label }} <span class="text-danger">*</span></label>
+                                {{ form.name|add_class:"form-control" }}
+                                {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors }}</div>{% endif %}
                             </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Название -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold required">
-                                                <i class="bi bi-tag me-1"></i>
-                                                {{ form.name.label }}
-                                            </label>
-                                                {{ form.name|add_class:"form-control" }}                                            {% if form.name.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.name.errors }}
-                                            </div>
-                                            {% endif %}
-                                            <div class="form-text small">
-                                                Наименование оборудования для идентификации в системе
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Категория -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold required">
-                                                <i class="bi bi-folder me-1"></i>
-                                                {{ form.category.label }}
-                                            </label>
-                                            {{ form.category|add_class:"form-select" }}
-                                            {% if form.category.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.category.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Тип оборудования -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.type_name.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-cpu me-1"></i>
-                                                {{ form.type_name.label }}
-                                            </label>
-                                            {{ form.type_name|add_class:"form-control" }}
-                                            {% if form.type_name.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.type_name.errors }}
-                                            </div>
-                                            {% endif %}
-                                            <div class="form-text small">
-                                                Например: Станок, Компьютер, Принтер, Сервер
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Производитель -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.manufacturer.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-building me-1"></i>
-                                                {{ form.manufacturer.label }}
-                                            </label>
-                                            {{ form.manufacturer|add_class:"form-control" }}
-                                            {% if form.manufacturer.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.manufacturer.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Модель -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.model.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-box me-1"></i>
-                                                {{ form.model.label }}
-                                            </label>
-                                            {{ form.model|add_class:"form-control" }}
-                                            {% if form.model.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.model.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Статус -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold required">
-                                                <i class="bi bi-activity me-1"></i>
-                                                {{ form.status.label }}
-                                            </label>
-                                            {{ form.status|add_class:"form-select" }}
-                                            {% if form.status.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.status.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Глобальное состояние -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.global_state.id_for_label }}" class="form-label fw-semibold required">
-                                                <i class="bi bi-globe2 me-1"></i>
-                                                {{ form.global_state.label }}
-                                            </label>
-                                            {{ form.global_state|add_class:"form-select" }}
-                                            {% if form.global_state.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.global_state.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold" for="{{ form.category.id_for_label }}">{{ form.category.label }} <span class="text-danger">*</span></label>
+                                {{ form.category|add_class:"form-select" }}
+                                {% if form.category.errors %}<div class="invalid-feedback d-block">{{ form.category.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.type_name.id_for_label }}">{{ form.type_name.label }}</label>
+                                {{ form.type_name|add_class:"form-control" }}
+                                {% if form.type_name.errors %}<div class="invalid-feedback d-block">{{ form.type_name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.manufacturer.id_for_label }}">{{ form.manufacturer.label }}</label>
+                                {{ form.manufacturer|add_class:"form-control" }}
+                                {% if form.manufacturer.errors %}<div class="invalid-feedback d-block">{{ form.manufacturer.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.model.id_for_label }}">{{ form.model.label }}</label>
+                                {{ form.model|add_class:"form-control" }}
+                                {% if form.model.errors %}<div class="invalid-feedback d-block">{{ form.model.errors }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- =====================================================
-                         3. ИДЕНТИФИКАЦИЯ И УЧЁТ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-upc-scan me-2 text-primary"></i>
-                                    Идентификация и учёт
-                                </h5>
+                <!-- Идентификация -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-upc-scan me-2 text-primary"></i>Идентификация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.serial_number.id_for_label }}">{{ form.serial_number.label }}</label>
+                                {{ form.serial_number|add_class:"form-control font-monospace" }}
+                                {% if form.serial_number.errors %}<div class="invalid-feedback d-block">{{ form.serial_number.errors }}</div>{% endif %}
+                                <div class="form-text small">{{ form.serial_number.help_text }}</div>
                             </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Серийный номер -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.serial_number.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-hash me-1"></i>
-                                                {{ form.serial_number.label }}
-                                            </label>
-                                            {{ form.serial_number|add_class:"form-control" }}
-                                            {% if form.serial_number.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.serial_number.errors }}
-                                            </div>
-                                            {% endif %}
-                                            <div class="form-text small">
-                                                Уникальный серийный номер от производителя
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Инвентарный номер -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.inventory_number.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-123 me-1"></i>
-                                                {{ form.inventory_number.label }}
-                                            </label>
-                                            {{ form.inventory_number|add_class:"form-control" }}
-                                            {% if form.inventory_number.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.inventory_number.errors }}
-                                            </div>
-                                            {% endif %}
-                                            <div class="form-text small">
-                                                Инвентарный номер в вашей системе
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.inventory_number.id_for_label }}">{{ form.inventory_number.label }}</label>
+                                {{ form.inventory_number|add_class:"form-control font-monospace" }}
+                                {% if form.inventory_number.errors %}<div class="invalid-feedback d-block">{{ form.inventory_number.errors }}</div>{% endif %}
+                                <div class="form-text small">{{ form.inventory_number.help_text }}</div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- =====================================================
-                         4. РАСПОЛОЖЕНИЕ И ОТВЕТСТВЕННОСТЬ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-geo-alt me-2 text-primary"></i>
-                                    Расположение и ответственность
-                                </h5>
+                <!-- Состояние и расположение -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-gear me-2 text-primary"></i>Состояние и расположение</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.status.id_for_label }}">{{ form.status.label }} <span class="text-danger">*</span></label>
+                                {{ form.status|add_class:"form-select" }}
+                                {% if form.status.errors %}<div class="invalid-feedback d-block">{{ form.status.errors }}</div>{% endif %}
                             </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Локация -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.location.id_for_label }}" class="form-label fw-semibold required">
-                                                <i class="bi bi-pin-map me-1"></i>
-                                                {{ form.location.label }}
-                                            </label>
-                                            {{ form.location|add_class:"form-select select2-field" }}
-                                            {% if form.location.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.location.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Ответственный -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.responsible.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-person me-1"></i>
-                                                {{ form.responsible.label }}
-                                            </label>
-                                            {{ form.responsible|add_class:"form-select select2-field" }}
-                                            {% if form.responsible.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.responsible.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.global_state.id_for_label }}">{{ form.global_state.label }} <span class="text-danger">*</span></label>
+                                {{ form.global_state|add_class:"form-select" }}
+                                {% if form.global_state.errors %}<div class="invalid-feedback d-block">{{ form.global_state.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.location.id_for_label }}">{{ form.location.label }} <span class="text-danger">*</span></label>
+                                {{ form.location|add_class:"form-select" }}
+                                {% if form.location.errors %}<div class="invalid-feedback d-block">{{ form.location.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.responsible.id_for_label }}">{{ form.responsible.label }}</label>
+                                {{ form.responsible|add_class:"form-select" }}
+                                {% if form.responsible.errors %}<div class="invalid-feedback d-block">{{ form.responsible.errors }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- =====================================================
-                         5. ЭКСПЛУАТАЦИЯ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-calendar-check me-2 text-primary"></i>
-                                    Эксплуатация
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Дата ввода в эксплуатацию -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.commissioning_date.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-plus me-1"></i>
-                                                {{ form.commissioning_date.label }}
-                                            </label>
-                                            <div class="input-group">
-                                                {{ form.commissioning_date|add_class:"form-control date-field" }}
-                                                <span class="input-group-text">
-                                                    <i class="bi bi-calendar3"></i>
-                                                </span>
-                                            </div>
-                                            {% if form.commissioning_date.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.commissioning_date.errors }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Гарантия до -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.warranty_until.id_for_label }}" class="form-label fw-semibold">
-                                                <i class="bi bi-shield-check me-1"></i>
-                                                {{ form.warranty_until.label }}
-                                            </label>
-                                            <div class="input-group">
-                                                {{ form.warranty_until|add_class:"form-control date-field" }}
-                                                <span class="input-group-text">
-                                                    <i class="bi bi-calendar3"></i>
-                                                </span>
-                                            </div>
-                                            {% if form.warranty_until.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.warranty_until.errors }}
-                                            </div>
-                                            {% endif %}
-                                            <div class="form-text small">
-                                                Оставьте пустым, если гарантия не предусмотрена
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Эксплуатация -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Эксплуатация</h5>
                     </div>
-
-                    <!-- =====================================================
-                         6. ОПИСАНИЕ
-                         ===================================================== -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-dark border-0">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-card-text me-2 text-primary"></i>
-                                    Описание и примечания
-                                </h5>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.commissioning_date.id_for_label }}">{{ form.commissioning_date.label }}</label>
+                                {{ form.commissioning_date|add_class:"form-control" }}
+                                {% if form.commissioning_date.errors %}<div class="invalid-feedback d-block">{{ form.commissioning_date.errors }}</div>{% endif %}
                             </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    {{ form.description|add_class:"form-control" }}
-                                    {% if form.description.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.description.errors }}
-                                    </div>
-                                    {% endif %}
-                                    <div class="form-text small">
-                                        Дополнительная информация, особенности эксплуатации, заметки
-                                    </div>
-                                </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="{{ form.warranty_until.id_for_label }}">{{ form.warranty_until.label }}</label>
+                                {{ form.warranty_until|add_class:"form-control" }}
+                                {% if form.warranty_until.errors %}<div class="invalid-feedback d-block">{{ form.warranty_until.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                                {{ form.description|add_class:"form-control" }}
+                                {% if form.description.errors %}<div class="invalid-feedback d-block">{{ form.description.errors }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Правая колонка: Фото и действия -->
+            <!-- ПРАВАЯ КОЛОНКА -->
             <div class="col-lg-4">
                 <div class="sticky-top" style="top: 20px;">
-                    <!-- =====================================================
-                         7. ФОТОГРАФИЯ
-                         ===================================================== -->
+                    <!-- Фото -->
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-dark border-0">
-                            <h5 class="mb-0">
-                                <i class="bi bi-camera me-2 text-primary"></i>
-                                Фотография оборудования
-                            </h5>
+                            <h5 class="mb-0"><i class="bi bi-image me-2 text-primary"></i>Фотография</h5>
                         </div>
                         <div class="card-body">
-                            <!-- Поле загрузки фото -->
-                            <div class="mb-3">
-                                <label for="{{ form.photo.id_for_label }}" class="form-label fw-semibold">
-                                    <i class="bi bi-upload me-1"></i>
-                                    {{ form.photo.label }}
-                                </label>
-
-                                <div class="input-group">
-                                    <input type="file"
-                                           name="{{ form.photo.name }}"
-                                           class="form-control"
-                                           id="{{ form.photo.id_for_label }}"
-                                           accept="image/*">
-                                    <button class="btn btn-outline-secondary" type="button" id="clearPhotoBtn">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                </div>
-
-                                {% if form.photo.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.photo.errors }}
-                                </div>
-                                {% endif %}
-
-                                <div class="form-text small">
-                                    Поддерживаемые форматы: JPG, PNG, GIF<br>
-                                    Максимальный размер: 5 MB
-                                </div>
-                            </div>
-
-                            <!-- Предпросмотр текущего фото -->
                             {% if not create and object.photo %}
-                            <div class="mb-3">
-                                <div class="text-center border rounded p-3">
-                                    <img src="{{ object.photo.url }}"
-                                         class="img-fluid rounded mb-2"
-                                         style="max-height: 180px; object-fit: contain;"
-                                         alt="Текущее фото {{ object.name }}"
-                                         id="currentPhotoPreview">
-                                    <div class="small text-muted">
-                                        Текущее фото оборудования
-                                    </div>
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger mt-2"
-                                            id="removePhotoBtn">
-                                        <i class="bi bi-trash me-1"></i>
-                                        Удалить фото
-                                    </button>
-                                </div>
+                            <div class="mb-3 text-center">
+                                <img src="{{ object.photo.url }}" class="img-fluid rounded mb-2" style="max-height: 200px;" alt="Текущее фото">
+                                <div class="text-muted small">Текущее фото</div>
                             </div>
                             {% endif %}
-
-                            <!-- Предпросмотр нового фото -->
-                            <div class="d-none" id="newPhotoPreviewContainer">
-                                <div class="text-center border rounded p-3">
-                                    <img src=""
-                                         class="img-fluid rounded mb-2"
-                                         style="max-height: 180px; object-fit: contain;"
-                                         alt="Новое фото"
-                                         id="newPhotoPreview">
-                                    <div class="small text-muted">
-                                        Предпросмотр нового фото
-                                    </div>
-                                </div>
-                            </div>
+                            <label class="form-label fw-semibold" for="{{ form.photo.id_for_label }}">{% if not create and object.photo %}Заменить фото{% else %}Загрузить фото{% endif %}</label>
+                            {{ form.photo|add_class:"form-control" }}
+                            {% if form.photo.errors %}<div class="invalid-feedback d-block">{{ form.photo.errors }}</div>{% endif %}
+                            <div class="form-text small">{{ form.photo.help_text }}</div>
                         </div>
                     </div>
 
-                    <!-- =====================================================
-                         8. ДЕЙСТВИЯ И КНОПКИ
-                         ===================================================== -->
+                    <!-- Кнопки -->
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-dark border-0">
-                            <h5 class="mb-0">
-                                <i class="bi bi-lightning me-2 text-primary"></i>
-                                Действия
-                            </h5>
-                        </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <!-- Основная кнопка сохранения -->
-                                <button type="submit"
-                                        class="btn btn-primary btn-lg d-flex align-items-center justify-content-center"
-                                        id="saveBtn">
-                                    <i class="bi bi-save me-2"></i>
-                                    {% if create %}Создать оборудование{% else %}Сохранить изменения{% endif %}
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-lg me-2"></i>{% if create %}Создать{% else %}Сохранить{% endif %}
                                 </button>
-
-                                <!-- Кнопка "Сохранить и добавить еще" -->
-                                {% if create %}
-                                <button type="button"
-                                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
-                                        id="saveAndAddAnotherBtn">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Сохранить и добавить еще
-                                </button>
-                                {% endif %}
-
-                                <!-- Кнопка отмены -->
-                                <a href="{% url 'assets:asset_list' %}"
-                                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-x-circle me-2"></i>
-                                    Отмена
+                                <a href="{% if create %}{% url 'assets:asset_list' %}{% else %}{% url 'assets:asset_detail' object.pk %}{% endif %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-lg me-2"></i>Отмена
                                 </a>
-
-                                <!-- Ссылка на просмотр (при редактировании) -->
-                                {% if not create %}
-                                <a href="{% url 'assets:asset_detail' object.pk %}"
-                                   class="btn btn-outline-info d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-eye me-2"></i>
-                                    Просмотр карточки
-                                </a>
-                                {% endif %}
-
-                                <!-- Кнопка удаления (при редактировании) -->
-                                {% if not create and perms.assets.delete_workstation %}
-                                <button type="button"
-                                        class="btn btn-outline-danger d-flex align-items-center justify-content-center"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal">
-                                    <i class="bi bi-trash me-2"></i>
-                                    Удалить оборудование
-                                </button>
-                                {% endif %}
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Индикатор прогресса -->
-                    <div class="mt-3" id="progressIndicator" style="display: none;">
-                        <div class="d-flex align-items-center">
-                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                <span class="visually-hidden">Загрузка...</span>
-                            </div>
-                            <span class="small text-muted">Сохранение данных...</span>
                         </div>
                     </div>
                 </div>
@@ -558,421 +196,4 @@
         </div>
     </form>
 </div>
-
-<!-- =====================================================
-     МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ
-     ===================================================== -->
-{% if not create and perms.assets.delete_workstation %}
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
-                    Удаление оборудования
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <p>Вы уверены, что хотите удалить оборудование <strong>"{{ object.name }}"</strong>?</p>
-                <div class="alert alert-warning small">
-                    <i class="bi bi-exclamation-circle me-1"></i>
-                    Это действие нельзя будет отменить. Все связанные данные (задачи, историю) также будут удалены.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                <form method="post" action="{% url 'assets:asset_delete' object.pk %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash me-1"></i>
-                        Удалить
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{% endblock %}
-
-{% block extra_css %}
-<style>
-/* Специфичные стили для формы */
-.form-control-lg {
-    font-weight: 500;
-}
-
-/* Стили для карточек с формами */
-.card {
-    border: 1px solid var(--bs-border-color);
-    transition: box-shadow 0.2s ease;
-}
-
-.card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-}
-
-.card-header.bg-light {
-    background-color: var(--bs-light-bg-subtle) !important;
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-/* Стили для обязательных полей */
-.form-label.required::after {
-    content: " *";
-    color: var(--bs-danger);
-    font-weight: 600;
-}
-
-/* Стили для полей с ошибками */
-.is-invalid {
-    border-color: var(--bs-danger) !important;
-}
-
-.invalid-feedback {
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
-}
-
-/* Стили для preview фотографий */
-#currentPhotoPreview,
-#newPhotoPreview {
-    transition: transform 0.2s ease;
-}
-
-#currentPhotoPreview:hover,
-#newPhotoPreview:hover {
-    transform: scale(1.02);
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .sticky-top {
-        position: static !important;
-    }
-
-    .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-    }
-}
-
-/* Стили для Select2 */
-.select2-container--bootstrap-5 .select2-selection {
-    min-height: 38px;
-    border: 1px solid var(--bs-border-color);
-    background-color: var(--bs-body-bg);
-}
-
-.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-    color: var(--bs-body-color);
-}
-
-.select2-container--bootstrap-5.select2-container--focus .select2-selection {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
-}
-
-/* Темная тема */
-[data-bs-theme="dark"] .card-header.bg-light {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-</style>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация Select2 для полей выбора
-    const select2Fields = document.querySelectorAll('.select2-field');
-    select2Fields.forEach(field => {
-        $(field).select2({
-            width: '100%',
-            placeholder: 'Выберите...',
-            allowClear: true,
-            theme: 'bootstrap-5',
-            dropdownParent: field.closest('.modal') || document.body
-        });
-    });
-
-    // Установка типа date для полей с датами
-    const dateFields = document.querySelectorAll('.date-field');
-    dateFields.forEach(field => {
-        field.type = 'date';
-    });
-
-    // Предпросмотр нового фото
-    const photoInput = document.getElementById('{{ form.photo.id_for_label }}');
-    const newPhotoPreview = document.getElementById('newPhotoPreview');
-    const newPhotoPreviewContainer = document.getElementById('newPhotoPreviewContainer');
-    const currentPhotoPreview = document.getElementById('currentPhotoPreview');
-    const removePhotoBtn = document.getElementById('removePhotoBtn');
-
-    if (photoInput) {
-        photoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    newPhotoPreview.src = e.target.result;
-                    newPhotoPreviewContainer.classList.remove('d-none');
-                }
-                reader.readAsDataURL(file);
-            } else {
-                newPhotoPreviewContainer.classList.add('d-none');
-            }
-        });
-    }
-
-    // Очистка поля фото
-    const clearPhotoBtn = document.getElementById('clearPhotoBtn');
-    if (clearPhotoBtn) {
-        clearPhotoBtn.addEventListener('click', function() {
-            if (photoInput) {
-                photoInput.value = '';
-                newPhotoPreviewContainer.classList.add('d-none');
-            }
-        });
-    }
-
-    // Удаление текущего фото
-    if (removePhotoBtn) {
-        removePhotoBtn.addEventListener('click', function() {
-            if (confirm('Удалить текущую фотографию оборудования?')) {
-                // Создаем скрытое поле для удаления фото
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = '{{ form.photo.name }}-clear';
-                hiddenInput.value = '1';
-                document.getElementById('workstationForm').appendChild(hiddenInput);
-
-                // Скрываем превью текущего фото
-                if (currentPhotoPreview) {
-                    currentPhotoPreview.style.display = 'none';
-                }
-                removePhotoBtn.style.display = 'none';
-            }
-        });
-    }
-
-    // Автоматический расчет даты гарантии (3 года от даты ввода)
-    const commissioningDateField = document.getElementById('{{ form.commissioning_date.id_for_label }}');
-    const warrantyDateField = document.getElementById('{{ form.warranty_until.id_for_label }}');
-
-    if (commissioningDateField && warrantyDateField) {
-        commissioningDateField.addEventListener('change', function() {
-            if (!this.value) return;
-
-            const commissioningDate = new Date(this.value);
-            const warrantyDate = new Date(commissioningDate);
-            warrantyDate.setFullYear(warrantyDate.getFullYear() + 3);
-
-            // Форматируем дату для input type="date"
-            const formattedDate = warrantyDate.toISOString().split('T')[0];
-
-            // Устанавливаем только если поле пустое
-            if (!warrantyDateField.value) {
-                warrantyDateField.value = formattedDate;
-            }
-        });
-    }
-
-    // Валидация дат
-    function validateDates() {
-        if (commissioningDateField && warrantyDateField &&
-            commissioningDateField.value && warrantyDateField.value) {
-
-            const commission = new Date(commissioningDateField.value);
-            const warranty = new Date(warrantyDateField.value);
-
-            if (warranty < commission) {
-                // Показываем ошибку под полем
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'invalid-feedback d-block';
-                errorDiv.textContent = 'Дата окончания гарантии не может быть раньше даты ввода в эксплуатацию';
-
-                // Убираем старую ошибку
-                const oldError = warrantyDateField.parentNode.querySelector('.invalid-feedback');
-                if (oldError) oldError.remove();
-
-                warrantyDateField.classList.add('is-invalid');
-                warrantyDateField.parentNode.appendChild(errorDiv);
-                return false;
-            }
-        }
-
-        // Убираем ошибки если все ок
-        if (warrantyDateField) {
-            warrantyDateField.classList.remove('is-invalid');
-            const errorDiv = warrantyDateField.parentNode.querySelector('.invalid-feedback');
-            if (errorDiv && errorDiv.textContent.includes('гарантии')) {
-                errorDiv.remove();
-            }
-        }
-        return true;
-    }
-
-    // Проверка обязательных полей
-    function validateRequiredFields() {
-        const requiredFields = [
-            '{{ form.name.id_for_label }}',
-            '{{ form.category.id_for_label }}',
-            '{{ form.status.id_for_label }}',
-            '{{ form.global_state.id_for_label }}',
-            '{{ form.type_name.id_for_label }}',
-            '{{ form.location.id_for_label }}'
-        ];
-
-        let isValid = true;
-
-        requiredFields.forEach(function(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (field && !field.value && field.offsetParent !== null) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else if (field) {
-                field.classList.remove('is-invalid');
-            }
-        });
-
-        return isValid;
-    }
-
-    // Показать/скрыть индикатор загрузки
-    function toggleLoading(show) {
-        const progressIndicator = document.getElementById('progressIndicator');
-        const saveBtn = document.getElementById('saveBtn');
-        const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
-
-        if (progressIndicator && saveBtn) {
-            if (show) {
-                progressIndicator.style.display = 'flex';
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Сохранение...';
-                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = true;
-            } else {
-                progressIndicator.style.display = 'none';
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>' +
-                    ({{ create|yesno:"true,false" }} ? 'Создать оборудование' : 'Сохранить изменения');
-                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = false;
-            }
-        }
-    }
-
-    // Обработка отправки формы
-    const form = document.getElementById('workstationForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!validateRequiredFields() || !validateDates()) {
-                e.preventDefault();
-
-                // Прокрутка к первой ошибке
-                const firstError = document.querySelector('.is-invalid');
-                if (firstError) {
-                    firstError.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                    firstError.focus();
-                }
-
-                return false;
-            }
-
-            toggleLoading(true);
-        });
-    }
-
-    // Кнопка "Сохранить и добавить еще"
-    const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
-    if (saveAndAddAnotherBtn) {
-        saveAndAddAnotherBtn.addEventListener('click', function() {
-            if (validateRequiredFields() && validateDates()) {
-                // Добавляем скрытое поле для редиректа
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'save_and_add';
-                hiddenInput.value = '1';
-                form.appendChild(hiddenInput);
-
-                toggleLoading(true);
-                form.submit();
-            }
-        });
-    }
-
-    // Очистка ошибок при вводе данных
-    document.querySelectorAll('input, select, textarea').forEach(field => {
-        field.addEventListener('input', function() {
-            if (this.value.trim()) {
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        field.addEventListener('change', function() {
-            this.classList.remove('is-invalid');
-        });
-    });
-
-    // Валидация дат при изменении
-    if (warrantyDateField) {
-        warrantyDateField.addEventListener('change', validateDates);
-    }
-    if (commissioningDateField) {
-        commissioningDateField.addEventListener('change', validateDates);
-    }
-
-    // Сброс индикатора загрузки при ошибке валидации на сервере
-    // (на случай если форма не была отправлена)
-    window.addEventListener('pageshow', function() {
-        toggleLoading(false);
-    });
-
-    // Убираем навязчивое поведение с предупреждением о несохраненных данных
-    // Только для десктопных браузеров и только при реальных изменениях
-    if (!{{ create|yesno:"true,false" }}) {
-        let initialFormData = new FormData(form);
-        let hasUnsavedChanges = false;
-
-        // Отслеживаем реальные изменения, а не каждый ввод
-        let changeTimeout;
-        form.addEventListener('change', function() {
-            clearTimeout(changeTimeout);
-            changeTimeout = setTimeout(() => {
-                const currentFormData = new FormData(form);
-                let changed = false;
-
-                // Простая проверка - сравниваем основные поля
-                for (let [key, value] of initialFormData.entries()) {
-                    const currentValue = currentFormData.get(key);
-                    if (String(value) !== String(currentValue)) {
-                        changed = true;
-                        break;
-                    }
-                }
-
-                hasUnsavedChanges = changed;
-            }, 500);
-        });
-
-        // Только при реальной попытке уйти
-        window.addEventListener('beforeunload', function(e) {
-            if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
-                return '';
-            }
-        });
-    }
-
-    // Инициализация тултипов (если есть)
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    if (tooltipTriggerList.length > 0) {
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-    }
-});
-</script>
 {% endblock %}

@@ -1,277 +1,262 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}{{ workstation.name }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-10 col-lg-11">
+<div class="container-fluid py-3">
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb small mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'assets:asset_list' %}" class="text-decoration-none">Оборудование</a></li>
+                    <li class="breadcrumb-item active">{{ workstation.name|truncatechars:40 }}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-1 d-flex align-items-center flex-wrap">
+                <i class="bi bi-cpu me-2 text-primary"></i>
+                {{ workstation.name }}
+                <span class="badge bg-light text-dark border ms-2">{{ workstation.get_status_display }}</span>
+            </h1>
+            <div class="text-muted small">
+                {{ workstation.get_category_display }} · ID: #{{ workstation.pk }}
+                {% if workstation.inventory_number %}· Инв. № {{ workstation.inventory_number }}{% endif %}
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary" href="{% url 'assets:asset_list' %}"><i class="bi bi-arrow-left me-1"></i>Назад</a>
+            {% if perms.assets.change_workstation %}<a class="btn btn-outline-primary" href="{% url 'assets:asset_edit' workstation.pk %}"><i class="bi bi-pencil me-1"></i>Редактировать</a>{% endif %}
+            {% if perms.assets.delete_workstation %}
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'assets:asset_delete' workstation.pk %}" data-delete-name="{{ workstation.name }}">
+                <i class="bi bi-trash me-1"></i>Удалить
+            </button>
+            {% endif %}
+        </div>
+    </div>
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-
-                <!-- =====================================================
-                     HEADER
-                     ===================================================== -->
-                <div class="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h1 class="h4 mb-1">{{ workstation.name }}</h1>
-                        <div class="text-muted small">
-                            Оборудование · карточка
-                            <span class="ms-3">
-                                Создано: {{ workstation.created_at|date:"d.m.Y" }}
-                            </span>
+    <div class="row">
+        <!-- ЛЕВАЯ КОЛОНКА -->
+        <div class="col-lg-8">
+            <!-- Основная информация -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Категория</div>
+                            <div class="fw-semibold">{{ workstation.get_category_display }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Тип</div>
+                            <div class="fw-semibold">{{ workstation.type_name|default:"—" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Производитель</div>
+                            <div class="fw-semibold">{{ workstation.manufacturer|default:"—" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Модель</div>
+                            <div class="fw-semibold">{{ workstation.model|default:"—" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Серийный номер</div>
+                            <div class="fw-semibold font-monospace">{{ workstation.serial_number|default:"—" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Инвентарный номер</div>
+                            <div class="fw-semibold font-monospace">{{ workstation.inventory_number|default:"—" }}</div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="d-flex gap-2">
-                        <a class="btn btn-outline-secondary"
-                           href="{% url 'assets:asset_list' %}">
-                            ← Назад
-                        </a>
+            <!-- Состояние и расположение -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2 text-primary"></i>Состояние и расположение</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Статус</div>
+                            <div class="fw-semibold">
+                                <span class="badge bg-light text-dark border">{{ workstation.get_status_display }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Глобальное состояние</div>
+                            <div class="fw-semibold">
+                                {% if workstation.global_state == 'active' %}
+                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">{{ workstation.get_global_state_display }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis border">{{ workstation.get_global_state_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Локация</div>
+                            <div class="fw-semibold">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                {% if workstation.location %}
+                                <a href="{% url 'locations:location_detail' workstation.location.pk %}" class="text-decoration-none">{{ workstation.location.name }}</a>
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Ответственный</div>
+                            <div class="fw-semibold">
+                                {% if workstation.responsible %}
+                                <i class="bi bi-person me-1"></i>
+                                <a href="{% url 'hr:hr_detail' workstation.responsible.pk %}" class="text-decoration-none">{{ workstation.responsible.name }}</a>
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Эксплуатация -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Эксплуатация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Дата ввода в эксплуатацию</div>
+                            <div class="fw-semibold">{{ workstation.commissioning_date|date:"d.m.Y"|default:"—" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Возраст</div>
+                            <div class="fw-semibold">{% if workstation.age_in_years %}{{ workstation.age_in_years }} лет{% else %}—{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Гарантия до</div>
+                            <div class="fw-semibold">{{ workstation.warranty_until|date:"d.m.Y"|default:"—" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Статус гарантии</div>
+                            <div class="fw-semibold">
+                                {% if workstation.warranty_until %}
+                                    {% if workstation.is_under_warranty %}
+                                    <span class="text-success"><i class="bi bi-shield-check me-1"></i>На гарантии</span>
+                                    {% else %}
+                                    <span class="text-muted"><i class="bi bi-shield-x me-1"></i>Гарантия истекла</span>
+                                    {% endif %}
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if workstation.description %}
+                    <hr>
+                    <div class="text-muted small mb-1">Описание</div>
+                    <div>{{ workstation.description|linebreaks }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- История изменений -->
+            {% if history %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>История изменений</h5>
+                    <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#historyCollapse">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="collapse" id="historyCollapse">
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for h in history %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold small">{{ h.history_change_reason|default:"Изменение данных" }}</div>
+                                        <div class="text-muted small"><i class="bi bi-person me-1"></i>{{ h.history_user|default:"Система" }}</div>
+                                    </div>
+                                    <div class="text-muted small">{{ h.history_date|date:"d.m.Y H:i" }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА -->
+        <div class="col-lg-4">
+            <!-- Фото -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-image me-2 text-primary"></i>Фотография</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if workstation.photo %}
+                    <img src="{{ workstation.photo.url }}" class="img-fluid rounded" alt="{{ workstation.name }}" style="max-height: 300px;">
+                    {% else %}
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center py-5">
+                        <div class="text-center text-muted">
+                            <i class="bi bi-camera" style="font-size: 3rem;"></i>
+                            <div class="mt-2">Фото не загружено</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2 text-primary"></i>Действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
                         {% if perms.assets.change_workstation %}
-                        <a class="btn btn-primary"
-                           href="{% url 'assets:asset_edit' workstation.pk %}">
-                            Редактировать
+                        <a href="{% url 'assets:asset_edit' workstation.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>Редактировать
                         </a>
                         {% endif %}
-
+                        {% if perms.maintenance.add_workorder %}
+                        <a href="{% url 'maintenance:wo_new' %}?workstation={{ workstation.pk }}" class="btn btn-outline-success">
+                            <i class="bi bi-clipboard-plus me-2"></i>Создать заявку
+                        </a>
+                        {% endif %}
                         {% if perms.assets.delete_workstation %}
-                        <button class="btn btn-outline-danger"
-                                data-bs-toggle="modal"
-                                data-bs-target="#deleteModal">
-                            Удалить
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'assets:asset_delete' workstation.pk %}" data-delete-name="{{ workstation.name }}">
+                            <i class="bi bi-trash me-2"></i>Удалить
                         </button>
                         {% endif %}
                     </div>
                 </div>
+            </div>
 
-                <!-- =====================================================
-                     ОСНОВНЫЕ ХАРАКТЕРИСТИКИ
-                     ===================================================== -->
-                <div class="mb-4">
-                    <div class="section-header">Основные характеристики</div>
-
-                    <div class="detail-grid">
-
-                        <div class="detail-item">
-                            <div class="detail-label">Статус</div>
-                            <div class="detail-value">
-                                {% with s=workstation.status %}
-                                    {% if s == "prod" %}
-                                        <span class="badge bg-success status-badge">{{ workstation.get_status_display }}</span>
-                                    {% elif s == "problem" %}
-                                        <span class="badge bg-danger status-badge">{{ workstation.get_status_display }}</span>
-                                    {% elif s == "maint" %}
-                                        <span class="badge bg-warning text-dark status-badge">{{ workstation.get_status_display }}</span>
-                                    {% elif s == "setup" %}
-                                        <span class="badge bg-info status-badge">{{ workstation.get_status_display }}</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary status-badge">{{ workstation.get_status_display }}</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </div>
-                        </div>
-
-                        <div class="detail-item">
-                            <div class="detail-label">Категория</div>
-                            <div class="detail-value">
-                                {{ workstation.get_category_display }}
-                            </div>
-                        </div>
-
-                        <div class="detail-item">
-                            <div class="detail-label">Производитель</div>
-                            <div class="detail-value">
-                                {{ workstation.manufacturer|default:"—" }}
-                            </div>
-                        </div>
-
-                        <div class="detail-item">
-                            <div class="detail-label">Серийный номер</div>
-                            <div class="detail-value">
-                                {{ workstation.serial_number|default:"—" }}
-                            </div>
-                        </div>
-
+            <!-- Метаданные -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Метаданные</h5>
+                </div>
+                <div class="card-body">
+                    {% include "components/metadata_list.html" with object=workstation show_id=True %}
+                    {% if workstation.created_by %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-0">
+                        <span class="text-muted small">Создал</span>
+                        <span class="fw-semibold small">{{ workstation.created_by.username }}</span>
                     </div>
+                    {% endif %}
                 </div>
-
-                <!-- =====================================================
-                     ФОТО
-                     ===================================================== -->
-                {% if workstation.photo %}
-                <div class="mb-4">
-                    <div class="section-header">Фотография</div>
-
-                    <img src="{{ workstation.photo.url }}"
-                         class="asset-photo-thumb"
-                         data-bs-toggle="modal"
-                         data-bs-target="#photoModal">
-                </div>
-                {% endif %}
-
-            </div>
-
-            <div class="card-footer text-muted small d-flex justify-content-between">
-                <span>ID: {{ workstation.id }}</span>
-                <span>Дата последнего обновления: {{ workstation.updated_at|date:"d.m.Y H:i" }}</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- =====================================================
-     МОДАЛКА ФОТО
-     ===================================================== -->
-{% if workstation.photo %}
-<div class="modal fade" id="photoModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <img src="{{ workstation.photo.url }}" class="img-fluid rounded">
-        </div>
-    </div>
-</div>
-{% endif %}
+{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить оборудование?" %}
+{% endblock %}
 
-<!-- =====================================================
-     МОДАЛКА УДАЛЕНИЯ
-     ===================================================== -->
-{% if perms.assets.delete_workstation %}
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form method="post"
-              action="{% url 'assets:asset_delete' workstation.pk %}"
-              class="modal-content">
-            {% csrf_token %}
-            <div class="modal-header">
-                <h5 class="modal-title">Удаление оборудования</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                Вы уверены, что хотите удалить <strong>{{ workstation.name }}</strong>?
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    Отмена
-                </button>
-                <button class="btn btn-danger">
-                    Удалить
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
-
-<!-- =====================================================
-     STYLES
-     ===================================================== -->
-<style>
-.section-header {
-    font-weight: 600;
-    border-bottom: 2px solid var(--bs-primary);
-    margin-bottom: 1rem;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-}
-
-.detail-label {
-    font-size: .85rem;
-    color: var(--bs-secondary);
-}
-
-.detail-value {
-    font-weight: 500;
-}
-
-.asset-photo-thumb {
-    max-width: 240px;
-    cursor: zoom-in;
-    border: 1px solid var(--bs-border-color);
-    border-radius: .5rem;
-}
-
-.status-badge {
-    cursor: pointer;
-}
-</style>
-
-<!-- =====================================================
-     SCRIPT
-     ===================================================== -->
-<script>
-const CAN_CHANGE_STATUS = {{ perms.assets.change_workstation|yesno:"true,false" }};
-const WORKSTATION_ID = {{ workstation.id }};
-
-document.addEventListener('DOMContentLoaded', () => {
-    const badge = document.querySelector('.status-badge');
-    if (!badge || !CAN_CHANGE_STATUS) return;
-
-    badge.title = 'Нажмите для изменения статуса';
-
-    badge.addEventListener('click', () => {
-        fetch(`{% url "assets:ajax_get_status" %}?id=${WORKSTATION_ID}`)
-            .then(r => r.json())
-            .then(data => {
-                if (!data.ok) return;
-
-                showStatusModal(data);
-            });
-    });
-});
-
-function showStatusModal(data) {
-    const html = `
-    <div class="modal fade" id="statusModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Изменение статуса</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <select class="form-select" id="newStatus">
-              ${Object.entries(data.choices).map(
-                ([v,l]) => `<option value="${v}" ${v===data.current?'selected':''}>${l}</option>`
-              ).join('')}
-            </select>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-            <button class="btn btn-primary" id="saveStatus">Сохранить</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-
-    document.body.insertAdjacentHTML('beforeend', html);
-    const modalEl = document.getElementById('statusModal');
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-
-    document.getElementById('saveStatus').onclick = () => {
-        fetch('{% url "assets:ajax_update_status" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: `id=${WORKSTATION_ID}&status=${document.getElementById('newStatus').value}`
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.ok) location.reload();
-            else alert(res.error || 'Ошибка');
-        });
-    };
-
-    modalEl.addEventListener('hidden.bs.modal', () => modalEl.remove());
-}
-</script>
-
+{% block extra_js %}
+{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
 {% endblock %}

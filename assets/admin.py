@@ -1,98 +1,127 @@
+"""
+assets/admin.py
+
+Рефакторинг с использованием базовых классов из core.admin_base.
+"""
+
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from simple_history.admin import SimpleHistoryAdmin
+from django.utils import timezone
+
+from core.admin_base import BaseModelAdmin
 from .models import Workstation
 
 
 @admin.register(Workstation)
-class WorkstationAdmin(SimpleHistoryAdmin):
-    # ОСНОВНЫЕ НАСТРОЙКИ
+class WorkstationAdmin(BaseModelAdmin):
+    """Админка оборудования."""
+
+    # =========================
+    # LIST
+    # =========================
     list_display = [
         'name',
         'category_display',
         'status_display',
+        'global_state_display',
         'get_location_name',
         'get_responsible_name',
         'get_warranty_status',
+        'last_change',
     ]
 
     list_filter = ['category', 'status', 'global_state', 'location']
+    search_fields = ['name', 'inventory_number', 'serial_number', 'type_name', 'model', 'manufacturer']
+    ordering = ['name']
 
-    search_fields = ['name', 'inventory_number', 'serial_number', 'type_name']
+    # Оптимизация запросов
+    select_related_fields = ['location', 'responsible', 'created_by']
 
-    # ФОРМА
+    # =========================
+    # FORM
+    # =========================
     fieldsets = [
-        ('Основная информация', {
+        (_('Основная информация'), {
             'fields': ['name', 'category', 'type_name', 'photo']
         }),
-        ('Детали', {
+        (_('Детали'), {
             'fields': ['manufacturer', 'model', 'serial_number', 'inventory_number']
         }),
-        ('Состояние', {
+        (_('Состояние'), {
             'fields': ['global_state', 'status', 'location', 'responsible']
         }),
-        ('Эксплуатация', {
+        (_('Эксплуатация'), {
             'fields': ['commissioning_date', 'warranty_until', 'description']
+        }),
+        (_('Системная информация'), {
+            'fields': ['created_by', 'created_at', 'updated_at'],
+            'classes': ['collapse'],
         }),
     ]
 
     readonly_fields = ['created_at', 'updated_at', 'created_by']
 
-    # ПРОСТЫЕ МЕТОДЫ ДЛЯ ОТОБРАЖЕНИЯ
-
-    @admin.display(description='Категория')
+    # =========================
+    # CUSTOM COLUMNS
+    # =========================
+    @admin.display(description=_('Категория'))
     def category_display(self, obj):
         return obj.get_category_display()
 
-    @admin.display(description='Статус')
+    @admin.display(description=_('Статус'))
     def status_display(self, obj):
-        return obj.get_status_display()
+        colors = {
+            'prod': 'green',
+            'maint': 'orange',
+            'repair': 'red',
+            'idle': 'gray',
+            'decommissioned': 'darkgray',
+        }
+        color = colors.get(obj.status, 'black')
+        return format_html('<span style="color: {};">{}</span>', color, obj.get_status_display())
 
+    @admin.display(description=_('Состояние'))
+    def global_state_display(self, obj):
+        colors = {
+            'active': 'green',
+            'archived': 'gray',
+        }
+        color = colors.get(obj.global_state, 'black')
+        return format_html('<span style="color: {};">{}</span>', color, obj.get_global_state_display())
+
+    @admin.display(description=_('Локация'), ordering='location__name')
     def get_location_name(self, obj):
-        return obj.location.name if obj.location else '-'
+        return obj.location.name if obj.location else '—'
 
-    get_location_name.short_description = 'Локация'
-    get_location_name.admin_order_field = 'location__name'
-
+    @admin.display(description=_('Ответственный'))
     def get_responsible_name(self, obj):
-        return str(obj.responsible) if obj.responsible else '-'
+        return str(obj.responsible) if obj.responsible else '—'
 
-    get_responsible_name.short_description = 'Ответственный'
-
+    @admin.display(description=_('Гарантия'))
     def get_warranty_status(self, obj):
         if not obj.warranty_until:
-            return 'Нет данных'
+            return format_html('<span class="text-muted">—</span>')
 
-        from django.utils import timezone
         today = timezone.now().date()
-
         if obj.warranty_until >= today:
             days = (obj.warranty_until - today).days
-            return f'Действует ({days} дн.)'
+            return format_html(
+                '<span style="color: green;">✓ {} дн.</span>',
+                days
+            )
         else:
-            return 'Истекла'
+            return format_html('<span style="color: red;">✗ Истекла</span>')
 
-    get_warranty_status.short_description = 'Гарантия'
+    # =========================
+    # SAVE (AUDIT)
+    # =========================
+    def save_model(self, request, obj, form, change):
+        """Сохранение с аудитом."""
+        if not change:
+            obj.created_by = request.user
 
-    # ПРОСТЫЕ ACTIONS
-    actions = ['mark_as_archived_action', 'mark_as_active_action']
-
-    def mark_as_archived_action(self, request, queryset):
-        from .models import WorkstationGlobalState, WorkstationStatus
-        queryset.update(
-            global_state=WorkstationGlobalState.ARCHIVED,
-            status=WorkstationStatus.DECOMMISSIONED
-        )
-        self.message_user(request, f'{queryset.count()} объектов перемещено в архив')
-
-    mark_as_archived_action.short_description = 'Переместить в архив'
-
-    def mark_as_active_action(self, request, queryset):
-        from .models import WorkstationGlobalState, WorkstationStatus
-        queryset.update(
-            global_state=WorkstationGlobalState.ACTIVE,
-            status=WorkstationStatus.PROD
-        )
-        self.message_user(request, f'{queryset.count()} объектов активировано')
-
-    mark_as_active_action.short_description = 'Активировать'
+        action = "изменение" if change else "создание"
+        obj._change_reason = f"admin: {action} оборудования"
+        obj._history_user = request.user
+        super().save_model(request, obj, form, change)
