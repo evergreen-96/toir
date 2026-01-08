@@ -1,596 +1,323 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ object.name }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-8 col-lg-9">
+<div class="container-fluid py-3">
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb small mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'maintenance:wo_list' %}" class="text-decoration-none">Заявки</a></li>
+                    <li class="breadcrumb-item active">#{{ object.pk }}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-1 d-flex align-items-center flex-wrap">
+                <i class="bi bi-clipboard-check me-2 text-primary"></i>
+                {{ object.name|truncatechars:50 }}
+            </h1>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <span class="badge bg-{{ object.status }}-subtle text-{{ object.status }}-emphasis border fs-6">{{ object.get_status_display }}</span>
+                {% include "components/priority_badge.html" with priority=object.priority %}
+                <span class="badge bg-light text-dark border">{{ object.get_category_display }}</span>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary" href="{% url 'maintenance:wo_list' %}"><i class="bi bi-arrow-left me-1"></i>Назад</a>
+            <a class="btn btn-outline-primary" href="{% url 'maintenance:wo_edit' object.pk %}"><i class="bi bi-pencil me-1"></i>Редактировать</a>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'maintenance:wo_delete' object.pk %}" data-delete-name="{{ object.name }}">
+                <i class="bi bi-trash me-1"></i>Удалить
+            </button>
+        </div>
+    </div>
 
-        <!-- Основная карточка -->
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-
-                <!-- =====================================================
-                     ШАПКА: Название, статус и кнопки действий
-                     ===================================================== -->
-                <div class="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                            {{ object.name }}
-
-                            <!-- Бейдж статуса -->
-                            <span class="badge
-                                {% if object.status == 'new' %}bg-secondary{% endif %}
-                                {% if object.status == 'in_progress' %}bg-primary{% endif %}
-                                {% if object.status == 'done' %}bg-success{% endif %}
-                                {% if object.status == 'failed' %}bg-warning text-dark{% endif %}
-                                {% if object.status == 'canceled' %}bg-danger{% endif %}
-                            ">
-                                {{ object.get_status_display }}
-                            </span>
-                        </h1>
-
-                        <div class="text-muted small">
-                            Задача обслуживания · детали и материалы
-                        </div>
-                    </div>
-
-                    <!-- Кнопки действий -->
-                    <div class="btn-group">
-                        <a class="btn btn-outline-secondary"
-                           href="{% url 'maintenance:wo_list' %}">
-                            ← К списку
-                        </a>
-                        <a class="btn btn-outline-primary"
-                           href="{% url 'maintenance:wo_edit' object.pk %}">
-                            Редактировать
-                        </a>
-                        <button type="button"
-                                class="btn btn-outline-danger"
-                                data-confirm-delete
-                                data-delete-url="{% url 'maintenance:wo_delete' object.pk %}"
-                                data-delete-name="«{{ object.name }}»"
-                                data-redirect-url="{% url 'maintenance:wo_list' %}">
-                            Удалить
-                        </button>
-                    </div>
+    <div class="row">
+        <!-- ЛЕВАЯ КОЛОНКА -->
+        <div class="col-lg-8">
+            <!-- Смена статуса -->
+            {% if allowed_transitions %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-arrow-right-circle me-2 text-primary"></i>Изменить статус</h5>
                 </div>
-
-                <!-- =====================================================
-                     A. УПРАВЛЕНИЕ СТАТУСОМ (если есть доступные переходы)
-                     ===================================================== -->
-                {% if allowed_transitions %}
-                <div class="form-section mb-4">
-                    <div class="form-section-header">
-                        Управление статусом
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
                         {% for next_status, label in allowed_transitions.items %}
-                        <form method="post"
-                              action="{% url 'maintenance:wo_set_status' object.pk next_status %}">
+                        <form method="post" action="{% url 'maintenance:wo_set_status' object.pk next_status %}" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit"
-                                    class="btn btn-sm
-                                        {% if next_status == 'in_progress' %}btn-outline-primary{% endif %}
-                                        {% if next_status == 'done' %}btn-outline-success{% endif %}
-                                        {% if next_status == 'failed' %}btn-outline-warning{% endif %}
-                                        {% if next_status == 'canceled' %}btn-outline-danger{% endif %}
-                                    ">
-                                {{ label }}
+                            <button type="submit" class="btn {% if next_status == 'in_progress' %}btn-outline-primary{% elif next_status == 'done' %}btn-outline-success{% elif next_status == 'failed' %}btn-outline-warning{% else %}btn-outline-danger{% endif %}">
+                                <i class="bi bi-arrow-right me-1"></i>{{ label }}
                             </button>
                         </form>
                         {% endfor %}
                     </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                <!-- =====================================================
-                     B. КОНТЕКСТ ВЫПОЛНЕНИЯ
-                     ===================================================== -->
-                <div class="form-section mb-4">
-                    <div class="form-section-header">
-                        Контекст выполнения
-                    </div>
-
-                    <div class="row g-3">
-                        <!-- Локация -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Локация</div>
+            <!-- Основная информация -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Оборудование</div>
+                            <div class="fw-semibold">
+                                {% if object.workstation %}
+                                <a href="{% url 'assets:asset_detail' object.workstation.pk %}" class="text-decoration-none">
+                                    <i class="bi bi-cpu me-1"></i>{{ object.workstation.name }}
+                                </a>
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Локация</div>
                             <div class="fw-semibold">
                                 {% if object.location %}
-                                <a href="{% url 'locations:location_detail' object.location.pk %}">
-                                    {{ object.location }}
-                                </a>
-                                {% else %}
-                                —
-                                {% endif %}
+                                <i class="bi bi-geo-alt me-1"></i>{{ object.location.name }}
+                                {% else %}—{% endif %}
                             </div>
                         </div>
-
-                        <!-- Оборудование -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Оборудование</div>
-                            {% if object.workstation %}
-                            <div class="fw-semibold mb-1">
-                                <a href="{% url 'assets:asset_detail' object.workstation.pk %}">
-                                    {{ object.workstation }}
-                                </a>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span class="badge bg-secondary" id="ws-status-label">
-                                    {{ object.workstation.get_status_display }}
-                                </span>
-                                {% if request.user.is_staff %}
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-secondary"
-                                        id="ws-status-open-btn"
-                                        title="Изменить статус оборудования">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                            <div class="small text-muted mt-1 d-none" id="ws-status-hint">
-                                Статус оборудования обновлён
-                            </div>
-                            {% else %}
-                            —
-                            {% endif %}
-                        </div>
-
-                        <!-- Ответственный -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Ответственный</div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Ответственный</div>
                             <div class="fw-semibold">
                                 {% if object.responsible %}
-                                <a href="{% url 'hr:hr_detail' object.responsible.pk %}">
-                                    {{ object.responsible }}
+                                <a href="{% url 'hr:hr_detail' object.responsible.pk %}" class="text-decoration-none">
+                                    <i class="bi bi-person me-1"></i>{{ object.responsible.name }}
                                 </a>
-                                {% else %}
-                                —
-                                {% endif %}
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Создано из плана</div>
+                            <div class="fw-semibold">
+                                {% if object.created_from_plan %}
+                                <a href="{% url 'maintenance:plan_detail' object.created_from_plan.pk %}" class="text-decoration-none">
+                                    <i class="bi bi-calendar-check me-1"></i>{{ object.created_from_plan.name }}
+                                </a>
+                                {% else %}—{% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- =====================================================
-                     C. ПАРАМЕТРЫ ЗАДАЧИ
-                     ===================================================== -->
-                <div class="form-section mb-4">
-                    <div class="form-section-header">
-                        Параметры задачи
-                    </div>
-
-                    <div class="row g-3">
-                        <!-- Приоритет -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Приоритет</div>
-                            <span class="badge
-                                {% if object.priority == 'low' %}bg-success{% endif %}
-                                {% if object.priority == 'medium' %}bg-warning text-dark{% endif %}
-                                {% if object.priority == 'high' %}bg-danger{% endif %}
-                            ">
-                                {{ object.get_priority_display }}
-                            </span>
+            <!-- Время и трудозатраты -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-clock me-2 text-primary"></i>Время и трудозатраты</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="text-muted small mb-1">Дата начала</div>
+                            <div class="fw-semibold">{{ object.date_start|date:"d.m.Y"|default:"—" }}</div>
                         </div>
-
-                        <!-- Категория -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Категория</div>
-                            <span class="badge
-                                {% if object.category == 'inspection' %}bg-secondary{% endif %}
-                                {% if object.category == 'pm' %}bg-info text-dark{% endif %}
-                                {% if object.category == 'repair_minor' %}bg-warning text-dark{% endif %}
-                                {% if object.category == 'repair_major' %}bg-primary{% endif %}
-                                {% if object.category == 'emergency' %}bg-danger{% endif %}
-                            ">
-                                {{ object.get_category_display }}
-                            </span>
+                        <div class="col-md-3">
+                            <div class="text-muted small mb-1">Дата окончания</div>
+                            <div class="fw-semibold">{{ object.date_finish|date:"d.m.Y"|default:"—" }}</div>
                         </div>
-
-                        <!-- Трудоёмкость -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Трудоёмкость (план / факт), ч</div>
-                            {% if object.labor_fact_hours > object.labor_plan_hours %}
-                            <div class="fw-semibold text-danger">
-                                {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}
-                                <small>(превышение)</small>
-                            </div>
-                            {% else %}
-                            <div class="fw-semibold">
-                                {{ object.labor_plan_hours }} / {{ object.labor_fact_hours }}
-                            </div>
-                            {% endif %}
+                        <div class="col-md-3">
+                            <div class="text-muted small mb-1">План (часы)</div>
+                            <div class="fw-semibold">{{ object.labor_plan_hours|default:"—" }}</div>
                         </div>
-
-                        <!-- Дата начала -->
-                        <div class="col-md-6">
-                            <div class="text-muted small">Дата начала</div>
-                            <div class="fw-semibold">
-                                {{ object.date_start|default:"—" }}
-                            </div>
-                        </div>
-
-                        <!-- Дата окончания -->
-                        <div class="col-md-6">
-                            <div class="text-muted small">Дата окончания</div>
-                            <div class="fw-semibold">
-                                {{ object.date_finish|default:"—" }}
-                            </div>
+                        <div class="col-md-3">
+                            <div class="text-muted small mb-1">Факт (часы)</div>
+                            <div class="fw-semibold">{{ object.labor_fact_hours|default:"—" }}</div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- =====================================================
-                     D. ОПИСАНИЕ И ВЛОЖЕНИЯ
-                     ===================================================== -->
-                {% if object.description or object.attachments.exists %}
-                <div class="form-section mb-4">
-                    <div class="form-section-header">
-                        Описание и вложения
-                    </div>
+            <!-- Описание -->
+            {% if object.description %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-text-paragraph me-2 text-primary"></i>Описание</h5>
+                </div>
+                <div class="card-body">{{ object.description|linebreaks }}</div>
+            </div>
+            {% endif %}
 
-                    {% if object.description %}
-                    <div class="mb-4">
-                        {{ object.description|linebreaks }}
-                    </div>
-                    {% endif %}
-
-                    {% if object.attachments.exists %}
+            <!-- Материалы -->
+            {% if materials %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-box-seam me-2 text-primary"></i>Материалы</h5>
+                    <span class="badge bg-primary-subtle text-primary-emphasis border">{{ materials.count }}</span>
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-sm align-middle attachments-table">
+                        <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width:56px;"></th>
-                                    <th>Файл</th>
-                                    <th style="width:120px;" class="text-end"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for att in object.attachments.all %}
-                                {% with fname=att.file.file.name|lower %}
-                                <tr>
-                                    <!-- Иконка/превью -->
-                                    <td>
-                                        {% if ".jpg" in fname or ".jpeg" in fname or ".png" in fname or ".webp" in fname or ".gif" in fname %}
-                                        <img src="{{ att.file.file.url }}"
-                                             alt="{{ att.file.file.name|cut:'workorders/' }}"
-                                             class="attachment-table-thumb attachment-thumb-zoom"
-                                             loading="lazy"
-                                             data-bs-toggle="modal"
-                                             data-bs-target="#attachmentImageModal"
-                                             data-image="{{ att.file.file.url }}"
-                                             data-title="{{ att.file.file.name|cut:'workorders/' }}">
-                                        {% else %}
-                                        <div class="attachment-icon">
-                                            {% if ".pdf" in fname %}
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            {% elif ".xls" in fname or ".xlsx" in fname %}
-                                            <i class="bi bi-file-earmark-excel"></i>
-                                            {% elif ".doc" in fname or ".docx" in fname %}
-                                            <i class="bi bi-file-earmark-word"></i>
-                                            {% else %}
-                                            <i class="bi bi-file-earmark"></i>
-                                            {% endif %}
-                                        </div>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Имя файла -->
-                                    <td>
-                                        {{ att.file.file.name|cut:"workorders/" }}
-                                    </td>
-
-                                    <!-- Кнопка скачивания -->
-                                    <td class="text-end">
-                                        <a href="{{ att.file.file.url }}"
-                                           download
-                                           class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-download"></i>
-                                            Скачать
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endwith %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- =====================================================
-                     E. МАТЕРИАЛЫ
-                     ===================================================== -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        Материалы
-                    </div>
-
-                    {% if object.materials.exists %}
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle materials-table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width:56px;"></th>
                                     <th>Материал</th>
-                                    <th class="text-end">План</th>
-                                    <th class="text-end">Факт</th>
-                                    <th style="width:40px;"></th>
+                                    <th class="text-center">План</th>
+                                    <th class="text-center">Факт</th>
+                                    <th>Ед. изм.</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for m in object.materials.all %}
-                                <tr class="{% if m.qty_used > m.qty_planned %}table-danger-subtle{% endif %}">
-                                    <!-- Превью материала -->
-                                    <td>
-                                        {% if m.material.image %}
-                                        <img src="{{ m.material.image.url }}"
-                                             alt="{{ m.material.name }}"
-                                             class="material-table-thumb material-thumb-img"
-                                             loading="lazy"
-                                             data-bs-toggle="modal"
-                                             data-bs-target="#materialImageModal"
-                                             data-image="{{ m.material.image.url }}"
-                                             data-title="{{ m.material.name }}">
-                                        {% else %}
-                                        <div class="material-thumb-placeholder">
-                                            <i class="bi bi-box-seam"></i>
-                                        </div>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Название материала -->
-                                    <td>
-                                        <a href="{% url 'inventory:material_detail' m.material.pk %}"
-                                           class="fw-semibold text-decoration-none">
-                                            {{ m.material.name }}
-                                        </a>
-                                    </td>
-
-                                    <!-- Запланированное количество -->
-                                    <td class="text-end">
-                                        {{ m.qty_planned }}
-                                    </td>
-
-                                    <!-- Использованное количество -->
-                                    <td class="text-end {% if m.qty_used > m.qty_planned %}text-danger fw-semibold{% endif %}">
-                                        {{ m.qty_used }}
-                                    </td>
-
-                                    <!-- Предупреждение о превышении -->
-                                    <td class="text-center">
-                                        {% if m.qty_used > m.qty_planned %}
-                                        <i class="bi bi-exclamation-triangle-fill text-danger"
-                                           title="Превышение плана"></i>
-                                        {% endif %}
-                                    </td>
+                                {% for m in materials %}
+                                <tr>
+                                    <td>{{ m.material.name }}</td>
+                                    <td class="text-center">{{ m.qty_planned }}</td>
+                                    <td class="text-center">{{ m.qty_used }}</td>
+                                    <td>{{ m.material.get_uom_display }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    {% else %}
-                    <div class="text-muted">
-                        Материалы не добавлены
-                    </div>
-                    {% endif %}
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Модальное окно для просмотра изображений вложений -->
-        <div class="modal fade" id="attachmentImageModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content bg-transparent border-0 shadow-none">
-                    <div class="modal-body p-0 text-center">
-                        <img id="attachmentImageModalImg" class="img-fluid rounded" src="" alt="">
-                        <div class="text-muted small mt-2" id="attachmentImageModalTitle"></div>
-                    </div>
                 </div>
             </div>
-        </div>
+            {% endif %}
 
-        <!-- Модальное окно для просмотра изображений материалов -->
-        <div class="modal fade" id="materialImageModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content bg-transparent border-0 shadow-none">
-                    <div class="modal-body p-0 text-center">
-                        <img id="materialImageModalImg" class="img-fluid rounded" src="" alt="">
-                        <div class="text-muted small mt-2" id="materialImageModalTitle"></div>
+            <!-- Вложения -->
+            {% if attachments %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-paperclip me-2 text-primary"></i>Вложения</h5>
+                    <span class="badge bg-primary-subtle text-primary-emphasis border">{{ attachments.count }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for att in attachments %}
+                        {% with att.file.file.url as file_url %}
+                        {% with att.file.file.name|cut:"workorders/" as file_name %}
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="attachment-card border rounded overflow-hidden h-100">
+                                {% if file_url|lower|slice:'-4:' in '.jpg.jpeg.png.gif.webp.bmp.svg' %}
+                                <div class="attachment-preview" style="cursor:zoom-in;" data-bs-toggle="modal" data-bs-target="#attachmentPreviewModal" data-src="{{ file_url }}" data-name="{{ file_name }}">
+                                    <img src="{{ file_url }}" class="img-fluid" alt="{{ file_name }}" style="width:100%;height:120px;object-fit:cover;">
+                                </div>
+                                {% elif file_url|lower|slice:'-4:' == '.pdf' %}
+                                <div class="attachment-preview d-flex align-items-center justify-content-center bg-danger-subtle" style="height:120px;">
+                                    <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
+                                </div>
+                                {% elif file_url|lower|slice:'-5:' in '.docx.xlsx' or file_url|lower|slice:'-4:' in '.doc.xls' %}
+                                <div class="attachment-preview d-flex align-items-center justify-content-center bg-primary-subtle" style="height:120px;">
+                                    <i class="bi bi-file-earmark-text fs-1 text-primary"></i>
+                                </div>
+                                {% else %}
+                                <div class="attachment-preview d-flex align-items-center justify-content-center bg-secondary-subtle" style="height:120px;">
+                                    <i class="bi bi-file-earmark fs-1 text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <div class="p-2 bg-body-tertiary">
+                                    <a href="{{ file_url }}" target="_blank" class="small text-decoration-none text-truncate d-block" title="{{ file_name }}">
+                                        <i class="bi bi-download me-1"></i>{{ file_name|truncatechars:20 }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}{% endwith %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>
+            {% endif %}
+
+            <!-- История -->
+            {% if history %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>История</h5>
+                    <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#historyCollapse">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="collapse" id="historyCollapse">
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for h in history %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <div class="fw-semibold small">{{ h.history_change_reason|default:"Изменение" }}</div>
+                                        <div class="text-muted small">{{ h.history_user|default:"Система" }}</div>
+                                    </div>
+                                    <div class="text-muted small">{{ h.history_date|date:"d.m.Y H:i" }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
+        <!-- ПРАВАЯ КОЛОНКА -->
+        <div class="col-lg-4">
+            <!-- Действия -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2 text-primary"></i>Действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'maintenance:wo_edit' object.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>Редактировать
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'maintenance:wo_delete' object.pk %}" data-delete-name="{{ object.name }}">
+                            <i class="bi bi-trash me-2"></i>Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Метаданные -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Метаданные</h5>
+                </div>
+                <div class="card-body">
+                    {% include "components/metadata_list.html" with object=object show_id=True %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Стили для улучшения отображения -->
-<style>
-    /* Общие стили для таблиц */
-    .attachments-table,
-    .materials-table {
-        font-size: .9rem;
-    }
+{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить заявку?" %}
 
-    .attachments-table tbody tr:hover,
-    .materials-table tbody tr:hover {
-        background-color: var(--bs-tertiary-bg);
-    }
+<!-- Модальное окно предпросмотра вложений -->
+<div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-white" id="attachmentPreviewName"></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-2 text-center">
+                <img id="attachmentPreviewImage" class="img-fluid rounded shadow" src="" alt="" style="max-height:80vh;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    /* Миниатюры изображений */
-    .attachment-table-thumb,
-    .material-table-thumb {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: .4rem;
-        border: 1px solid var(--bs-border-color);
-        cursor: zoom-in;
-        transition: transform .15s ease, box-shadow .15s ease;
-    }
-
-    .attachment-table-thumb:hover,
-    .material-table-thumb:hover {
-        transform: scale(1.15);
-        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .25);
-    }
-
-    /* Заглушки для файлов без изображений */
-    .attachment-icon,
-    .material-thumb-placeholder {
-        width: 40px;
-        height: 40px;
-        border-radius: .4rem;
-        border: 1px solid var(--bs-border-color);
-        background: var(--bs-secondary-bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        color: var(--bs-primary);
-    }
-
-    /* Специфичные стили для таблицы материалов */
-    .materials-table td.text-danger {
-        font-weight: 600;
-    }
-</style>
-
-<!-- JavaScript для интерактивных элементов -->
+{% block extra_js %}
+{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // =====================================================
-        // 1. УПРАВЛЕНИЕ СТАТУСОМ ОБОРУДОВАНИЯ
-        // =====================================================
-        const wsOpenBtn = document.getElementById("ws-status-open-btn");
-        const wsSaveBtn = document.getElementById("ws-status-modal-save");
-        const wsSelect = document.getElementById("ws-status-modal-select");
-        const wsLabel = document.getElementById("ws-status-label");
-        const wsHint = document.getElementById("ws-status-hint");
-        const wsModalEl = document.getElementById("wsStatusModal");
-
-        if (wsOpenBtn && wsSaveBtn && wsSelect && wsModalEl) {
-            // Функция для получения CSRF-токена
-            function getCSRFToken() {
-                const el = document.querySelector('#csrf-vault [name=csrfmiddlewaretoken]');
-                if (el?.value) return el.value;
-
-                const m = document.cookie.match(/csrftoken=([^;]+)/);
-                return m ? decodeURIComponent(m[1]) : null;
-            }
-
-            // Стили для бейджей статусов
-            function getBadgeClass(status) {
-                const statusClasses = {
-                    'ok': "bg-success",
-                    'problem': "bg-danger",
-                    'maintenance': "bg-warning text-dark",
-                    'disabled': "bg-secondary",
-                };
-                return statusClasses[status] || "bg-secondary";
-            }
-
-            // Инициализация модального окна
-            const wsModal = new bootstrap.Modal(wsModalEl, {
-                backdrop: true,
-                keyboard: true,
-                focus: true,
-            });
-
-            // Открытие модального окна
-            wsOpenBtn.addEventListener("click", () => {
-                wsModal.show();
-            });
-
-            // Сохранение статуса
-            wsSaveBtn.addEventListener("click", function () {
-                const status = wsSelect.value;
-                const token = getCSRFToken();
-
-                if (!token) {
-                    alert("CSRF token не найден. Обновите страницу.");
-                    return;
-                }
-
-                wsSaveBtn.disabled = true;
-
-                fetch("{% url 'maintenance:ajax_workstation_status_update' %}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": token,
-                        "X-Requested-With": "XMLHttpRequest",
-                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    },
-                    body: "id={{ object.workstation.pk }}&status=" + encodeURIComponent(status),
-                })
-                .then(async response => {
-                    const data = await response.json().catch(() => ({}));
-                    if (!response.ok || !data.ok) throw data;
-                    return data;
-                })
-                .then(() => {
-                    // Обновление UI
-                    wsLabel.textContent = wsSelect.options[wsSelect.selectedIndex].text;
-                    wsLabel.className = "badge " + getBadgeClass(status);
-
-                    // Показ подсказки
-                    wsHint.classList.remove("d-none");
-                    setTimeout(() => wsHint.classList.add("d-none"), 2000);
-
-                    // Закрытие модального окна
-                    wsModal.hide();
-                })
-                .catch(error => {
-                    console.error("Ошибка обновления статуса:", error);
-                    alert(error?.error || "Ошибка обновления статуса оборудования");
-                })
-                .finally(() => {
-                    wsSaveBtn.disabled = false;
-                });
-            });
+// Предпросмотр вложений
+const attachmentModal = document.getElementById('attachmentPreviewModal');
+if (attachmentModal) {
+    attachmentModal.addEventListener('show.bs.modal', function(e) {
+        const trigger = e.relatedTarget;
+        if (trigger) {
+            document.getElementById('attachmentPreviewImage').src = trigger.dataset.src || '';
+            document.getElementById('attachmentPreviewName').textContent = trigger.dataset.name || '';
         }
-
-        // =====================================================
-        // 2. ПРОСМОТР ИЗОБРАЖЕНИЙ В МОДАЛЬНЫХ ОКНАХ
-        // =====================================================
-        function initImageModal(imageSelector, modalImageId, modalTitleId) {
-            const modalImage = document.getElementById(modalImageId);
-            const modalTitle = document.getElementById(modalTitleId);
-
-            document.querySelectorAll(imageSelector).forEach(image => {
-                image.addEventListener("click", function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    modalImage.src = this.dataset.image;
-                    modalImage.alt = this.dataset.title || "";
-                    modalTitle.textContent = this.dataset.title || "";
-                });
-            });
-        }
-
-        // Инициализация модальных окон для изображений
-        initImageModal(
-            ".attachment-thumb-zoom",
-            "attachmentImageModalImg",
-            "attachmentImageModalTitle"
-        );
-
-        initImageModal(
-            ".material-thumb-img",
-            "materialImageModalImg",
-            "materialImageModalTitle"
-        );
     });
+    attachmentModal.addEventListener('hidden.bs.modal', function() {
+        document.getElementById('attachmentPreviewImage').src = '';
+    });
+}
 </script>
-
-<!-- Включение модального окна статуса оборудования (только для администраторов) -->
-
-{% include "includes/workstation_status_modal.html" %}
-
-
 {% endblock %}

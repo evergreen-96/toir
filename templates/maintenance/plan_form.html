@@ -1,607 +1,177 @@
 {% extends "base.html" %}
-{% load form_extras %}
-{% block title %}
-{% if create %}Новый план{% else %}Редактирование плана{% endif %}
-{% endblock %}
+{% load static form_extras %}
+
+{% block title %}{% if create %}Новый план{% else %}Редактирование плана{% endif %}{% endblock %}
 
 {% block extra_head %}
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
 <style>
-.section-header {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--bs-heading-color);
-    border-bottom: 2px solid var(--bs-primary);
-    padding-bottom: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.form-text {
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-}
-
-.invalid-feedback {
-    display: block !important;
-}
-
-.card {
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-.form-switch .form-check-input {
-    width: 3em;
-    height: 1.5em;
-}
-
-.form-check-input:checked {
-    background-color: var(--bs-success);
-    border-color: var(--bs-success);
-}
-
-/* Стили для Tom-select */
-.ts-wrapper {
-    width: 100% !important;
-}
-
-/* Убираем стандартную стрелку Bootstrap */
+/* Tom Select */
+.ts-wrapper { width: 100% !important; }
 .form-select.js-tom-select-location,
 .form-select.js-tom-select-workstation,
-.form-select.js-tom-select-responsible {
-    background-image: none !important;
-}
+.form-select.js-tom-select-responsible { background-image: none !important; }
+.ts-dropdown { z-index: 1060 !important; }
+.ts-wrapper.disabled .ts-control { cursor: not-allowed !important; opacity: 0.6; background-color: var(--bs-secondary-bg) !important; }
+[data-bs-theme="dark"] .ts-control { background-color: var(--bs-dark) !important; color: #e9ecef !important; }
+[data-bs-theme="dark"] .ts-dropdown { background-color: var(--bs-dark) !important; }
 
-/* Кастомизация dropdown */
-.ts-dropdown {
-    z-index: 1060 !important;
-}
-
-/* Заблокированное состояние */
-.ts-wrapper.disabled .ts-control,
-.ts-wrapper.disabled .ts-control * {
-    cursor: not-allowed !important;
-    opacity: 0.6;
-    background-color: var(--bs-secondary-bg) !important;
-}
-
-/* Для множественного выбора (если будет нужно) */
-.ts-control.multi {
-    padding: .25rem .5rem !important;
-}
-
-.ts-control.multi .item {
-    background-color: var(--bs-secondary-bg) !important;
-    border: 1px solid var(--bs-border-color) !important;
-    border-radius: .375rem !important;
-    margin: .15rem !important;
-}
-
-/* Темная тема для Tom Select */
-[data-bs-theme="dark"] .ts-control {
-    background-color: var(--bs-dark) !important;
-    color: #e9ecef !important;
-}
-
-[data-bs-theme="dark"] .ts-dropdown {
-    background-color: var(--bs-dark) !important;
-    border-color: var(--bs-border-color) !important;
-}
-
-[data-bs-theme="dark"] .ts-dropdown .option {
-    color: #e9ecef !important;
-}
-
-[data-bs-theme="dark"] .ts-wrapper.disabled .ts-control {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Стили для календаря */
-.calendar-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-    max-width: 100%;
-    overflow: hidden;
-}
-
-/* Кастомный скроллбар для календаря */
-.calendar-grid::-webkit-scrollbar {
-    width: 6px;
-}
-
-.calendar-grid::-webkit-scrollbar-track {
-    background: var(--bs-light);
-    border-radius: 3px;
-}
-
-.calendar-grid::-webkit-scrollbar-thumb {
-    background: var(--bs-secondary);
-    border-radius: 3px;
-}
-
-.calendar-grid::-webkit-scrollbar-thumb:hover {
-    background: var(--bs-secondary-color);
-}
-
-[data-bs-theme="dark"] .calendar-grid::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-[data-bs-theme="dark"] .calendar-grid::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-[data-bs-theme="dark"] .calendar-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.mini-month {
-    border: 1px solid var(--bs-border-color);
-    border-radius: .5rem;
-    padding: 0.75rem;
-    background: var(--bs-body-bg);
-    max-width: 100%;
-    overflow: hidden;
-}
-
-.mini-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: .5rem;
-    margin-bottom: 0.75rem;
-}
-
-.mini-title {
-    font-weight: 700;
-    font-size: 0.9rem;
-    line-height: 1.1;
-    color: var(--bs-body-color);
-}
-
-.mini-sub {
-    font-size: .7rem;
-    color: var(--bs-secondary-color);
-    margin-top: .15rem;
-}
-
-.mini-dow {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: .25rem;
-    margin-bottom: .4rem;
-}
-
-.mini-dow div {
-    font-size: .65rem;
-    color: var(--bs-secondary-color);
-    text-align: center;
-    padding: .1rem 0;
-}
-
-.mini-days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: .25rem;
-}
-
-.mini-day {
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: .4rem;
-    border: 1px solid var(--bs-border-color);
-    font-size: .75rem;
-    user-select: none;
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
-    transition: all 0.15s ease;
-    min-width: 0;
-}
-
-.mini-day:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,.1);
-}
-
-.mini-day.empty {
-    border-color: transparent;
-    background: transparent;
-}
-
-/* Первый запуск */
-.mini-day.first {
-    background: var(--bs-danger);
-    border-color: var(--bs-danger);
-    color: #fff;
-    font-weight: 700;
-}
-
-/* Последующие запуски */
-.mini-day.next {
-    background: var(--bs-warning);
-    border-color: var(--bs-warning);
-    color: var(--bs-warning-text-emphasis);
-    font-weight: 700;
-}
-
-/* Сегодня */
-.mini-day.today {
-    outline: 2px solid var(--bs-primary);
-    outline-offset: 1px;
-}
-
-/* Темная тема */
-[data-bs-theme="dark"] .card-header.bg-dark {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .mini-day.next {
-    filter: saturate(.95);
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .sticky-top {
-        position: static !important;
-    }
-    .calendar-grid {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-    .mini-month {
-        padding: 0.6rem;
-    }
-    .mini-day {
-        height: 26px;
-        font-size: .7rem;
-    }
-    .mini-dow div {
-        font-size: .6rem;
-    }
-}
-
-@media (min-width: 992px) {
-    .calendar-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (min-width: 1400px) {
-    .calendar-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-.form-select.js-tom-select-location,
-.form-select.js-tom-select-workstation,
-.form-select.js-tom-select-responsible {
-    background-image: none !important;
-}
+/* Calendar */
+.calendar-month { margin-bottom: 1.5rem; }
+.calendar-month-title { font-weight: 600; margin-bottom: 0.5rem; color: var(--bs-primary); }
+.calendar-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+.calendar-grid-header span { text-align: center; font-size: 0.75rem; color: var(--bs-secondary); font-weight: 500; }
+.calendar-grid-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; border-radius: 4px; background: var(--bs-tertiary-bg); }
+.calendar-day.empty { background: transparent; }
+.calendar-day.today { border: 2px solid var(--bs-primary); font-weight: bold; }
+.calendar-day.first { background: var(--bs-success); color: white; font-weight: bold; }
+.calendar-day.next { background: var(--bs-primary); color: white; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3">
-    <!-- =====================================================
-         1. HEADER
-         ===================================================== -->
-    <div class="row justify-content-center">
-        <div class="col-xl-10 col-lg-11">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-                <div class="mb-3 mb-md-0">
-                    <nav aria-label="breadcrumb" class="mb-2">
-                        <ol class="breadcrumb small">
-                            <li class="breadcrumb-item">
-                                <a href="{% url 'maintenance:plan_list' %}" class="text-decoration-none">
-                                    Плановые задачи
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">
-                                {% if create %}Новый план{% else %}Редактирование{% endif %}
-                            </li>
-                        </ol>
-                    </nav>
-
-                    <h1 class="h4 mb-1">
-                        {% if create %}
-                        <i class="bi bi-calendar-plus me-2 text-success"></i>
-                        Новый план обслуживания
-                        {% else %}
-                        <i class="bi bi-pencil-square me-2 text-primary"></i>
-                        Редактирование плана
-                        {% endif %}
-                    </h1>
-
-                    <div class="text-muted small">
-                        Плановые работы · периодичность и параметры
-                        {% if not create %}
-                        <span class="ms-3">ID: {{ object.id }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">
-                        <i class="bi bi-arrow-left me-1"></i>
-                        Назад
-                    </a>
-
-                    {% if not create %}
-                    <a class="btn btn-outline-info" href="{% url 'maintenance:plan_detail' object.pk %}">
-                        <i class="bi bi-eye me-1"></i>
-                        Просмотр
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb small mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'maintenance:plan_list' %}" class="text-decoration-none">Планы</a></li>
+                    {% if not create and object %}<li class="breadcrumb-item"><a href="{% url 'maintenance:plan_detail' object.pk %}" class="text-decoration-none">{{ object.name|truncatechars:20 }}</a></li>{% endif %}
+                    <li class="breadcrumb-item active">{% if create %}Новый{% else %}Редактирование{% endif %}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-1">
+                {% if create %}<i class="bi bi-plus-circle me-2 text-success"></i>Новый план
+                {% else %}<i class="bi bi-pencil-square me-2 text-primary"></i>Редактирование{% endif %}
+            </h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}"><i class="bi bi-arrow-left me-1"></i>Назад</a>
+            {% if not create %}<a class="btn btn-outline-info" href="{% url 'maintenance:plan_detail' object.pk %}"><i class="bi bi-eye me-1"></i>Просмотр</a>{% endif %}
         </div>
     </div>
 
-    <!-- =====================================================
-         2. ФОРМА И ПРЕВЬЮ
-         ===================================================== -->
-    <form method="post" id="planForm">
+    <form method="post" novalidate>
         {% csrf_token %}
-        <div class="row justify-content-center">
-            <!-- LEFT: Форма -->
-            <div class="col-xl-7 col-lg-8">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-dark">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-pencil-square me-2"></i>
-                            Параметры плана
-                        </h5>
+        {{ form.interval_value }}
+        {{ form.interval_unit }}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-triangle me-2"></i>{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row">
+            <!-- ЛЕВАЯ КОЛОНКА -->
+            <div class="col-lg-8">
+                <!-- Основная информация -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
                     </div>
                     <div class="card-body">
-                        <!-- НАЗВАНИЕ -->
-                        <div class="mb-3">
-                            <label for="{{ form.name.id_for_label }}" class="form-label">
-                                {{ form.name.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.name.errors.0 }}
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">{{ form.name.label }} <span class="text-danger">*</span></label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors }}</div>{% endif %}
                             </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- ОПИСАНИЕ -->
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">
-                                {{ form.description.label }}
-                            </label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.description.errors.0 }}
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h6 class="section-header">
-                            <i class="bi bi-geo-alt me-2"></i>
-                            Локация и оборудование
-                        </h6>
-
-                        <!-- ЛОКАЦИЯ -->
-                        <div class="mb-3">
-                            <label for="{{ form.location.id_for_label }}" class="form-label">
-                                {{ form.location.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.location }}
-                            {% if form.location.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.location.errors.0 }}
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- ОБОРУДОВАНИЕ -->
-                        <div class="mb-3">
-                            <label for="{{ form.workstation.id_for_label }}" class="form-label">
-                                {{ form.workstation.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.workstation }}
-                            {% if form.workstation.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.workstation.errors.0 }}
-                            </div>
-                            {% endif %}
-                            <div class="form-text">
-                                Выберите локацию для загрузки списка оборудования
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h6 class="section-header">
-                            <i class="bi bi-person-check me-2"></i>
-                            Ответственность и категоризация
-                        </h6>
-
-                        <!-- ОТВЕТСТВЕННЫЙ -->
-                        <div class="mb-3">
-                            <label for="{{ form.responsible_default.id_for_label }}" class="form-label">
-                                {{ form.responsible_default.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.responsible_default }}
-                            {% if form.responsible_default.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.responsible_default.errors.0 }}
-                            </div>
-                            {% endif %}
-                            {% if form.responsible_default.help_text %}
-                            <div class="form-text">
-                                {{ form.responsible_default.help_text }}
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- КАТЕГОРИЯ И ПРИОРИТЕТ -->
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.category.id_for_label }}" class="form-label">
-                                    {{ form.category.label }} <span class="text-danger">*</span>
-                                </label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.category.label }}</label>
                                 {{ form.category }}
-                                {% if form.category.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.category.errors.0 }}
-                                </div>
-                                {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.priority.id_for_label }}" class="form-label">
-                                    {{ form.priority.label }} <span class="text-danger">*</span>
-                                </label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.priority.label }}</label>
                                 {{ form.priority }}
-                                {% if form.priority.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.priority.errors.0 }}
-                                </div>
-                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">{{ form.description.label }}</label>
+                                {{ form.description }}
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- ТРУДОЕМКОСТЬ -->
-                        <div class="mb-3">
-                            <label for="{{ form.labor_plan_hours.id_for_label }}" class="form-label">
-                                {{ form.labor_plan_hours.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.labor_plan_hours }}
-                            {% if form.labor_plan_hours.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.labor_plan_hours.errors.0 }}
+                <!-- Оборудование и локация -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-cpu me-2 text-primary"></i>Оборудование и локация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.location.label }} <span class="text-danger">*</span></label>
+                                {{ form.location }}
                             </div>
-                            {% endif %}
-                            {% if form.labor_plan_hours.help_text %}
-                            <div class="form-text">
-                                {{ form.labor_plan_hours.help_text }}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.workstation.label }} <span class="text-danger">*</span></label>
+                                {{ form.workstation }}
                             </div>
-                            {% endif %}
                         </div>
+                    </div>
+                </div>
 
-                        <hr class="my-4">
-
-                        <h6 class="section-header">
-                            <i class="bi bi-clock-history me-2"></i>
-                            Периодичность выполнения
-                        </h6>
-
-                        <!-- ЧАСТОТА -->
+                <!-- Периодичность -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Периодичность выполнения</h5>
+                    </div>
+                    <div class="card-body">
                         <div class="mb-4">
                             {% for value, label in form.frequency_choice.field.choices %}
                             <div class="form-check mb-2">
-                                <input class="form-check-input frequency-choice" type="radio"
-                                    name="{{ form.frequency_choice.name }}"
-                                    id="id_frequency_choice_{{ forloop.counter0 }}"
-                                    value="{{ value }}"
-                                    {% if form.frequency_choice.value == value %}checked{% elif not form.frequency_choice.value and value == 'weekly' %}checked{% endif %}>
-                                <label class="form-check-label" for="id_frequency_choice_{{ forloop.counter0 }}">
-                                    {{ label }}
-                                </label>
+                                <input class="form-check-input frequency-choice" type="radio" name="{{ form.frequency_choice.name }}" id="id_frequency_choice_{{ forloop.counter0 }}" value="{{ value }}" {% if form.frequency_choice.value == value %}checked{% elif not form.frequency_choice.value and value == 'weekly' %}checked{% endif %}>
+                                <label class="form-check-label" for="id_frequency_choice_{{ forloop.counter0 }}">{{ label }}</label>
                             </div>
                             {% endfor %}
                         </div>
 
-                        <!-- ЕЖЕДНЕВНО -->
+                        <!-- Ежедневно -->
                         <div id="frequency-daily-fields" style="display: none;">
-                            <div class="card bg-dark mb-3">
+                            <div class="card bg-body-tertiary mb-3">
                                 <div class="card-body">
-                                    <h6 class="card-title mb-3">
-                                        <i class="bi bi-calendar-check me-2"></i>
-                                        Ежедневное обслуживание
-                                    </h6>
-                                    <div class="mb-0">
-                                        <label for="{{ form.first_run_date.id_for_label }}" class="form-label">
-                                            {{ form.first_run_date.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.first_run_date }}
-                                        {% if form.first_run_date.help_text %}
-                                        <div class="form-text">
-                                            {{ form.first_run_date.help_text }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
+                                    <h6 class="card-title mb-3"><i class="bi bi-calendar-check me-2"></i>Ежедневное обслуживание</h6>
+                                    <label for="{{ form.first_run_date.id_for_label }}" class="form-label">{{ form.first_run_date.label }} <span class="text-danger">*</span></label>
+                                    {{ form.first_run_date }}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ЕЖЕНЕДЕЛЬНО -->
+                        <!-- Еженедельно -->
                         <div id="frequency-weekly-fields" style="display: none;">
-                            <div class="card bg-dark mb-3">
+                            <div class="card bg-body-tertiary mb-3">
                                 <div class="card-body">
-                                    <h6 class="card-title mb-3">
-                                        <i class="bi bi-calendar-week me-2"></i>
-                                        Еженедельное обслуживание
-                                    </h6>
-                                    <div class="mb-0">
-                                        <label for="{{ form.weekday.id_for_label }}" class="form-label">
-                                            {{ form.weekday.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.weekday }}
-                                        {% if form.weekday.help_text %}
-                                        <div class="form-text">
-                                            {{ form.weekday.help_text }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
+                                    <h6 class="card-title mb-3"><i class="bi bi-calendar-week me-2"></i>Еженедельное обслуживание</h6>
+                                    <label for="{{ form.weekday.id_for_label }}" class="form-label">{{ form.weekday.label }} <span class="text-danger">*</span></label>
+                                    {{ form.weekday }}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ЕЖЕМЕСЯЧНО -->
+                        <!-- Ежемесячно -->
                         <div id="frequency-monthly-fields" style="display: none;">
-                            <div class="card bg-dark mb-3">
+                            <div class="card bg-body-tertiary mb-3">
                                 <div class="card-body">
-                                    <h6 class="card-title mb-3">
-                                        <i class="bi bi-calendar-month me-2"></i>
-                                        Ежемесячное обслуживание
-                                    </h6>
-                                    <div class="mb-0">
-                                        <label for="{{ form.day_of_month.id_for_label }}" class="form-label">
-                                            {{ form.day_of_month.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.day_of_month }}
-                                        {% if form.day_of_month.help_text %}
-                                        <div class="form-text">
-                                            {{ form.day_of_month.help_text }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
+                                    <h6 class="card-title mb-3"><i class="bi bi-calendar-month me-2"></i>Ежемесячное обслуживание</h6>
+                                    <label for="{{ form.day_of_month.id_for_label }}" class="form-label">{{ form.day_of_month.label }} <span class="text-danger">*</span></label>
+                                    {{ form.day_of_month }}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ПРОИЗВОЛЬНЫЙ ИНТЕРВАЛ -->
+                        <!-- Произвольный -->
                         <div id="frequency-custom-fields" style="display: none;">
-                            <div class="card bg-dark mb-3">
+                            <div class="card bg-body-tertiary mb-3">
                                 <div class="card-body">
-                                    <h6 class="card-title mb-3">
-                                        <i class="bi bi-gear me-2"></i>
-                                        Произвольный интервал
-                                    </h6>
+                                    <h6 class="card-title mb-3"><i class="bi bi-gear me-2"></i>Произвольный интервал</h6>
                                     <div class="row">
                                         <div class="col-md-6 mb-3 mb-md-0">
-                                            <label for="custom_interval_value" class="form-label">
-                                                Значение <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="number" class="form-control" id="custom_interval_value"
-                                                min="1" value="1" placeholder="1">
+                                            <label for="custom_interval_value" class="form-label">Значение <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="custom_interval_value" min="1" value="1">
                                         </div>
                                         <div class="col-md-6">
-                                            <label for="custom_interval_unit" class="form-label">
-                                                Единица <span class="text-danger">*</span>
-                                            </label>
+                                            <label for="custom_interval_unit" class="form-label">Единица <span class="text-danger">*</span></label>
                                             <select class="form-select" id="custom_interval_unit">
                                                 {% for value, label in form.interval_unit.field.choices %}
                                                 <option value="{{ value }}">{{ label }}</option>
@@ -609,109 +179,85 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="form-text mt-2">
-                                        Например: 2 недели, 3 месяца, 10 дней
-                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- СКРЫТЫЕ ПОЛЯ -->
-                        {{ form.interval_value }}
-                        {{ form.interval_unit }}
-
-                        <hr class="my-4">
-
-                        <!-- АКТИВНОСТЬ -->
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                {{ form.is_active }}
-                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                                    {{ form.is_active.label }}
-                                </label>
-                            </div>
-                            {% if form.is_active.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.is_active.errors.0 }}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- КНОПКИ СОХРАНЕНИЯ -->
-                <div class="card shadow-sm mb-4">
+                <!-- Исполнение -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-person me-2 text-primary"></i>Исполнение</h5>
+                    </div>
                     <div class="card-body">
-                        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
-                            <a href="{% url 'maintenance:plan_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-2"></i>
-                                Отмена
-                            </a>
-                            {% if create %}
-                            <button type="button" class="btn btn-outline-primary" id="saveAndAddAnotherBtn">
-                                <i class="bi bi-plus-circle me-2"></i>
-                                Сохранить и добавить еще
-                            </button>
-                            {% endif %}
-                            <button type="submit" class="btn btn-primary" id="saveBtn">
-                                <i class="bi bi-save me-2"></i>
-                                {% if create %}Создать план{% else %}Сохранить изменения{% endif %}
-                            </button>
-                        </div>
-
-                        <!-- Индикатор прогресса -->
-                        <div id="progressIndicator" class="mt-3 align-items-center justify-content-center" style="display: none;">
-                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                <span class="visually-hidden">Загрузка...</span>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.responsible_default.label }} <span class="text-danger">*</span></label>
+                                {{ form.responsible_default }}
                             </div>
-                            <span class="text-muted">Сохранение данных...</span>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.labor_plan_hours.label }}</label>
+                                {{ form.labor_plan_hours }}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-3">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT: Превью -->
-            <div class="col-xl-4 col-lg-5">
-                <div class="sticky-top" style="top: 1rem;">
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-dark">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-calendar3 me-2"></i>
-                                Превью расписания
-                            </h5>
-                        </div>
+            <!-- ПРАВАЯ КОЛОНКА -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- Кнопки -->
+                    <div class="card border-0 shadow-sm mb-4">
                         <div class="card-body">
-                            <!-- Loader -->
-                            <div id="preview-loading" class="text-center py-3" style="display: none;">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">Загрузка...</span>
-                                </div>
-                                <div class="text-muted small mt-2">Расчет расписания...</div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-lg me-2"></i>{% if create %}Создать{% else %}Сохранить{% endif %}
+                                </button>
+                                {% if create %}
+                                <button type="submit" name="save_and_add" value="1" class="btn btn-outline-success">
+                                    <i class="bi bi-plus-circle me-2"></i>Сохранить и добавить ещё
+                                </button>
+                                {% endif %}
+                                <a href="{% if create %}{% url 'maintenance:plan_list' %}{% else %}{% url 'maintenance:plan_detail' object.pk %}{% endif %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-lg me-2"></i>Отмена
+                                </a>
                             </div>
-
-                            <!-- Error -->
-                            <div id="preview-error" class="alert alert-danger small py-2 mb-3" style="display: none;"></div>
-
-                            <!-- Stats -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="text-muted small">Первый запуск:</span>
-                                    <strong id="preview-first-run" class="text-primary">—</strong>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted small">Запусков (6 мес.):</span>
-                                    <strong id="preview-count" class="text-success">—</strong>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <!-- Calendar -->
-                            <div id="preview-calendar" class="calendar-grid" style="max-height: 600px; overflow-y: auto; overflow-x: hidden;"></div>
                         </div>
                     </div>
 
-
+                    <!-- Превью расписания -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark border-0">
+                            <h5 class="mb-0"><i class="bi bi-calendar-event me-2 text-primary"></i>Превью расписания</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="preview-loading" class="text-center py-3" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <span class="ms-2">Расчет...</span>
+                            </div>
+                            <div id="preview-error" class="alert alert-warning small" style="display: none;"></div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small">
+                                    <span class="text-muted">Первый запуск:</span>
+                                    <strong id="preview-first-run" class="text-primary">—</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small">
+                                    <span class="text-muted">Запусков (6 мес.):</span>
+                                    <strong id="preview-count" class="text-success">—</strong>
+                                </div>
+                            </div>
+                            <hr>
+                            <div id="preview-calendar" style="max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -723,622 +269,207 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // =============================
-    // TOM SELECT ИНИЦИАЛИЗАЦИЯ
-    // =============================
-
+    // =====================================================
+    // TOM SELECT
+    // =====================================================
     let locationSelect = null;
     let workstationSelect = null;
-    let responsibleSelect = null;
 
-    // Локация
     const locationElement = document.querySelector('.js-tom-select-location');
     if (locationElement) {
         locationSelect = new TomSelect(locationElement, {
-            maxOptions: null,
-            placeholder: 'Выберите локацию...',
-            allowEmptyOption: true,
-            searchField: ['text'],
-            sortField: {
-                field: 'text',
-                direction: 'asc'
-            },
-            render: {
-                option: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
-                },
-                item: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
-                },
-                no_results: function(data, escape) {
-                    return '<div class="no-results">Не найдено</div>';
-                }
-            },
-            onInitialize: function() {
-                const initialValue = locationElement.value;
-                if (initialValue) {
-                    this.setValue(initialValue);
-                }
-            },
-            onChange: function(value) {
-                loadWorkstations(value);
-            }
+            maxOptions: null, placeholder: 'Выберите локацию...', allowEmptyOption: true,
+            searchField: ['text'], sortField: { field: 'text', direction: 'asc' },
+            onInitialize: function() { if (locationElement.value) this.setValue(locationElement.value); },
+            onChange: function(value) { loadWorkstations(value); }
         });
     }
 
-    // Оборудование
     const workstationElement = document.querySelector('.js-tom-select-workstation');
     if (workstationElement) {
         workstationSelect = new TomSelect(workstationElement, {
-            maxOptions: null,
-            placeholder: 'Сначала выберите локацию...',
-            allowEmptyOption: true,
-            searchField: ['text'],
-            sortField: {
-                field: 'text',
-                direction: 'asc'
-            },
-            render: {
-                option: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
-                },
-                item: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
-                },
-                no_results: function(data, escape) {
-                    return '<div class="no-results">Не найдено</div>';
-                }
-            },
+            maxOptions: null, placeholder: 'Сначала выберите локацию...', allowEmptyOption: true,
+            searchField: ['text'], sortField: { field: 'text', direction: 'asc' },
             onInitialize: function() {
-                const initialValue = workstationElement.value;
-                if (initialValue) {
-                    this.setValue(initialValue);
-                }
-                // Блокируем если локация не выбрана
-                if (!locationSelect || !locationSelect.getValue()) {
-                    this.disable();
-                }
+                if (workstationElement.value) this.setValue(workstationElement.value);
+                if (!locationSelect || !locationSelect.getValue()) this.disable();
             }
         });
     }
 
-    // Ответственный
     const responsibleElement = document.querySelector('.js-tom-select-responsible');
     if (responsibleElement) {
-        responsibleSelect = new TomSelect(responsibleElement, {
-            maxOptions: null,
-            placeholder: 'Выберите ответственного...',
-            allowEmptyOption: true,
-            searchField: ['text'],
-            sortField: {
-                field: 'text',
-                direction: 'asc'
-            },
-            render: {
-                option: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
-                },
-                item: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
-                },
-                no_results: function(data, escape) {
-                    return '<div class="no-results">Не найдено</div>';
-                }
-            },
-            onInitialize: function() {
-                const initialValue = responsibleElement.value;
-                if (initialValue) {
-                    this.setValue(initialValue);
-                }
-            }
+        new TomSelect(responsibleElement, {
+            maxOptions: null, placeholder: 'Выберите ответственного...', allowEmptyOption: true,
+            searchField: ['text'], sortField: { field: 'text', direction: 'asc' },
+            onInitialize: function() { if (responsibleElement.value) this.setValue(responsibleElement.value); }
         });
     }
 
-    // Функция загрузки оборудования
     function loadWorkstations(locationId) {
         if (!workstationSelect) return;
-
-        // ВАЖНО: сначала очищаем выбранное значение
-        workstationSelect.clear();
-
-        // Затем очищаем все опции
-        workstationSelect.clearOptions();
-
+        workstationSelect.clear(); workstationSelect.clearOptions();
         if (!locationId) {
             workstationSelect.settings.placeholder = 'Сначала выберите локацию...';
-            workstationSelect.disable();  // Блокируем поле
-            workstationSelect.inputState();
-            return;
+            workstationSelect.disable(); workstationSelect.inputState(); return;
         }
-
-        // Показываем индикатор загрузки
         workstationSelect.settings.placeholder = 'Загрузка...';
-        workstationSelect.disable();  // Блокируем на время загрузки
-        workstationSelect.inputState();
+        workstationSelect.disable(); workstationSelect.inputState();
 
-        // Загружаем новые опции
-        const apiUrl = "{% url 'maintenance:api_workstations' %}";
-        fetch(`${apiUrl}?location=${locationId}`)
-            .then(response => response.json())
+        fetch('{% url "maintenance:api_workstations" %}?location=' + locationId)
+            .then(r => r.json())
             .then(data => {
                 if (data && data.length > 0) {
-                    data.forEach(item => {
-                        workstationSelect.addOption({
-                            value: item.id,
-                            text: item.name
-                        });
-                    });
+                    data.forEach(item => workstationSelect.addOption({ value: item.id, text: item.name }));
                     workstationSelect.settings.placeholder = 'Выберите оборудование...';
-                    workstationSelect.enable();  // Разблокируем после загрузки
+                    workstationSelect.enable();
                 } else {
-                    workstationSelect.settings.placeholder = 'Нет доступного оборудования';
-                    workstationSelect.disable();  // Оставляем заблокированным если нет оборудования
+                    workstationSelect.settings.placeholder = 'Нет оборудования';
+                    workstationSelect.disable();
                 }
-                workstationSelect.inputState();
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки оборудования:', error);
-                workstationSelect.settings.placeholder = 'Ошибка загрузки';
-                workstationSelect.disable();  // Блокируем при ошибке
                 workstationSelect.inputState();
             });
     }
 
-    // Загружаем оборудование при инициализации, если локация уже выбрана
-    if (locationSelect && locationSelect.getValue()) {
-        const currentLocation = locationSelect.getValue();
-        const currentWorkstation = workstationElement ? workstationElement.value : null;
-
-        // Загружаем оборудование для текущей локации
-        const apiUrl = "{% url 'maintenance:api_workstations' %}";
-        fetch(`${apiUrl}?location=${currentLocation}`)
-            .then(response => response.json())
+    {% if not create and object.location_id %}
+    if (locationSelect && workstationSelect) {
+        const currentWorkstation = '{{ object.workstation_id|default:"" }}';
+        fetch('{% url "maintenance:api_workstations" %}?location={{ object.location_id }}')
+            .then(r => r.json())
             .then(data => {
                 if (data && data.length > 0) {
                     workstationSelect.clearOptions();
-                    data.forEach(item => {
-                        workstationSelect.addOption({
-                            value: item.id,
-                            text: item.name
-                        });
-                    });
-                    // Восстанавливаем выбранное оборудование
-                    if (currentWorkstation) {
-                        workstationSelect.setValue(currentWorkstation);
-                    }
-                    workstationSelect.settings.placeholder = 'Выберите оборудование...';
-                    workstationSelect.enable();  // Разблокируем
-                } else {
-                    workstationSelect.settings.placeholder = 'Нет доступного оборудования';
-                    workstationSelect.disable();  // Оставляем заблокированным
+                    data.forEach(item => workstationSelect.addOption({ value: item.id, text: item.name }));
+                    if (currentWorkstation) workstationSelect.setValue(currentWorkstation);
+                    workstationSelect.enable();
                 }
-                workstationSelect.inputState();
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки оборудования при инициализации:', error);
-                workstationSelect.disable();  // Блокируем при ошибке
             });
     }
+    {% endif %}
 
-    // =============================
-    // УПРАВЛЕНИЕ ЧАСТОТОЙ
-    // =============================
-
+    // =====================================================
+    // ПЕРИОДИЧНОСТЬ
+    // =====================================================
     const radios = document.querySelectorAll(".frequency-choice");
     const dailyFields = document.getElementById("frequency-daily-fields");
     const weeklyFields = document.getElementById("frequency-weekly-fields");
     const monthlyFields = document.getElementById("frequency-monthly-fields");
     const customFields = document.getElementById("frequency-custom-fields");
-
     const hiddenValue = document.querySelector(".interval-value-field");
     const hiddenUnit = document.querySelector(".interval-unit-field");
-
     const customValue = document.getElementById("custom_interval_value");
     const customUnit = document.getElementById("custom_interval_unit");
 
+    function getSelectedFrequency() { return Array.from(radios).find(r => r.checked)?.value || "weekly"; }
+
     function updateFrequencyUI() {
         const freq = getSelectedFrequency();
-
-        // Скрываем все блоки
         if (dailyFields) dailyFields.style.display = "none";
         if (weeklyFields) weeklyFields.style.display = "none";
         if (monthlyFields) monthlyFields.style.display = "none";
         if (customFields) customFields.style.display = "none";
 
-        // Показываем нужный блок
         switch (freq) {
-            case "daily":
-                if (dailyFields) dailyFields.style.display = "block";
-                if (hiddenValue) hiddenValue.value = "1";
-                if (hiddenUnit) hiddenUnit.value = "day";
-                break;
-            case "weekly":
-                if (weeklyFields) weeklyFields.style.display = "block";
-                if (hiddenValue) hiddenValue.value = "1";
-                if (hiddenUnit) hiddenUnit.value = "week";
-                break;
-            case "monthly":
-                if (monthlyFields) monthlyFields.style.display = "block";
-                if (hiddenValue) hiddenValue.value = "1";
-                if (hiddenUnit) hiddenUnit.value = "month";
-                break;
-            case "custom":
-                if (customFields) customFields.style.display = "block";
-                if (hiddenValue && customValue) hiddenValue.value = customValue.value;
-                if (hiddenUnit && customUnit) hiddenUnit.value = customUnit.value;
-                break;
+            case "daily": if (dailyFields) dailyFields.style.display = "block"; if (hiddenValue) hiddenValue.value = "1"; if (hiddenUnit) hiddenUnit.value = "day"; break;
+            case "weekly": if (weeklyFields) weeklyFields.style.display = "block"; if (hiddenValue) hiddenValue.value = "1"; if (hiddenUnit) hiddenUnit.value = "week"; break;
+            case "monthly": if (monthlyFields) monthlyFields.style.display = "block"; if (hiddenValue) hiddenValue.value = "1"; if (hiddenUnit) hiddenUnit.value = "month"; break;
+            case "custom": if (customFields) customFields.style.display = "block"; if (hiddenValue && customValue) hiddenValue.value = customValue.value; if (hiddenUnit && customUnit) hiddenUnit.value = customUnit.value; break;
         }
     }
 
-    // Инициализация UI
     updateFrequencyUI();
+    radios.forEach(r => r.addEventListener("change", () => { updateFrequencyUI(); schedulePreviewRefresh(); }));
+    if (customValue) customValue.addEventListener("input", () => { if (hiddenValue) hiddenValue.value = customValue.value; schedulePreviewRefresh(); });
+    if (customUnit) customUnit.addEventListener("change", () => { if (hiddenUnit) hiddenUnit.value = customUnit.value; schedulePreviewRefresh(); });
 
-    // =============================
+    // =====================================================
     // ПРЕВЬЮ КАЛЕНДАРЯ
-    // =============================
-
+    // =====================================================
     const MONTHS_AHEAD = 6;
     const previewCalendar = document.getElementById("preview-calendar");
     const previewLoading = document.getElementById("preview-loading");
     const previewError = document.getElementById("preview-error");
     const previewFirstRun = document.getElementById("preview-first-run");
     const previewCount = document.getElementById("preview-count");
-
-    const MONTH_NAMES = [
-        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
-    ];
+    const MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
     const DOW_SHORT = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-    function monthsInRange(start, end) {
-        const arr = [];
-        let d = new Date(start);
-        while (d <= end) {
-            arr.push([d.getFullYear(), d.getMonth()]);
-            d.setMonth(d.getMonth() + 1);
-        }
-        return arr;
-    }
+    function setError(text) { previewError.style.display = text ? "block" : "none"; previewError.textContent = text || ""; }
+    function monthsInRange(start, end) { const arr = []; let d = new Date(start); while (d <= end) { arr.push([d.getFullYear(), d.getMonth()]); d.setMonth(d.getMonth() + 1); } return arr; }
+    function firstDayOfMonth(y, m0) { let wd = new Date(y, m0, 1).getDay(); return wd === 0 ? 6 : wd - 1; }
+    function daysInMonth(y, m0) { return new Date(y, m0 + 1, 0).getDate(); }
+    function toISO(y, m0, d) { return `${y}-${String(m0 + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
 
-    function firstDayOfMonth(y, m0) {
-        const d = new Date(y, m0, 1);
-        let wd = d.getDay();
-        return wd === 0 ? 6 : wd - 1;
-    }
-
-    function daysInMonth(y, m0) {
-        return new Date(y, m0 + 1, 0).getDate();
-    }
-
-    function buildMonthNode(y, m0, todayISO, firstDayISO, nextDaysSet) {
-        const wrap = document.createElement("div");
-        wrap.className = "mini-month";
-
-        const head = document.createElement("div");
-        head.className = "mini-head";
-        head.innerHTML = `
-            <div>
-                <div class="mini-title">${MONTH_NAMES[m0]}</div>
-                <div class="mini-sub">${y}</div>
-            </div>
-        `;
-        wrap.appendChild(head);
-
-        const dow = document.createElement("div");
-        dow.className = "mini-dow";
-        DOW_SHORT.forEach(nm => {
-            const cell = document.createElement("div");
-            cell.textContent = nm;
-            dow.appendChild(cell);
-        });
-        wrap.appendChild(dow);
-
-        const grid = document.createElement("div");
-        grid.className = "mini-days";
-
-        const offset = firstDayOfMonth(y, m0);
-        for (let i = 0; i < offset; i++) {
-            const emp = document.createElement("div");
-            emp.className = "mini-day empty";
-            grid.appendChild(emp);
-        }
-
-        const total = daysInMonth(y, m0);
-        for (let day = 1; day <= total; day++) {
-            const cell = document.createElement("div");
-            cell.className = "mini-day";
-
-            const iso = `${y}-${String(m0 + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-            if (iso === firstDayISO) {
-                cell.classList.add("first");
-            } else if (nextDaysSet.has(iso)) {
-                cell.classList.add("next");
-            }
-
+    function buildMonthNode(year, month0, todayISO, firstDayISO, nextDaysSet) {
+        const wrap = document.createElement("div"); wrap.className = "calendar-month";
+        const title = document.createElement("div"); title.className = "calendar-month-title"; title.textContent = `${MONTH_NAMES[month0]} ${year}`; wrap.appendChild(title);
+        const header = document.createElement("div"); header.className = "calendar-grid-header";
+        DOW_SHORT.forEach(d => { const span = document.createElement("span"); span.textContent = d; header.appendChild(span); }); wrap.appendChild(header);
+        const grid = document.createElement("div"); grid.className = "calendar-grid-days";
+        const startWd = firstDayOfMonth(year, month0);
+        for (let i = 0; i < startWd; i++) { const empty = document.createElement("div"); empty.className = "calendar-day empty"; grid.appendChild(empty); }
+        const days = daysInMonth(year, month0);
+        for (let day = 1; day <= days; day++) {
+            const cell = document.createElement("div"); cell.className = "calendar-day";
+            const iso = toISO(year, month0, day);
+            if (iso === firstDayISO) cell.classList.add("first");
+            else if (nextDaysSet.has(iso)) cell.classList.add("next");
             if (iso === todayISO) cell.classList.add("today");
-
-            cell.textContent = String(day);
-            grid.appendChild(cell);
+            cell.textContent = String(day); grid.appendChild(cell);
         }
-
-        wrap.appendChild(grid);
-        return wrap;
+        wrap.appendChild(grid); return wrap;
     }
 
     function renderCalendars(todayISO, firstRunStr, runsStr) {
         previewCalendar.innerHTML = "";
-
         const firstDayISO = firstRunStr.slice(0, 10);
         const runDaysISO = runsStr.map(x => x.slice(0, 10));
         const nextDaysSet = new Set(runDaysISO.filter(x => x !== firstDayISO));
-
         const today = new Date(todayISO + "T00:00:00");
-        const end = new Date(today);
-        end.setMonth(end.getMonth() + MONTHS_AHEAD);
-
-        const months = monthsInRange(today, end);
-        months.forEach(([y, m0]) => {
-            previewCalendar.appendChild(buildMonthNode(y, m0, todayISO, firstDayISO, nextDaysSet));
-        });
-    }
-
-    function getSelectedFrequency() {
-        return Array.from(radios).find(r => r.checked)?.value || "weekly";
-    }
-
-    function setError(text) {
-        if (!text) {
-            previewError.style.display = "none";
-            previewError.textContent = "";
-            return;
-        }
-        previewError.style.display = "block";
-        previewError.textContent = text;
+        const end = new Date(today); end.setMonth(end.getMonth() + MONTHS_AHEAD);
+        monthsInRange(today, end).forEach(([y, m0]) => { previewCalendar.appendChild(buildMonthNode(y, m0, todayISO, firstDayISO, nextDaysSet)); });
     }
 
     let _previewTimer = null;
-
-    function schedulePreviewRefresh() {
-        if (_previewTimer) clearTimeout(_previewTimer);
-        _previewTimer = setTimeout(refreshPreview, 300);
-    }
+    function schedulePreviewRefresh() { if (_previewTimer) clearTimeout(_previewTimer); _previewTimer = setTimeout(refreshPreview, 300); }
 
     async function refreshPreview() {
         setError("");
         if (previewLoading) previewLoading.style.display = "block";
-
         const freq = getSelectedFrequency();
-
         const params = new URLSearchParams();
         params.set("frequency_choice", freq);
         params.set("months_ahead", String(MONTHS_AHEAD));
-
         if (hiddenValue) params.set("interval_value", hiddenValue.value || "");
         if (hiddenUnit) params.set("interval_unit", hiddenUnit.value || "");
+        params.set("first_run_date", document.getElementById("id_first_run_date")?.value || "");
+        params.set("weekday", document.getElementById("id_weekday")?.value || "");
+        params.set("day_of_month", document.getElementById("id_day_of_month")?.value || "");
+        if (freq === "custom") { params.set("interval_value", customValue?.value || ""); params.set("interval_unit", customUnit?.value || ""); }
 
-        const frd = document.getElementById("id_first_run_date")?.value || "";
-        const wd = document.getElementById("id_weekday")?.value || "";
-        const dom = document.getElementById("id_day_of_month")?.value || "";
+        if (freq === "daily" && !params.get("first_run_date")) { if (previewLoading) previewLoading.style.display = "none"; return; }
+        if (freq === "weekly" && !params.get("weekday")) { if (previewLoading) previewLoading.style.display = "none"; return; }
+        if (freq === "monthly" && !params.get("day_of_month")) { if (previewLoading) previewLoading.style.display = "none"; return; }
+        if (freq === "custom" && (!params.get("interval_value") || !params.get("interval_unit"))) { if (previewLoading) previewLoading.style.display = "none"; return; }
 
-        params.set("first_run_date", frd);
-        params.set("weekday", wd);
-        params.set("day_of_month", dom);
-
-        if (freq === "custom") {
-            params.set("interval_value", customValue?.value || "");
-            params.set("interval_unit", customUnit?.value || "");
-        }
-
-        if (freq === "daily" && !frd) {
-            if (previewLoading) previewLoading.style.display = "none";
-            return;
-        }
-        if (freq === "weekly" && (wd === "" || wd === null)) {
-            if (previewLoading) previewLoading.style.display = "none";
-            return;
-        }
-        if (freq === "monthly" && !dom) {
-            if (previewLoading) previewLoading.style.display = "none";
-            return;
-        }
-        if (freq === "custom" && (!params.get("interval_value") || !params.get("interval_unit"))) {
-            if (previewLoading) previewLoading.style.display = "none";
-            return;
-        }
-
-        const url = "{% url 'maintenance:plan_preview' %}?" + params.toString();
-
-        let data;
         try {
-            const r = await fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}});
-            data = await r.json();
+            const r = await fetch("{% url 'maintenance:plan_preview' %}?" + params.toString(), {headers: {"X-Requested-With": "XMLHttpRequest"}});
+            const data = await r.json();
+            if (previewLoading) previewLoading.style.display = "none";
+            if (!data.ok) { setError(data.error || "Ошибка"); return; }
+            if (previewFirstRun) previewFirstRun.textContent = data.first_run;
+            if (previewCount) previewCount.textContent = data.runs.length;
+            if (previewCalendar) renderCalendars(data.today, data.first_run, data.runs);
         } catch (e) {
             if (previewLoading) previewLoading.style.display = "none";
-            setError("Не удалось получить превью (ошибка сети)");
-            return;
-        }
-
-        if (previewLoading) previewLoading.style.display = "none";
-
-        if (!data.ok) {
-            setError(data.error || "Ошибка расчета расписания");
-            return;
-        }
-
-        if (previewFirstRun) previewFirstRun.textContent = data.first_run;
-        if (previewCount) previewCount.textContent = data.runs.length;
-
-        if (previewCalendar) {
-            renderCalendars(data.today, data.first_run, data.runs);
+            setError("Не удалось получить превью");
         }
     }
-
-    // Обновляем превью при изменении расписания
-    radios.forEach(r => r.addEventListener("change", () => {
-        updateFrequencyUI();
-        schedulePreviewRefresh();
-    }));
 
     document.getElementById("id_first_run_date")?.addEventListener("change", schedulePreviewRefresh);
     document.getElementById("id_weekday")?.addEventListener("change", schedulePreviewRefresh);
     document.getElementById("id_day_of_month")?.addEventListener("input", schedulePreviewRefresh);
-
-    if (customValue) {
-        customValue.addEventListener("input", () => {
-            if (hiddenValue) hiddenValue.value = customValue.value;
-            schedulePreviewRefresh();
-        });
-    }
-
-    if (customUnit) {
-        customUnit.addEventListener("change", () => {
-            if (hiddenUnit) hiddenUnit.value = customUnit.value;
-            schedulePreviewRefresh();
-        });
-    }
-
-    // Initial preview
     schedulePreviewRefresh();
-
-    // ===========================
-    // ВАЛИДАЦИЯ ФОРМЫ
-    // ===========================
-    function validateRequiredFields() {
-        const requiredFields = [
-            '{{ form.name.id_for_label }}',
-            '{{ form.category.id_for_label }}',
-            '{{ form.location.id_for_label }}',
-            '{{ form.workstation.id_for_label }}',
-            '{{ form.priority.id_for_label }}',
-            '{{ form.labor_plan_hours.id_for_label }}'
-        ];
-
-        let isValid = true;
-
-        requiredFields.forEach(function(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (field && !field.value && field.offsetParent !== null) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else if (field) {
-                field.classList.remove('is-invalid');
-            }
-        });
-
-        return isValid;
-    }
-
-    // Валидация соответствия оборудования локации
-    function validateWorkstationLocation() {
-        if (!locationSelect || !workstationSelect) return true;
-
-        const locationId = locationSelect.getValue();
-        const workstationId = workstationSelect.getValue();
-
-        // Если оборудование выбрано, но локация не выбрана
-        if (workstationId && !locationId) {
-            alert('Выберите локацию перед выбором оборудования');
-            return false;
-        }
-
-        // Если выбрано оборудование, проверяем что оно в списке опций
-        // (список опций загружается только для текущей локации)
-        if (workstationId && locationId) {
-            const workstationOption = workstationSelect.options[workstationId];
-            if (!workstationOption) {
-                alert('Выбранное оборудование не принадлежит текущей локации. Пожалуйста, выберите оборудование заново.');
-                workstationSelect.clear();
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Показать/скрыть индикатор загрузки
-     */
-    function toggleLoading(show) {
-        const progressIndicator = document.getElementById('progressIndicator');
-        const saveBtn = document.getElementById('saveBtn');
-        const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
-
-        if (progressIndicator && saveBtn) {
-            if (show) {
-                progressIndicator.style.display = 'flex';
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Сохранение...';
-                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = true;
-            } else {
-                progressIndicator.style.display = 'none';
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>' +
-                    {% if create %}'Создать план'{% else %}'Сохранить изменения'{% endif %};
-                if (saveAndAddAnotherBtn) saveAndAddAnotherBtn.disabled = false;
-            }
-        }
-    }
-
-    // Обработка отправки формы
-    const form = document.getElementById('planForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!validateRequiredFields() || !validateWorkstationLocation()) {
-                e.preventDefault();
-
-                // Прокрутка к первой ошибке
-                const firstError = document.querySelector('.is-invalid');
-                if (firstError) {
-                    firstError.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                    firstError.focus();
-                }
-
-                return false;
-            }
-
-            toggleLoading(true);
-        });
-    }
-
-    // Кнопка "Сохранить и добавить еще"
-    const saveAndAddAnotherBtn = document.getElementById('saveAndAddAnotherBtn');
-    if (saveAndAddAnotherBtn) {
-        saveAndAddAnotherBtn.addEventListener('click', function() {
-            if (validateRequiredFields() && validateWorkstationLocation()) {
-                // Добавляем скрытое поле для редиректа
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'save_and_add';
-                hiddenInput.value = '1';
-                form.appendChild(hiddenInput);
-
-                toggleLoading(true);
-                form.submit();
-            }
-        });
-    }
-
-    // Очистка ошибок при вводе данных
-    document.querySelectorAll('input, select, textarea').forEach(field => {
-        field.addEventListener('input', function() {
-            if (this.value.trim()) {
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        field.addEventListener('change', function() {
-            this.classList.remove('is-invalid');
-        });
-    });
-
-    // Сброс индикатора загрузки при ошибке валидации на сервере
-    window.addEventListener('pageshow', function() {
-        toggleLoading(false);
-    });
 });
 </script>
 {% endblock %}

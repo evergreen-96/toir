@@ -1,611 +1,199 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ object.name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3">
-    <!-- =====================================================
-         1. HEADER
-         ===================================================== -->
-    <div class="row justify-content-center">
-        <div class="col-xl-10 col-lg-11">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-                <div class="mb-3 mb-md-0">
-                    <nav aria-label="breadcrumb" class="mb-2">
-                        <ol class="breadcrumb small">
-                            <li class="breadcrumb-item">
-                                <a href="{% url 'maintenance:plan_list' %}" class="text-decoration-none">
-                                    Плановые задачи
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">
-                                Просмотр плана
-                            </li>
-                        </ol>
-                    </nav>
-
-                    <h1 class="h2 mb-1 d-flex align-items-center gap-3">
-                        {{ object.name }}
-                        <span class="badge
-                            {% if object.is_active %}bg-success{% else %}bg-secondary{% endif %}
-                            px-3 py-2">
-                            <i class="bi
-                                {% if object.is_active %}bi-check-circle{% else %}bi-pause-circle{% endif %}
-                            me-1"></i>
-                            {% if object.is_active %}Активен{% else %}Выключен{% endif %}
-                        </span>
-                    </h1>
-
-                    <div class="text-muted small">
-                        Плановое обслуживание · ID: {{ object.id }} · Создан: {{ object.created_at|date:"d.m.Y H:i" }}
-                    </div>
-                </div>
-
-                <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}">
-                        <i class="bi bi-arrow-left me-1"></i>
-                        К списку
-                    </a>
-
-                    <a class="btn btn-primary" href="{% url 'maintenance:plan_edit' object.pk %}">
-                        <i class="bi bi-pencil me-1"></i>
-                        Редактировать
-                    </a>
-
-                    <button type="button"
-                            class="btn btn-outline-danger"
-                            data-confirm-delete
-                            data-delete-url="{% url 'maintenance:plan_delete' object.pk %}"
-                            data-delete-name="«{{ object.name }}»"
-                            data-redirect-url="{% url 'maintenance:plan_list' %}">
-                        <i class="bi bi-trash me-1"></i>
-                        Удалить
-                    </button>
-                </div>
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb small mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'maintenance:plan_list' %}" class="text-decoration-none">Планы</a></li>
+                    <li class="breadcrumb-item active">{{ object.name|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-1 d-flex align-items-center flex-wrap">
+                <i class="bi bi-calendar-check me-2 text-primary"></i>
+                {{ object.name|truncatechars:50 }}
+            </h1>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                {% if object.is_active %}
+                <span class="badge bg-success-subtle text-success-emphasis border fs-6"><i class="bi bi-check-circle me-1"></i>Активен</span>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border fs-6"><i class="bi bi-pause-circle me-1"></i>Неактивен</span>
+                {% endif %}
+                <span class="badge bg-light text-dark border fs-6">{{ object.interval_value }} {{ object.get_interval_unit_display }}</span>
             </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary" href="{% url 'maintenance:plan_list' %}"><i class="bi bi-arrow-left me-1"></i>Назад</a>
+            <a class="btn btn-outline-primary" href="{% url 'maintenance:plan_edit' object.pk %}"><i class="bi bi-pencil me-1"></i>Редактировать</a>
+            {% if object.is_active %}
+            <form method="post" action="{% url 'maintenance:plan_run_now' object.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success"><i class="bi bi-play me-1"></i>Запустить сейчас</button>
+            </form>
+            {% endif %}
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'maintenance:plan_delete' object.pk %}" data-delete-name="{{ object.name }}">
+                <i class="bi bi-trash me-1"></i>Удалить
+            </button>
         </div>
     </div>
 
-    <!-- =====================================================
-         2. ИНФОРМАЦИОННЫЕ КАРТОЧКИ
-         ===================================================== -->
-    <div class="row g-3">
-        <!-- Левая колонка -->
+    <div class="row">
+        <!-- ЛЕВАЯ КОЛОНКА -->
         <div class="col-lg-8">
-            <!-- A. ОСНОВНЫЕ ПАРАМЕТРЫ -->
+            <!-- Основная информация -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-dark border-0">
-                    <h5 class="mb-0">
-                        <i class="bi bi-gear me-2 text-primary"></i>
-                        Основные параметры
-                    </h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
-                        <!-- Ответственный -->
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="detail-item">
-                                <div class="detail-label">
-                                    <i class="bi bi-person me-1"></i>
-                                    Ответственный по умолчанию
-                                </div>
-                                <div class="detail-value">
-                                    {{ object.responsible_default|default:"—" }}
-                                </div>
+                            <div class="text-muted small mb-1">Оборудование</div>
+                            <div class="fw-semibold">
+                                {% if object.workstation %}
+                                <a href="{% url 'assets:asset_detail' object.workstation.pk %}" class="text-decoration-none">
+                                    <i class="bi bi-cpu me-1"></i>{{ object.workstation.name }}
+                                </a>
+                                {% else %}—{% endif %}
                             </div>
                         </div>
-
-                        <!-- Категория -->
                         <div class="col-md-6">
-                            <div class="detail-item">
-                                <div class="detail-label">
-                                    <i class="bi bi-tag me-1"></i>
-                                    Категория
-                                </div>
-                                <div class="detail-value">
-                                    <span class="badge
-                                        {% if object.category == 'inspection' %}bg-secondary-subtle text-secondary-emphasis{% endif %}
-                                        {% if object.category == 'pm' %}bg-info-subtle text-info-emphasis border border-info-subtle{% endif %}
-                                        {% if object.category == 'repair_minor' %}bg-warning-subtle text-warning-emphasis border border-warning-subtle{% endif %}
-                                        {% if object.category == 'repair_major' %}bg-primary-subtle text-primary-emphasis border border-primary-subtle{% endif %}
-                                        {% if object.category == 'emergency' %}bg-danger-subtle text-danger-emphasis border border-danger-subtle{% endif %}
-                                        px-3 py-2">
-                                        {{ object.get_category_display }}
-                                    </span>
-                                </div>
+                            <div class="text-muted small mb-1">Локация</div>
+                            <div class="fw-semibold">
+                                {% if object.location %}<i class="bi bi-geo-alt me-1"></i>{{ object.location.name }}{% else %}—{% endif %}
                             </div>
                         </div>
-
-                        <!-- Приоритет -->
                         <div class="col-md-6">
-                            <div class="detail-item">
-                                <div class="detail-label">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>
-                                    Приоритет
-                                </div>
-                                <div class="detail-value">
-                                    <span class="badge
-                                        {% if object.priority == 'low' %}bg-success-subtle text-success-emphasis border border-success-subtle{% endif %}
-                                        {% if object.priority == 'medium' %}bg-warning-subtle text-warning-emphasis border border-warning-subtle{% endif %}
-                                        {% if object.priority == 'high' %}bg-danger-subtle text-danger-emphasis border border-danger-subtle{% endif %}
-                                        px-3 py-2">
-                                        {{ object.get_priority_display }}
-                                    </span>
-                                </div>
+                            <div class="text-muted small mb-1">Ответственный по умолчанию</div>
+                            <div class="fw-semibold">
+                                {% if object.responsible_default %}
+                                <a href="{% url 'hr:hr_detail' object.responsible_default.pk %}" class="text-decoration-none">
+                                    <i class="bi bi-person me-1"></i>{{ object.responsible_default.name }}
+                                </a>
+                                {% else %}—{% endif %}
                             </div>
                         </div>
-
-                        <!-- Трудоёмкость -->
                         <div class="col-md-6">
-                            <div class="detail-item">
-                                <div class="detail-label">
-                                    <i class="bi bi-clock me-1"></i>
-                                    Трудоёмкость (план)
-                                </div>
-                                <div class="detail-value">
-                                    {{ object.labor_plan_hours }} ч
-                                </div>
-                            </div>
+                            <div class="text-muted small mb-1">Категория</div>
+                            <div class="fw-semibold">{{ object.get_category_display|default:"—" }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- B. ПРИВЯЗКА -->
+            <!-- Расписание -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-dark border-0">
-                    <h5 class="mb-0">
-                        <i class="bi bi-pin-map me-2 text-primary"></i>
-                        Привязка
-                    </h5>
+                    <h5 class="mb-0"><i class="bi bi-clock me-2 text-primary"></i>Расписание</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
-                        <!-- Локация -->
-                        <div class="col-md-6">
-                            <div class="detail-item">
-                                <div class="detail-label">
-                                    <i class="bi bi-geo-alt me-1"></i>
-                                    Локация
-                                </div>
-                                <div class="detail-value">
-                                    {% if object.location %}
-                                    <a href="{% url 'locations:location_detail' object.location.pk %}"
-                                       class="text-decoration-none">
-                                        {{ object.location }}
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted">—</span>
-                                    {% endif %}
-                                </div>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-muted small mb-1">Интервал</div>
+                            <div class="fw-semibold fs-5">{{ object.interval_value }} {{ object.get_interval_unit_display }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small mb-1">Следующий запуск</div>
+                            <div class="fw-semibold">
+                                {% if object.next_run %}
+                                <span class="text-primary">{{ object.next_run|date:"d.m.Y H:i" }}</span>
+                                {% else %}—{% endif %}
                             </div>
                         </div>
-
-                        <!-- Оборудование -->
-                        <div class="col-md-6">
-                            <div class="detail-item">
-                                <div class="detail-label">
-                                    <i class="bi bi-cpu me-1"></i>
-                                    Оборудование
-                                </div>
-                                <div class="detail-value">
-                                    {% if object.workstation %}
-                                    <a href="{% url 'assets:asset_detail' object.workstation.pk %}"
-                                       class="text-decoration-none">
-                                        {{ object.workstation }}
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted">—</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Правая колонка -->
-        <div class="col-lg-4">
-            <!-- C. РАСПИСАНИЕ -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-dark border-0">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-event me-2 text-primary"></i>
-                        Расписание
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="detail-grid">
-                        <!-- Интервал -->
-                        <div class="detail-item">
-                            <div class="detail-label">
-                                <i class="bi bi-clock-history me-1"></i>
-                                Интервал
-                            </div>
-                            <div class="detail-value">
-                                каждые {{ object.interval_value }}
-                                {{ object.get_interval_unit_display }}
-                            </div>
-                        </div>
-
-                        <!-- Следующий запуск -->
-                        <div class="detail-item">
-                            <div class="detail-label">
-                                <i class="bi bi-calendar-plus me-1"></i>
-                                Следующий запуск
-                            </div>
-                            <div class="detail-value">
-                                {{ object.next_run|default:"—" }}
-                            </div>
-                        </div>
-
-                        <!-- Первый запуск -->
-                        <div class="detail-item">
-                            <div class="detail-label">
-                                <i class="bi bi-calendar-check me-1"></i>
-                                Первый запуск
-                            </div>
-                            <div class="detail-value">
-                                {{ object.first_run_date|default:"—" }}
-                            </div>
-                        </div>
-
-                        <!-- Частота -->
-                        <div class="detail-item">
-                            <div class="detail-label">
-                                <i class="bi bi-arrow-repeat me-1"></i>
-                                Частота
-                            </div>
-                            <div class="detail-value">
-                                {{ object.get_frequency_choice_display }}
-                            </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small mb-1">План. трудозатраты</div>
+                            <div class="fw-semibold">{{ object.labor_plan_hours|default:"—" }} ч.</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- D. ОПИСАНИЕ -->
+            <!-- Описание -->
             {% if object.description %}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-dark border-0">
-                    <h5 class="mb-0">
-                        <i class="bi bi-card-text me-2 text-primary"></i>
-                        Описание
-                    </h5>
+                    <h5 class="mb-0"><i class="bi bi-text-paragraph me-2 text-primary"></i>Описание</h5>
                 </div>
-                <div class="card-body">
-                    <div class="description-content">
-                        {{ object.description|linebreaks }}
-                    </div>
-                </div>
+                <div class="card-body">{{ object.description|linebreaks }}</div>
             </div>
             {% endif %}
 
-            <!-- E. ДЕЙСТВИЯ -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-dark border-0">
-                    <h5 class="mb-0">
-                        <i class="bi bi-lightning me-2 text-primary"></i>
-                        Действия
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <!-- Создать задачу сейчас -->
-                        <form method="post" action="{% url 'maintenance:plan_run_now' object.pk %}" class="mb-0">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-primary w-100">
-                                <i class="bi bi-plus-circle me-1"></i>
-                                Создать задачу сейчас
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- =====================================================
-         3. ЗАДАЧИ ПО ПЛАНУ
-         ===================================================== -->
-    <div class="row mt-4">
-        <div class="col-12">
+            <!-- Созданные задачи -->
+            {% if work_orders %}
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-clipboard-check me-2 text-primary"></i>
-                        Задачи по этому плану
-                    </h5>
-                    <span class="badge bg-light text-dark">
-                        {{ work_orders|length }}
-                    </span>
+                    <h5 class="mb-0"><i class="bi bi-clipboard-check me-2 text-primary"></i>Созданные задачи</h5>
+                    <span class="badge bg-primary-subtle text-primary-emphasis border">{{ work_orders.count }}</span>
                 </div>
-
-                {% if work_orders %}
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
-                                <tr>
-                                    <th style="width: 80px;">ID</th>
-                                    <th>Название</th>
-                                    <th style="width: 120px;">Статус</th>
-                                    <th style="width: 150px;">Ответственный</th>
-                                    <th style="width: 120px;" class="text-end">Создана</th>
-                                    <th style="width: 80px;" class="text-end">Действия</th>
-                                </tr>
+                                <tr><th>Название</th><th>Статус</th><th>Ответственный</th><th>Создано</th></tr>
                             </thead>
                             <tbody>
                                 {% for wo in work_orders %}
-                                <tr class="table-row-link" data-href="{% url 'maintenance:wo_detail' wo.pk %}">
-                                    <!-- ID -->
-                                    <td class="text-muted">#{{ wo.id }}</td>
-
-                                    <!-- Название -->
-                                    <td>
-                                        <div class="fw-semibold">{{ wo.name|truncatechars:60 }}</div>
-                                        {% if wo.description %}
-                                        <div class="text-muted small text-truncate" style="max-width: 300px;">
-                                            {{ wo.description|truncatechars:80 }}
-                                        </div>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Статус -->
-                                    <td>
-                                        {% if wo.status == 'done' %}
-                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                Завершено
-                                            </span>
-                                        {% elif wo.status == 'in_progress' %}
-                                            <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
-                                                <i class="bi bi-arrow-repeat me-1"></i>
-                                                В работе
-                                            </span>
-                                        {% elif wo.status == 'failed' %}
-                                            <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
-                                                <i class="bi bi-x-circle me-1"></i>
-                                                Не выполнено
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                                                {{ wo.get_status_display }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Ответственный -->
-                                    <td>
-                                        {% if wo.responsible %}
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-person me-2 text-muted small"></i>
-                                            <span class="truncate">{{ wo.responsible }}</span>
-                                        </div>
-                                        {% else %}
-                                        <span class="text-muted">—</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Дата создания -->
-                                    <td class="text-end text-muted small">
-                                        {{ wo.created_at|date:"d.m.Y H:i" }}
-                                    </td>
-
-                                    <!-- Действия -->
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'maintenance:wo_detail' wo.pk %}"
-                                               class="btn btn-outline-secondary"
-                                               data-bs-toggle="tooltip"
-                                               title="Просмотр">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if perms.maintenance.change_workorder %}
-                                            <a href="{% url 'maintenance:wo_edit' wo.pk %}"
-                                               class="btn btn-outline-secondary"
-                                               data-bs-toggle="tooltip"
-                                               title="Редактировать">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
+                                <tr>
+                                    <td><a href="{% url 'maintenance:wo_detail' wo.pk %}" class="text-decoration-none">{{ wo.name|truncatechars:30 }}</a></td>
+                                    <td><span class="badge bg-light text-dark border">{{ wo.get_status_display }}</span></td>
+                                    <td>{{ wo.responsible.name|default:"—" }}</td>
+                                    <td class="text-muted small">{{ wo.created_at|date:"d.m.Y" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-                {% else %}
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
-                    <h5 class="text-muted mb-3">Задачи не созданы</h5>
-                    <p class="text-muted small mb-3">
-                        По этому плану задачи ещё не создавались.<br>
-                        Они появятся автоматически по расписанию или после нажатия кнопки "Создать задачу сейчас"
-                    </p>
-                    <form method="post" action="{% url 'maintenance:plan_run_now' object.pk %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            Создать первую задачу
-                        </button>
-                    </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА -->
+        <div class="col-lg-4">
+            <!-- Действия -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2 text-primary"></i>Действия</h5>
                 </div>
-                {% endif %}
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if object.is_active %}
+                        <form method="post" action="{% url 'maintenance:plan_run_now' object.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100"><i class="bi bi-play me-2"></i>Запустить сейчас</button>
+                        </form>
+                        {% endif %}
+                        <a href="{% url 'maintenance:plan_edit' object.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>Редактировать
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'maintenance:plan_delete' object.pk %}" data-delete-name="{{ object.name }}">
+                            <i class="bi bi-trash me-2"></i>Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Метаданные -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Метаданные</h5>
+                </div>
+                <div class="card-body">
+                    {% include "components/metadata_list.html" with object=object show_id=True %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_css %}
-<style>
-/* Стили для detail items */
-.detail-item {
-    padding: 1rem;
-    border-radius: .75rem;
-    background: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color-translucent);
-    height: 100%;
-}
-
-.detail-label {
-    font-size: .75rem;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    color: var(--bs-secondary-color);
-    margin-bottom: .5rem;
-    display: flex;
-    align-items: center;
-}
-
-.detail-value {
-    font-weight: 600;
-    font-size: 1.1rem;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-}
-
-/* Стили для описания */
-.description-content {
-    line-height: 1.6;
-    color: var(--bs-body-color);
-}
-
-.description-content p:last-child {
-    margin-bottom: 0;
-}
-
-/* Стили для строк таблицы с кликом */
-.table-row-link {
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-}
-
-.table-row-link:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.05);
-}
-
-/* Улучшенные состояния для ссылок в таблице */
-.table a {
-    transition: color 0.2s;
-}
-
-.table a:hover {
-    color: var(--bs-primary) !important;
-}
-
-.truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.text-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Стили для карточек */
-.card {
-    border: 1px solid var(--bs-border-color);
-    transition: box-shadow 0.2s ease;
-}
-
-.card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-}
-
-.card-header.bg-dark {
-    background-color: var(--bs-light-bg-subtle) !important;
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-/* Темная тема */
-[data-bs-theme="dark"] .card-header.bg-dark {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .table-light {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .text-muted {
-    color: var(--bs-secondary-color) !important;
-}
-
-[data-bs-theme="dark"] .detail-item {
-    background: var(--bs-dark);
-    border-color: var(--bs-border-color);
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .detail-item {
-        padding: .75rem;
-    }
-
-    .detail-value {
-        font-size: 1rem;
-    }
-
-    .detail-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (min-width: 768px) {
-    .detail-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-</style>
+{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить план?" %}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Клик по строке таблицы для перехода к деталям
-    document.querySelectorAll('.table-row-link').forEach(row => {
-        row.addEventListener('click', function(e) {
-            // Игнорируем клики по кнопкам и ссылкам
-            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-                return;
-            }
-
-            const href = this.getAttribute('data-href');
-            if (href) {
-                window.location.href = href;
-            }
-        });
-    });
-
-    // Инициализация тултипов
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    if (tooltipTriggerList.length > 0) {
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-    }
-
-    // Подтверждение создания задачи
-    const actionButtons = document.querySelectorAll('form button[type="submit"]');
-    actionButtons.forEach(button => {
-        if (button.textContent.includes('Создать задачу') || button.textContent.includes('Создать первую задачу')) {
-            button.addEventListener('click', function(e) {
-                if (!confirm('Создать задачу по этому плану сейчас?')) {
-                    e.preventDefault();
-                }
-            });
-        }
-    });
-});
-</script>
+{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
 {% endblock %}
