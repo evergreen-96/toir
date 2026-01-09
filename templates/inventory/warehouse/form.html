@@ -1,94 +1,96 @@
 {% extends "base.html" %}
-{% load form_extras %}
-{% block title %}
-  {% if create %}Новый {{ model_name }}{% else %}Редактирование {{ model_name }}{% endif %}
+{% block title %}{% if create %}Новый склад{% else %}Редактирование склада{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+.ts-wrapper { width: 100% !important; }
+.ts-dropdown { z-index: 1060 !important; }
+[data-bs-theme="dark"] .ts-control { background-color: var(--bs-dark) !important; color: #e9ecef !important; }
+[data-bs-theme="dark"] .ts-dropdown { background-color: var(--bs-dark) !important; }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-xl-8 col-lg-9">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <!-- ===== Header ===== -->
-        <div class="mb-3">
-          <h1 class="h4 mb-1">
-            {% if create %}Новый {{ model_name }}{% else %}Редактирование {{ model_name }}{% endif %}
-          </h1>
-          <div class="text-muted small">
-            Основные параметры {{ model_name|lower }}
-          </div>
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{% url 'inventory:warehouse_list' %}">Склады</a></li>
+                        <li class="breadcrumb-item active">{% if create %}Новый склад{% else %}{{ object.name|truncatechars:30 }}{% endif %}</li>
+                    </ol>
+                </nav>
+                <h1 class="h2 mb-1">
+                    <i class="bi bi-building me-2 text-primary"></i>
+                    {% if create %}Новый склад{% else %}Редактирование склада{% endif %}
+                </h1>
+            </div>
+
+            <form method="post" id="warehouse-form">
+                {% csrf_token %}
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">{{ form.name.label }} <span class="text-danger">*</span></label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.location.label }}</label>
+                                {{ form.location }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.responsible.label }}</label>
+                                {{ form.responsible }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% if create %}{% url 'inventory:warehouse_list' %}{% else %}{% url 'inventory:warehouse_detail' object.pk %}{% endif %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i>Отмена
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i>Сохранить
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <!-- ===== Legend ===== -->
-        <div class="text-muted small mb-4">
-          <span class="text-danger fw-semibold">*</span> — обязательные поля
-        </div>
-
-        <form method="post" novalidate enctype="multipart/form-data">
-          {% csrf_token %}
-
-          <div class="row g-3">
-            {% for field in form %}
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  {{ field.label }}
-                  {% if field.field.required %}
-                    <span class="text-danger">*</span>
-                  {% endif %}
-                </label>
-
-                {% if field.field.widget.input_type == "select" or field.field.widget.input_type == "selectmultiple" %}
-                  {{ field|add_class:"form-select js-select2" }}
-                {% elif field.field.widget.input_type == "checkbox" %}
-                  <div class="form-check">
-                    {{ field|add_class:"form-check-input" }}
-                    <label class="form-check-label" for="{{ field.id_for_label }}">
-                      {{ field.label }}
-                    </label>
-                  </div>
-                {% elif field.field.widget.input_type == "file" %}
-                  {{ field|add_class:"form-control" }}
-                {% else %}
-                  {{ field|add_class:"form-control" }}
-                {% endif %}
-
-                {% if field.help_text %}
-                  <div class="form-text">{{ field.help_text }}</div>
-                {% endif %}
-
-                {% if field.errors %}
-                  <div class="invalid-feedback d-block">
-                    {{ field.errors }}
-                  </div>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-
-          <!-- ===== Actions ===== -->
-          <div class="d-flex justify-content-between align-items-center mt-4">
-            <a class="btn btn-outline-secondary"
-               href="{% url 'inventory:warehouse_list' %}">
-              Отмена
-            </a>
-            <button class="btn btn-primary px-4" type="submit">
-              Сохранить
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
-  </div>
 </div>
+{% endblock %}
 
-<!-- ===== Select2 init ===== -->
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
-  $(document).ready(function () {
-    $('.js-select2').select2({
-      width: '100%',
-      placeholder: 'Выберите',
-      allowClear: true
-    });
-  });
+document.addEventListener('DOMContentLoaded', function() {
+    // Tom Select для локации
+    const locationEl = document.querySelector('.js-tom-select-location');
+    if (locationEl) {
+        new TomSelect(locationEl, {
+            allowEmptyOption: true,
+            placeholder: 'Выберите локацию...'
+        });
+    }
+
+    // Tom Select для ответственного
+    const responsibleEl = document.querySelector('.js-tom-select-responsible');
+    if (responsibleEl) {
+        new TomSelect(responsibleEl, {
+            allowEmptyOption: true,
+            placeholder: 'Выберите ответственного...'
+        });
+    }
+});
 </script>
 {% endblock %}

@@ -434,8 +434,8 @@ class WorkOrder(models.Model):
     date_finish = models.DateField("Дата окончания работ", null=True, blank=True)
 
     # Трудоёмкость
-    labor_plan_hours = models.FloatField("Трудоёмкость (план), ч", default=0)
-    labor_fact_hours = models.FloatField("Трудоёмкость (факт), ч", default=0)
+    labor_plan_hours = models.FloatField("Трудоёмкость (план), ч", default=0, blank=True)
+    labor_fact_hours = models.FloatField("Трудоёмкость (факт), ч", default=0, blank=True)
 
     # Приоритет и системные поля
     priority = models.CharField(
@@ -649,3 +649,27 @@ class WorkOrderAttachment(models.Model):
 
     def __str__(self):
         return f"Вложение {self.file} для {self.work_order}"
+
+
+class PlannedOrderAttachment(models.Model):
+    """Связь между плановой задачей и файлом."""
+
+    history = HistoricalRecords()
+
+    planned_order = models.ForeignKey(
+        PlannedOrder,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+    file = models.ForeignKey(
+        File,
+        on_delete=models.CASCADE,
+        related_name="work_orders",
+    )
+    attached_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("work_order", "file")
+
+    def __str__(self):
+        return f"Вложение {self.file} для {self.planned_order}"

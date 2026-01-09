@@ -1,65 +1,102 @@
+"""
+Inventory Forms - Склады и Материалы
+====================================
+"""
+
 from django import forms
-from django.core.validators import MinValueValidator
 from django.forms import ClearableFileInput
 
+from hr.models import HumanResource
+from locations.models import Location
 from .models import Warehouse, Material
-from assets.models import Workstation
 
 
-class BaseInventoryForm(forms.ModelForm):
-    """Базовая форма для инвентаря"""
+# =============================================================================
+# ВИДЖЕТЫ
+# =============================================================================
 
-    def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
-        super().__init__(*args, **kwargs)
-
-    def clean_name(self):
-        """Базовая валидация названия"""
-        name = self.cleaned_data.get('name')
-        if name and len(name.strip()) < 2:
-            raise forms.ValidationError("Название должно содержать минимум 2 символа")
-        return name.strip()
+class ImagePreviewInput(ClearableFileInput):
+    """Виджет загрузки изображения без лишнего Django UI."""
+    initial_text = ""
+    input_text = ""
+    clear_checkbox_label = ""
+    template_name = "django/forms/widgets/clearable_file_input.html"
 
 
-class WarehouseForm(BaseInventoryForm):
-    """Форма для склада"""
+class MaterialSelectWithImage(forms.Select):
+    """
+    Кастомный виджет Select с data-атрибутами для изображений материалов.
+    Используется с Tom Select для отображения превью.
+    """
+    
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(
+            name, value, label, selected, index, subindex=subindex, attrs=attrs
+        )
+        
+        if value and hasattr(value, "value"):
+            material_id = value.value
+            material = self.choices.queryset.filter(pk=material_id).first()
+            
+            if material:
+                if material.image:
+                    option["attrs"]["data-image"] = material.image.url
+                option["attrs"]["data-stock"] = str(material.qty_available)
+                option["attrs"]["data-uom"] = material.get_uom_display()
+        
+        return option
 
+
+# =============================================================================
+# WAREHOUSE FORM
+# =============================================================================
+
+class WarehouseForm(forms.ModelForm):
+    """Форма для склада."""
+    
     class Meta:
         model = Warehouse
         fields = ["name", "location", "responsible"]
-
+        widgets = {
+            "name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Введите название склада",
+            }),
+            "location": forms.Select(attrs={
+                "class": "form-select js-tom-select-location",
+            }),
+            "responsible": forms.Select(attrs={
+                "class": "form-select js-tom-select-responsible",
+            }),
+        }
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Queryset для связанных полей
+        self.fields["location"].queryset = Location.objects.all().order_by("name")
+        self.fields["responsible"].queryset = HumanResource.objects.filter(
+            is_active=True
+        ).order_by("name")
+        
+        # Необязательные поля
+        self.fields["location"].required = False
+        self.fields["responsible"].required = False
+    
+    def clean_name(self):
+        name = self.cleaned_data.get("name", "").strip()
+        if len(name) < 2:
+            raise forms.ValidationError("Название должно содержать минимум 2 символа")
+        return name
 
-        # Применение CSS классов
-        self.fields['name'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Введите название склада'
-        })
-        self.fields['location'].widget.attrs.update({
-            'class': 'form-select js-select2',
-            'data-placeholder': 'Выберите локацию'
-        })
-        self.fields['responsible'].widget.attrs.update({
-            'class': 'form-select js-select2',
-            'data-placeholder': 'Выберите ответственного'
-        })
 
+# =============================================================================
+# MATERIAL FORM
+# =============================================================================
 
-
-class ImageOnlyFileInput(ClearableFileInput):
-    """
-    Убираем дефолтный Django UI:
-    - 'На данный момент'
-    - 'Очистить [ ]'
-    """
-    initial_text = ''
-    input_text = ''
-    clear_checkbox_label = ''
-
-class MaterialForm(BaseInventoryForm):
-    """Форма для материала"""
-
+class MaterialForm(forms.ModelForm):
+    """Форма для материала."""
+    
     class Meta:
         model = Material
         fields = [
@@ -71,186 +108,105 @@ class MaterialForm(BaseInventoryForm):
             "uom",
             "qty_available",
             "qty_reserved",
+            "min_stock_level",
             "warehouse",
             "suitable_for",
             "image",
             "is_active",
+            "notes",
         ]
         widgets = {
-            'image': ImageOnlyFileInput(),
+            "name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Полное наименование материала",
+            }),
+            "group": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Группа материалов",
+            }),
+            "article": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Артикул",
+            }),
+            "part_number": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Номер детали / OEM",
+            }),
+            "vendor": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Производитель",
+            }),
+            "uom": forms.Select(attrs={
+                "class": "form-select",
+            }),
+            "qty_available": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "min": "0",
+            }),
+            "qty_reserved": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "min": "0",
+            }),
+            "min_stock_level": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "min": "0",
+                "placeholder": "Мин. запас для уведомлений",
+            }),
+            "warehouse": forms.Select(attrs={
+                "class": "form-select js-tom-select-warehouse",
+            }),
+            "suitable_for": forms.SelectMultiple(attrs={
+                "class": "form-select js-tom-select-workstations",
+            }),
+            "image": ImagePreviewInput(attrs={
+                "class": "form-control",
+                "accept": "image/*",
+            }),
+            "is_active": forms.CheckboxInput(attrs={
+                "class": "form-check-input",
+            }),
+            "notes": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Дополнительные примечания...",
+            }),
         }
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Настройка виджетов
-        text_fields = ['name', 'group', 'article', 'part_number', 'vendor']
-        for field in text_fields:
-            self.fields[field].widget.attrs.update({
-                'class': 'form-control',
-                'placeholder': f'Введите {self.fields[field].label.lower()}'
-            })
-
-        # Числовые поля
-        self.fields['qty_available'].widget.attrs.update({
-            'class': 'form-control',
-            'step': '0.01',
-            'min': '0'
-        })
-        self.fields['qty_reserved'].widget.attrs.update({
-            'class': 'form-control',
-            'step': '1',
-            'min': '0'
-        })
-
-        # Выпадающие списки и множественный выбор
-        self.fields['uom'].widget.attrs.update({
-            'class': 'form-select'
-        })
-        self.fields['warehouse'].widget.attrs.update({
-            'class': 'form-select js-select2',
-            'data-placeholder': 'Выберите склад'
-        })
-        self.fields['suitable_for'].widget.attrs.update({
-            'class': 'form-select js-select2',
-            'data-placeholder': 'Выберите оборудование',
-            'multiple': 'multiple'
-        })
-
-        # Чекбокс
-        self.fields['is_active'].widget.attrs.update({
-            'class': 'form-check-input'
-        })
-
-        # Поле изображения
-        self.fields['image'].widget.attrs.update({
-            'class': 'form-control',
-            'accept': 'image/*'
-        })
-
+        
+        # Queryset для связанных полей
+        self.fields["warehouse"].queryset = Warehouse.objects.all().order_by("name")
+        
+        from assets.models import Workstation
+        self.fields["suitable_for"].queryset = Workstation.objects.all().order_by("name")
+        
+        # Необязательные поля
+        optional_fields = [
+            "group", "article", "part_number", "vendor",
+            "warehouse", "suitable_for", "image", "notes", "min_stock_level"
+        ]
+        for field in optional_fields:
+            self.fields[field].required = False
+    
+    def clean_name(self):
+        name = self.cleaned_data.get("name", "").strip()
+        if len(name) < 2:
+            raise forms.ValidationError("Название должно содержать минимум 2 символа")
+        return name
+    
     def clean(self):
-        """Валидация взаимоотношений между полями"""
         cleaned_data = super().clean()
-        qty_available = cleaned_data.get('qty_available')
-        qty_reserved = cleaned_data.get('qty_reserved')
-
+        qty_available = cleaned_data.get("qty_available")
+        qty_reserved = cleaned_data.get("qty_reserved")
+        
         if qty_reserved and qty_available and qty_reserved > qty_available:
-            raise forms.ValidationError({
-                'qty_reserved': 'Резерв не может превышать доступное количество'
-            })
-
+            self.add_error(
+                "qty_reserved",
+                "Резерв не может превышать доступное количество"
+            )
+        
         return cleaned_data
-
-
-class MaterialSelectWithImage(forms.Select):
-    """Кастомный виджет Select с изображениями материалов"""
-
-    def create_option(
-            self, name, value, label, selected, index, subindex=None, attrs=None
-    ):
-        option = super().create_option(
-            name, value, label, selected, index, subindex=subindex, attrs=attrs
-        )
-
-        # 🔑 ВАЖНО: value — это ModelChoiceIteratorValue
-        if value and hasattr(value, "value"):
-            material_id = value.value
-
-            # Получаем материал из кеша или запроса
-            material = self.choices.queryset.filter(pk=material_id).first()
-            if material and material.image:
-                option["attrs"]["data-image"] = material.image.url
-                # Добавляем класс для стилизации
-                if 'class' in option["attrs"]:
-                    option["attrs"]["class"] += " has-image"
-                else:
-                    option["attrs"]["class"] = "has-image"
-
-        return option
-
-    def get_context(self, name, value, attrs):
-        context = super().get_context(name, value, attrs)
-        # Добавляем дополнительные данные в контекст
-        context['widget']['attrs']['data-select2-images'] = 'true'
-        return context
-
-
-class MaterialChoiceField(forms.ModelChoiceField):
-    """Кастомное поле выбора материала с виджетом изображений"""
-    widget = MaterialSelectWithImage
-
-    def __init__(self, *args, **kwargs):
-        # Убедимся, что queryset включает материалы с изображениями
-        if 'queryset' not in kwargs:
-            from .models import Material
-            kwargs['queryset'] = Material.objects.filter(is_active=True).select_related('warehouse')
-
-        # Настройки виджета
-        widget_attrs = kwargs.pop('widget_attrs', {})
-        widget_attrs.update({
-            'class': 'form-select js-select2-material',
-            'data-placeholder': 'Выберите материал',
-            'data-allow-clear': 'true',
-        })
-
-        super().__init__(*args, **kwargs)
-        self.widget.attrs.update(widget_attrs)
-
-
-# Формы фильтрации
-class WarehouseFilterForm(forms.Form):
-    """Форма фильтрации складов"""
-    search = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Поиск по названию склада...'
-        })
-    )
-
-    location = forms.ModelChoiceField(
-        queryset=None,  # Будет установлено в __init__
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select js-select2',
-            'data-placeholder': 'Все локации'
-        })
-    )
-
-    def __init__(self, *args, **kwargs):
-        from locations.models import Location
-        super().__init__(*args, **kwargs)
-        self.fields['location'].queryset = Location.objects.all()
-
-
-class MaterialFilterForm(forms.Form):
-    """Форма фильтрации материалов"""
-    search = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Поиск по названию, артикулу...'
-        })
-    )
-
-    warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.all(),
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select js-select2',
-            'data-placeholder': 'Все склады'
-        })
-    )
-
-    is_active = forms.ChoiceField(
-        choices=[('', 'Все'), ('1', 'Активные'), ('0', 'Неактивные')],
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-
-    group = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Группа...'
-        })
-    )

@@ -1,322 +1,322 @@
-{% extends "base.html" %}
-{% load static %}
-{% block title %}Персонал{% endblock %}
+<!--{% extends "base.html" %}-->
+<!--{% load static %}-->
+<!--{% block title %}Персонал{% endblock %}-->
 
-{% block content %}
-<div class="container-fluid py-3">
-    <!-- =====================================================
-         HEADER
-         ===================================================== -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-        <div class="mb-3 mb-md-0">
-            <h1 class="h2 mb-1">Персонал</h1>
-            <div class="text-muted small">Сотрудники и организационная структура</div>
-        </div>
+<!--{% block content %}-->
+<!--<div class="container-fluid py-3">-->
+<!--    &lt;!&ndash; =====================================================-->
+<!--         HEADER-->
+<!--         ===================================================== &ndash;&gt;-->
+<!--    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">-->
+<!--        <div class="mb-3 mb-md-0">-->
+<!--            <h1 class="h2 mb-1">Персонал</h1>-->
+<!--            <div class="text-muted small">Сотрудники и организационная структура</div>-->
+<!--        </div>-->
 
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-            <!-- Вид отображения -->
-            {% include "components/view_mode_toggle.html" with storage_key="hr_view_mode" %}
+<!--        <div class="d-flex flex-wrap gap-2 align-items-center">-->
+<!--            &lt;!&ndash; Вид отображения &ndash;&gt;-->
+<!--            {% include "components/view_mode_toggle.html" with storage_key="hr_view_mode" %}-->
 
-            <!-- Экспорт -->
-            {% if perms.hr.view_humanresource %}
-            <a class="btn btn-outline-secondary"
-               href="{% url 'hr:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
-                <i class="bi bi-download me-1"></i>
-                Экспорт
-            </a>
-            {% endif %}
+<!--            &lt;!&ndash; Экспорт &ndash;&gt;-->
+<!--            {% if perms.hr.view_humanresource %}-->
+<!--            <a class="btn btn-outline-secondary"-->
+<!--               href="{% url 'hr:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">-->
+<!--                <i class="bi bi-download me-1"></i>-->
+<!--                Экспорт-->
+<!--            </a>-->
+<!--            {% endif %}-->
 
-            <!-- Добавление нового -->
-            {% if perms.hr.add_humanresource %}
-            <a class="btn btn-primary" href="{% url 'hr:hr_new' %}">
-                <i class="bi bi-plus-lg me-1"></i>
-                Добавить сотрудника
-            </a>
-            {% endif %}
-        </div>
-    </div>
+<!--            &lt;!&ndash; Добавление нового &ndash;&gt;-->
+<!--            {% if perms.hr.add_humanresource %}-->
+<!--            <a class="btn btn-primary" href="{% url 'hr:hr_new' %}">-->
+<!--                <i class="bi bi-plus-lg me-1"></i>-->
+<!--                Добавить сотрудника-->
+<!--            </a>-->
+<!--            {% endif %}-->
+<!--        </div>-->
+<!--    </div>-->
 
-    <!-- =====================================================
-         СТАТИСТИКА (с компонентами)
-         ===================================================== -->
-    {% if stats %}
-    <div class="row g-3 mb-4">
-        <div class="col-md-3 col-sm-6">
-            {% include "components/stat_card.html" with title="Всего сотрудников" value=stats.total icon="bi-people" color="primary" %}
-        </div>
-        <div class="col-md-3 col-sm-6">
-            {% include "components/stat_card.html" with title="Активные" value=stats.active icon="bi-person-check" color="success" %}
-        </div>
-        <div class="col-md-3 col-sm-6">
-            {% include "components/stat_card.html" with title="Руководители" value=stats.managers icon="bi-person-badge" color="warning" %}
-        </div>
-        <div class="col-md-3 col-sm-6">
-            {% include "components/stat_card.html" with title="Должностей" value=stats.job_titles icon="bi-briefcase" color="info" %}
-        </div>
-    </div>
-    {% endif %}
+<!--    &lt;!&ndash; =====================================================-->
+<!--         СТАТИСТИКА (с компонентами)-->
+<!--         ===================================================== &ndash;&gt;-->
+<!--    {% if stats %}-->
+<!--    <div class="row g-3 mb-4">-->
+<!--        <div class="col-md-3 col-sm-6">-->
+<!--            {% include "components/stat_card.html" with title="Всего сотрудников" value=stats.total icon="bi-people" color="primary" %}-->
+<!--        </div>-->
+<!--        <div class="col-md-3 col-sm-6">-->
+<!--            {% include "components/stat_card.html" with title="Активные" value=stats.active icon="bi-person-check" color="success" %}-->
+<!--        </div>-->
+<!--        <div class="col-md-3 col-sm-6">-->
+<!--            {% include "components/stat_card.html" with title="Руководители" value=stats.managers icon="bi-person-badge" color="warning" %}-->
+<!--        </div>-->
+<!--        <div class="col-md-3 col-sm-6">-->
+<!--            {% include "components/stat_card.html" with title="Должностей" value=stats.job_titles icon="bi-briefcase" color="info" %}-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    {% endif %}-->
 
-    <!-- =====================================================
-         ФИЛЬТРЫ
-         ===================================================== -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="bi bi-funnel me-2 text-primary"></i>
-                Фильтры
-            </h5>
-            <button class="btn btn-sm btn-link text-muted" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#filterCollapse"
-                    id="filterToggleBtn">
-                <i class="bi bi-chevron-down"></i>
-            </button>
-        </div>
+<!--    &lt;!&ndash; =====================================================-->
+<!--         ФИЛЬТРЫ-->
+<!--         ===================================================== &ndash;&gt;-->
+<!--    <div class="card border-0 shadow-sm mb-4">-->
+<!--        <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">-->
+<!--            <h5 class="mb-0">-->
+<!--                <i class="bi bi-funnel me-2 text-primary"></i>-->
+<!--                Фильтры-->
+<!--            </h5>-->
+<!--            <button class="btn btn-sm btn-link text-muted" type="button"-->
+<!--                    data-bs-toggle="collapse" data-bs-target="#filterCollapse"-->
+<!--                    id="filterToggleBtn">-->
+<!--                <i class="bi bi-chevron-down"></i>-->
+<!--            </button>-->
+<!--        </div>-->
 
-        <div class="collapse show" id="filterCollapse">
-            <div class="card-body">
-                <form class="row g-3" method="get" id="filterForm">
-                    <!-- Поиск -->
-                    <div class="col-xl-3 col-md-6">
-                        {% include "components/search_input.html" with name="q" value=filter_params.q placeholder="ФИО, должность..." label="Поиск" %}
-                    </div>
+<!--        <div class="collapse show" id="filterCollapse">-->
+<!--            <div class="card-body">-->
+<!--                <form class="row g-3" method="get" id="filterForm">-->
+<!--                    &lt;!&ndash; Поиск &ndash;&gt;-->
+<!--                    <div class="col-xl-3 col-md-6">-->
+<!--                        {% include "components/search_input.html" with name="q" value=filter_params.q placeholder="ФИО, должность..." label="Поиск" %}-->
+<!--                    </div>-->
 
-                    <!-- Руководитель -->
-                    <div class="col-xl-2 col-md-4">
-                        <label class="form-label small mb-1">
-                            <i class="bi bi-person-badge me-1"></i>
-                            Руководитель
-                        </label>
-                        <select name="manager" class="form-select">
-                            <option value="">Все</option>
-                            {% for m in managers %}
-                            <option value="{{ m.pk }}" {% if filter_params.manager == m.pk|stringformat:"d" %}selected{% endif %}>
-                                {{ m.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+<!--                    &lt;!&ndash; Руководитель &ndash;&gt;-->
+<!--                    <div class="col-xl-2 col-md-4">-->
+<!--                        <label class="form-label small mb-1">-->
+<!--                            <i class="bi bi-person-badge me-1"></i>-->
+<!--                            Руководитель-->
+<!--                        </label>-->
+<!--                        <select name="manager" class="form-select">-->
+<!--                            <option value="">Все</option>-->
+<!--                            {% for m in managers %}-->
+<!--                            <option value="{{ m.pk }}" {% if filter_params.manager == m.pk|stringformat:"d" %}selected{% endif %}>-->
+<!--                                {{ m.name }}-->
+<!--                            </option>-->
+<!--                            {% endfor %}-->
+<!--                        </select>-->
+<!--                    </div>-->
 
-                    <!-- Должность -->
-                    <div class="col-xl-2 col-md-4">
-                        <label class="form-label small mb-1">
-                            <i class="bi bi-briefcase me-1"></i>
-                            Должность
-                        </label>
-                        <select name="job_title" class="form-select">
-                            <option value="">Все должности</option>
-                            {% for jt in job_titles %}
-                            <option value="{{ jt }}" {% if filter_params.job_title == jt %}selected{% endif %}>
-                                {{ jt }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+<!--                    &lt;!&ndash; Должность &ndash;&gt;-->
+<!--                    <div class="col-xl-2 col-md-4">-->
+<!--                        <label class="form-label small mb-1">-->
+<!--                            <i class="bi bi-briefcase me-1"></i>-->
+<!--                            Должность-->
+<!--                        </label>-->
+<!--                        <select name="job_title" class="form-select">-->
+<!--                            <option value="">Все должности</option>-->
+<!--                            {% for jt in job_titles %}-->
+<!--                            <option value="{{ jt }}" {% if filter_params.job_title == jt %}selected{% endif %}>-->
+<!--                                {{ jt }}-->
+<!--                            </option>-->
+<!--                            {% endfor %}-->
+<!--                        </select>-->
+<!--                    </div>-->
 
-                    <!-- Статус -->
-                    <div class="col-xl-2 col-md-4">
-                        <label class="form-label small mb-1">
-                            <i class="bi bi-toggle-on me-1"></i>
-                            Статус
-                        </label>
-                        <select name="is_active" class="form-select">
-                            <option value="">Все</option>
-                            <option value="true" {% if filter_params.is_active == 'true' %}selected{% endif %}>Активные</option>
-                            <option value="false" {% if filter_params.is_active == 'false' %}selected{% endif %}>Неактивные</option>
-                        </select>
-                    </div>
+<!--                    &lt;!&ndash; Статус &ndash;&gt;-->
+<!--                    <div class="col-xl-2 col-md-4">-->
+<!--                        <label class="form-label small mb-1">-->
+<!--                            <i class="bi bi-toggle-on me-1"></i>-->
+<!--                            Статус-->
+<!--                        </label>-->
+<!--                        <select name="is_active" class="form-select">-->
+<!--                            <option value="">Все</option>-->
+<!--                            <option value="true" {% if filter_params.is_active == 'true' %}selected{% endif %}>Активные</option>-->
+<!--                            <option value="false" {% if filter_params.is_active == 'false' %}selected{% endif %}>Неактивные</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
 
-                    <!-- Кнопки -->
-                    <div class="col-xl-3 col-md-12 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search me-1"></i>
-                            Применить
-                        </button>
-                        <a href="{% url 'hr:hr_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-lg me-1"></i>
-                            Сбросить
-                        </a>
-                    </div>
-                </form>
+<!--                    &lt;!&ndash; Кнопки &ndash;&gt;-->
+<!--                    <div class="col-xl-3 col-md-12 d-flex align-items-end gap-2">-->
+<!--                        <button type="submit" class="btn btn-primary">-->
+<!--                            <i class="bi bi-search me-1"></i>-->
+<!--                            Применить-->
+<!--                        </button>-->
+<!--                        <a href="{% url 'hr:hr_list' %}" class="btn btn-outline-secondary">-->
+<!--                            <i class="bi bi-x-lg me-1"></i>-->
+<!--                            Сбросить-->
+<!--                        </a>-->
+<!--                    </div>-->
+<!--                </form>-->
 
-                <!-- Результаты -->
-                <div class="mt-3 pt-3 border-top">
-                    {% include "components/filter_results_info.html" with count=paginator.count query=filter_params.q reset_url=request.path has_filters=request.GET %}
-                </div>
-            </div>
-        </div>
-    </div>
+<!--                &lt;!&ndash; Результаты &ndash;&gt;-->
+<!--                <div class="mt-3 pt-3 border-top">-->
+<!--                    {% include "components/filter_results_info.html" with count=paginator.count query=filter_params.q reset_url=request.path has_filters=request.GET %}-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
 
-    <!-- =====================================================
-         ВИД 1: Карточки
-         ===================================================== -->
-    <div id="cards-view">
-        {% if employees %}
-        <div class="row g-3">
-            {% for employee in employees %}
-            <div class="col-xl-3 col-lg-4 col-md-6">
-                <div class="card h-100 border hover-shadow">
-                    <div class="card-body d-flex flex-column">
-                        <!-- Заголовок -->
-                        <div class="mb-3">
-                            <h6 class="card-title mb-1">
-                                <a href="{% url 'hr:hr_detail' employee.pk %}"
-                                   class="text-decoration-none text-body">
-                                    {{ employee.name }}
-                                </a>
-                            </h6>
-                            <div class="text-muted small">
-                                <i class="bi bi-briefcase me-1"></i>
-                                {{ employee.job_title|default:"Должность не указана" }}
-                            </div>
-                        </div>
+<!--    &lt;!&ndash; =====================================================-->
+<!--         ВИД 1: Карточки-->
+<!--         ===================================================== &ndash;&gt;-->
+<!--    <div id="cards-view">-->
+<!--        {% if employees %}-->
+<!--        <div class="row g-3">-->
+<!--            {% for employee in employees %}-->
+<!--            <div class="col-xl-3 col-lg-4 col-md-6">-->
+<!--                <div class="card h-100 border hover-shadow">-->
+<!--                    <div class="card-body d-flex flex-column">-->
+<!--                        &lt;!&ndash; Заголовок &ndash;&gt;-->
+<!--                        <div class="mb-3">-->
+<!--                            <h6 class="card-title mb-1">-->
+<!--                                <a href="{% url 'hr:hr_detail' employee.pk %}"-->
+<!--                                   class="text-decoration-none text-body">-->
+<!--                                    {{ employee.name }}-->
+<!--                                </a>-->
+<!--                            </h6>-->
+<!--                            <div class="text-muted small">-->
+<!--                                <i class="bi bi-briefcase me-1"></i>-->
+<!--                                {{ employee.job_title|default:"Должность не указана" }}-->
+<!--                            </div>-->
+<!--                        </div>-->
 
-                        <!-- Статус -->
-                        <div class="mb-3">
-                            {% include "components/status_badge.html" with is_active=employee.is_active %}
-                        </div>
+<!--                        &lt;!&ndash; Статус &ndash;&gt;-->
+<!--                        <div class="mb-3">-->
+<!--                            {% include "components/status_badge.html" with is_active=employee.is_active %}-->
+<!--                        </div>-->
 
-                        <!-- Руководитель -->
-                        {% if employee.manager %}
-                        <div class="small text-muted mb-2">
-                            <i class="bi bi-person me-1"></i>
-                            Руководитель:
-                            <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">
-                                {{ employee.manager.name }}
-                            </a>
-                        </div>
-                        {% endif %}
+<!--                        &lt;!&ndash; Руководитель &ndash;&gt;-->
+<!--                        {% if employee.manager %}-->
+<!--                        <div class="small text-muted mb-2">-->
+<!--                            <i class="bi bi-person me-1"></i>-->
+<!--                            Руководитель:-->
+<!--                            <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">-->
+<!--                                {{ employee.manager.name }}-->
+<!--                            </a>-->
+<!--                        </div>-->
+<!--                        {% endif %}-->
 
-                        <!-- Подчинённые -->
-                        {% if employee.sub_count %}
-                        <div class="small text-muted mb-2">
-                            <i class="bi bi-people me-1"></i>
-                            Подчинённых: <span class="badge bg-primary-subtle text-primary-emphasis">{{ employee.sub_count }}</span>
-                        </div>
-                        {% endif %}
+<!--                        &lt;!&ndash; Подчинённые &ndash;&gt;-->
+<!--                        {% if employee.sub_count %}-->
+<!--                        <div class="small text-muted mb-2">-->
+<!--                            <i class="bi bi-people me-1"></i>-->
+<!--                            Подчинённых: <span class="badge bg-primary-subtle text-primary-emphasis">{{ employee.sub_count }}</span>-->
+<!--                        </div>-->
+<!--                        {% endif %}-->
 
-                        <!-- Кнопки -->
-                        <div class="mt-auto pt-3 border-top d-flex gap-1">
-                            <a href="{% url 'hr:hr_detail' employee.pk %}" class="btn btn-sm btn-outline-primary" title="Просмотр">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            {% if perms.hr.change_humanresource %}
-                            <a href="{% url 'hr:hr_edit' employee.pk %}" class="btn btn-sm btn-outline-secondary" title="Редактировать">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            {% endif %}
-                            {% if perms.hr.delete_humanresource %}
-                            <button type="button" class="btn btn-sm btn-outline-danger" title="Удалить"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deleteModal"
-                                    data-delete-url="{% url 'hr:hr_delete' employee.pk %}"
-                                    data-delete-name="{{ employee.name }}">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        {% include "components/empty_state.html" with 
-            message="Сотрудники не найдены" 
-            icon="bi-people"
-            subtitle="Попробуйте изменить фильтры или добавьте первого сотрудника"
-            action_url="/hr/new/"
-            action_text="Добавить сотрудника"
-        %}
-        {% endif %}
-    </div>
+<!--                        &lt;!&ndash; Кнопки &ndash;&gt;-->
+<!--                        <div class="mt-auto pt-3 border-top d-flex gap-1">-->
+<!--                            <a href="{% url 'hr:hr_detail' employee.pk %}" class="btn btn-sm btn-outline-primary" title="Просмотр">-->
+<!--                                <i class="bi bi-eye"></i>-->
+<!--                            </a>-->
+<!--                            {% if perms.hr.change_humanresource %}-->
+<!--                            <a href="{% url 'hr:hr_edit' employee.pk %}" class="btn btn-sm btn-outline-secondary" title="Редактировать">-->
+<!--                                <i class="bi bi-pencil"></i>-->
+<!--                            </a>-->
+<!--                            {% endif %}-->
+<!--                            {% if perms.hr.delete_humanresource %}-->
+<!--                            <button type="button" class="btn btn-sm btn-outline-danger" title="Удалить"-->
+<!--                                    data-bs-toggle="modal"-->
+<!--                                    data-bs-target="#deleteModal"-->
+<!--                                    data-delete-url="{% url 'hr:hr_delete' employee.pk %}"-->
+<!--                                    data-delete-name="{{ employee.name }}">-->
+<!--                                <i class="bi bi-trash"></i>-->
+<!--                            </button>-->
+<!--                            {% endif %}-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            {% endfor %}-->
+<!--        </div>-->
+<!--        {% else %}-->
+<!--        {% include "components/empty_state.html" with -->
+<!--            message="Сотрудники не найдены" -->
+<!--            icon="bi-people"-->
+<!--            subtitle="Попробуйте изменить фильтры или добавьте первого сотрудника"-->
+<!--            action_url="/hr/new/"-->
+<!--            action_text="Добавить сотрудника"-->
+<!--        %}-->
+<!--        {% endif %}-->
+<!--    </div>-->
 
-    <!-- =====================================================
-         ВИД 2: Таблица
-         ===================================================== -->
-    <div id="table-view" class="d-none">
-        {% if employees %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr class="table-light">
-                        <th>ФИО</th>
-                        <th>Должность</th>
-                        <th>Руководитель</th>
-                        <th>Подчинённые</th>
-                        <th>Статус</th>
-                        <th style="width: 100px;">Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for employee in employees %}
-                    <tr>
-                        <td>
-                            <div class="fw-semibold">
-                                <a href="{% url 'hr:hr_detail' employee.pk %}" class="text-decoration-none">
-                                    {{ employee.name }}
-                                </a>
-                            </div>
-                            <div class="small text-muted">ID: {{ employee.id }}</div>
-                        </td>
-                        <td>{{ employee.job_title|default:"—" }}</td>
-                        <td>
-                            {% if employee.manager %}
-                            <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">
-                                {{ employee.manager.name }}
-                            </a>
-                            {% else %}
-                            <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if employee.sub_count %}
-                            <span class="badge bg-primary-subtle text-primary-emphasis">{{ employee.sub_count }}</span>
-                            {% else %}
-                            <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>{% include "components/status_badge.html" with is_active=employee.is_active size="sm" %}</td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                {% if perms.hr.change_humanresource %}
-                                <a href="{% url 'hr:hr_edit' employee.pk %}" class="btn btn-sm btn-outline-secondary" title="Редактировать">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                {% endif %}
-                                {% if perms.hr.delete_humanresource %}
-                                <button type="button" class="btn btn-sm btn-outline-danger" title="Удалить"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal"
-                                        data-delete-url="{% url 'hr:hr_delete' employee.pk %}"
-                                        data-delete-name="{{ employee.name }}">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        {% include "components/empty_state.html" with message="Сотрудники не найдены" icon="bi-people" %}
-        {% endif %}
-    </div>
+<!--    &lt;!&ndash; =====================================================-->
+<!--         ВИД 2: Таблица-->
+<!--         ===================================================== &ndash;&gt;-->
+<!--    <div id="table-view" class="d-none">-->
+<!--        {% if employees %}-->
+<!--        <div class="table-responsive">-->
+<!--            <table class="table table-hover align-middle">-->
+<!--                <thead>-->
+<!--                    <tr class="table-light">-->
+<!--                        <th>ФИО</th>-->
+<!--                        <th>Должность</th>-->
+<!--                        <th>Руководитель</th>-->
+<!--                        <th>Подчинённые</th>-->
+<!--                        <th>Статус</th>-->
+<!--                        <th style="width: 100px;">Действия</th>-->
+<!--                    </tr>-->
+<!--                </thead>-->
+<!--                <tbody>-->
+<!--                    {% for employee in employees %}-->
+<!--                    <tr>-->
+<!--                        <td>-->
+<!--                            <div class="fw-semibold">-->
+<!--                                <a href="{% url 'hr:hr_detail' employee.pk %}" class="text-decoration-none">-->
+<!--                                    {{ employee.name }}-->
+<!--                                </a>-->
+<!--                            </div>-->
+<!--                            <div class="small text-muted">ID: {{ employee.id }}</div>-->
+<!--                        </td>-->
+<!--                        <td>{{ employee.job_title|default:"—" }}</td>-->
+<!--                        <td>-->
+<!--                            {% if employee.manager %}-->
+<!--                            <a href="{% url 'hr:hr_detail' employee.manager.pk %}" class="text-decoration-none">-->
+<!--                                {{ employee.manager.name }}-->
+<!--                            </a>-->
+<!--                            {% else %}-->
+<!--                            <span class="text-muted">—</span>-->
+<!--                            {% endif %}-->
+<!--                        </td>-->
+<!--                        <td>-->
+<!--                            {% if employee.sub_count %}-->
+<!--                            <span class="badge bg-primary-subtle text-primary-emphasis">{{ employee.sub_count }}</span>-->
+<!--                            {% else %}-->
+<!--                            <span class="text-muted">—</span>-->
+<!--                            {% endif %}-->
+<!--                        </td>-->
+<!--                        <td>{% include "components/status_badge.html" with is_active=employee.is_active size="sm" %}</td>-->
+<!--                        <td>-->
+<!--                            <div class="d-flex gap-1">-->
+<!--                                {% if perms.hr.change_humanresource %}-->
+<!--                                <a href="{% url 'hr:hr_edit' employee.pk %}" class="btn btn-sm btn-outline-secondary" title="Редактировать">-->
+<!--                                    <i class="bi bi-pencil"></i>-->
+<!--                                </a>-->
+<!--                                {% endif %}-->
+<!--                                {% if perms.hr.delete_humanresource %}-->
+<!--                                <button type="button" class="btn btn-sm btn-outline-danger" title="Удалить"-->
+<!--                                        data-bs-toggle="modal"-->
+<!--                                        data-bs-target="#deleteModal"-->
+<!--                                        data-delete-url="{% url 'hr:hr_delete' employee.pk %}"-->
+<!--                                        data-delete-name="{{ employee.name }}">-->
+<!--                                    <i class="bi bi-trash"></i>-->
+<!--                                </button>-->
+<!--                                {% endif %}-->
+<!--                            </div>-->
+<!--                        </td>-->
+<!--                    </tr>-->
+<!--                    {% endfor %}-->
+<!--                </tbody>-->
+<!--            </table>-->
+<!--        </div>-->
+<!--        {% else %}-->
+<!--        {% include "components/empty_state.html" with message="Сотрудники не найдены" icon="bi-people" %}-->
+<!--        {% endif %}-->
+<!--    </div>-->
 
-    <!-- =====================================================
-         ПАГИНАЦИЯ
-         ===================================================== -->
-    {% if page_obj.has_other_pages %}
-    {% include "core/partials/pagination.html" with page_obj=page_obj %}
-    {% endif %}
-</div>
+<!--    &lt;!&ndash; =====================================================-->
+<!--         ПАГИНАЦИЯ-->
+<!--         ===================================================== &ndash;&gt;-->
+<!--    {% if page_obj.has_other_pages %}-->
+<!--    {% include "core/partials/pagination.html" with page_obj=page_obj %}-->
+<!--    {% endif %}-->
+<!--</div>-->
 
-<!-- Модальное окно удаления -->
-{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить сотрудника?" %}
-{% endblock %}
+<!--&lt;!&ndash; Модальное окно удаления &ndash;&gt;-->
+<!--{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить сотрудника?" %}-->
+<!--{% endblock %}-->
 
-{% block extra_js %}
-{% include "components/view_mode_toggle_js.html" with storage_key="hr_view_mode" %}
-{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
-{% endblock %}
+<!--{% block extra_js %}-->
+<!--{% include "components/view_mode_toggle_js.html" with storage_key="hr_view_mode" %}-->
+<!--{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}-->
+<!--{% endblock %}-->
