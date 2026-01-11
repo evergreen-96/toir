@@ -80,7 +80,7 @@
                             <div class="text-muted small mb-1">Должность</div>
                             <div class="fw-semibold">
                                 {% if employee.job_title %}
-                                <span class="badge bg-light text-dark border">
+                                <span class="badge bg_dark text-dark border">
                                     <i class="bi bi-briefcase me-1"></i>{{ employee.job_title }}
                                 </span>
                                 {% else %}
@@ -169,7 +169,7 @@
                                     </td>
                                     <td>
                                         {% if sub.job_title %}
-                                        <span class="badge bg-light text-dark border">{{ sub.job_title|truncatechars:30 }}</span>
+                                        <span class="badge bg_dark text-dark border">{{ sub.job_title|truncatechars:30 }}</span>
                                         {% else %}
                                         <span class="text-muted">—</span>
                                         {% endif %}

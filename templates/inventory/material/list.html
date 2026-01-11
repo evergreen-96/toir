@@ -52,7 +52,10 @@
         <div class="col-md-4">{% include "components/stat_card.html" with title="Доступно" value=total_available icon="bi-check-circle" color="success" %}</div>
         <div class="col-md-4">{% include "components/stat_card.html" with title="В резерве" value=total_reserved icon="bi-bookmark" color="warning" %}</div>
     </div>
-
+            <a href="{% url 'inventory:material_new' %}"
+           class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Новый материал
+        </a>
     <!-- Список -->
     {% if materials %}
     <div class="card border-0 shadow-sm mb-4">

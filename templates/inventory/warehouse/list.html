@@ -26,6 +26,10 @@
     </div>
 
     <!-- Список -->
+            <a href="{% url 'inventory:warehouse_new' %}"
+           class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Новый склад
+        </a>
     {% if warehouses %}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
