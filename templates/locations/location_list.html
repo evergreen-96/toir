@@ -1,131 +1,150 @@
 {% extends "base.html" %}
 {% block title %}Локации{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/themes/default/style.min.css">
+<style>
+.jstree-default .jstree-anchor { font-size: 0.95rem; }
+.jstree-default .jstree-icon { font-size: 1rem; }
+.jstree-default .jstree-clicked { background: var(--bs-primary-bg-subtle) !important; color: var(--bs-primary) !important; }
+.jstree-default .jstree-hovered { background: var(--bs-light) !important; }
+[data-bs-theme="dark"] .jstree-default .jstree-anchor { color: #e9ecef; }
+[data-bs-theme="dark"] .jstree-default .jstree-clicked { background: rgba(var(--bs-primary-rgb), 0.2) !important; }
+[data-bs-theme="dark"] .jstree-default .jstree-hovered { background: rgba(255,255,255,0.1) !important; }
+#location-tree { min-height: 300px; }
+.location-meta { font-size: 0.8rem; color: var(--bs-secondary); margin-left: 8px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-10 col-lg-11">
+<div class="container-fluid py-3">
+    <!-- Header -->
+    {% include "components/page_header.html" with title="Локации" subtitle="Иерархическая структура объектов" icon="bi-geo-alt" create_url="locations:location_new" create_text="Новая локация" %}
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-
-                <!-- ===== Header (как у складов) ===== -->
-                <div class="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h1 class="h4 mb-1">Локации</h1>
-                        <div class="text-muted small">
-                            Иерархия помещений и зон
-                        </div>
-                    </div>
-                    <a class="btn btn-primary"
-                       href="{% url 'locations:location_new' %}">
-                        + Локация
-                    </a>
-                </div>
-
-                <!-- ===== Tree toolbar ===== -->
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="text-muted small">
-                        Всего локаций: <span id="locations-count">—</span>
-                    </div>
-                    <button id="toggle-all"
-                            class="btn btn-outline-secondary btn-sm">
-                        Раскрыть все
+    <div class="row">
+        <!-- Дерево -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2 text-primary"></i>Дерево локаций</h5>
+                    <button class="btn btn-sm btn-outline-secondary" id="expand-all-btn" title="Развернуть все">
+                        <i class="bi bi-arrows-expand"></i>
                     </button>
                 </div>
-
-                <!-- ===== Tree ===== -->
-                <div id="locations-tree"
-                     class="border rounded p-2">
+                <div class="card-body">
+                    <div id="location-tree"></div>
+                    <div id="tree-loading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
                 </div>
-
             </div>
         </div>
 
+        <!-- Детали выбранной локации -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4" id="location-details-card" style="display: none;">
+                <div class="card-header bg-dark border-0">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Детали локации</h5>
+                </div>
+                <div class="card-body">
+                    <div id="location-details">
+                        <p class="text-muted">Выберите локацию в дереве слева</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Подсказка -->
+            <div class="card border-0 shadow-sm" id="location-hint-card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-hand-index fs-1 text-muted mb-3 d-block"></i>
+                    <h5 class="text-muted mb-3">Выберите локацию</h5>
+                    <p class="text-muted small">Кликните на локацию в дереве слева, чтобы увидеть детали</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-{% include "includes/pagination.html" %}
 {% endblock %}
 
-
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const treeEl = $('#location-tree');
+    const loadingEl = document.getElementById('tree-loading');
+    const detailsCard = document.getElementById('location-details-card');
+    const hintCard = document.getElementById('location-hint-card');
+    const detailsEl = document.getElementById('location-details');
+    const expandBtn = document.getElementById('expand-all-btn');
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const tree = $('#locations-tree');
-        const toggleAllBtn = $('#toggle-all');
-
-        // если кнопки нет (например, шаблон не тот) — не падаем
-        let allExpanded = false;
-
-        tree.jstree({
-            core: {
-                data: {
-                    url: "{% url 'locations:location_tree_json' %}",
-                    dataType: "json"
-                },
-                multiple: false,
-                themes: {icons: false, dots: false}
+    // Инициализация jsTree
+    treeEl.jstree({
+        core: {
+            data: {
+                url: '{% url "locations:location_tree_json" %}',
+                dataType: 'json'
             },
-            plugins: ["wholerow"]
-        });
-
-        // Клик по строке → раскрыть/свернуть
-        tree.on("select_node.jstree", function (e, data) {
-            tree.jstree(true).toggle_node(data.node);
-        });
-
-        // Раскрыть/скрыть все
-        toggleAllBtn.on("click", function () {
-            const inst = tree.jstree(true);
-
-            if (allExpanded) {
-                inst.close_all();
-                toggleAllBtn.text("Раскрыть все");
-            } else {
-                inst.open_all();
-                toggleAllBtn.text("Скрыть все");
+            themes: {
+                responsive: true,
+                variant: 'large'
             }
-
-            allExpanded = !allExpanded;
-        });
-        tree.on("loaded.jstree", function () {
-            const inst = tree.jstree(true);
-            $('#locations-count').text(inst.get_json('#', {flat: true}).length);
-        });
-
-        // Рендерим "Перейти" + meta после загрузки/раскрытия
-        function decorateAnchors() {
-            const inst = tree.jstree(true);
-
-            tree.find(".jstree-anchor").each(function () {
-                const node = inst.get_node(this);
-                if (!node) return;
-
-                // уже дорисовано
-                if ($(this).find(".tree-actions").length) return;
-
-                const meta = (node.data && node.data.meta) ? node.data.meta : "";
-                const url = (node.data && node.data.detail_url) ? node.data.detail_url : "#";
-
-                $(this).append(`
-        <span class="tree-extra">
-          ${meta ? `<span class="tree-meta">${meta}</span>` : ""}
-          <span class="tree-actions">
-            <a href="${url}" class="tree-link">Перейти</a>
-          </span>
-        </span>
-      `);
-            });
-        }
-
-        tree.on("loaded.jstree open_node.jstree", decorateAnchors);
-
-        // Клик по "Перейти" НЕ должен раскрывать дерево
-        tree.on("click", ".tree-link", function (e) {
-            e.stopPropagation();
-            // переход выполнит браузер по href
-        });
+        },
+        plugins: ['search', 'wholerow']
     });
+
+    // Скрыть загрузку когда дерево готово
+    treeEl.on('ready.jstree', function() {
+        loadingEl.style.display = 'none';
+    });
+
+    // Обработка клика по узлу
+    treeEl.on('select_node.jstree', function(e, data) {
+        const node = data.node;
+        const detailUrl = node.data.detail_url;
+        const meta = node.data.meta;
+
+        // Показать карточку с деталями
+        hintCard.style.display = 'none';
+        detailsCard.style.display = 'block';
+
+        detailsEl.innerHTML = `
+            <div class="mb-3">
+                <div class="text-muted small mb-1">Название</div>
+                <div class="fw-semibold fs-5">${node.text}</div>
+            </div>
+            ${meta ? `
+            <div class="mb-3">
+                <div class="text-muted small mb-1">Ответственный</div>
+                <div><i class="bi bi-person me-1 text-primary"></i>${meta}</div>
+            </div>
+            ` : ''}
+            <div class="d-flex gap-2 mt-4">
+                <a href="${detailUrl}" class="btn btn-primary">
+                    <i class="bi bi-eye me-1"></i>Открыть
+                </a>
+                <a href="${detailUrl.replace(/\/(\d+)\/$/, '/$1/edit/')}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>Редактировать
+                </a>
+            </div>
+        `;
+    });
+
+    // Развернуть/свернуть всё
+    let expanded = false;
+    expandBtn.addEventListener('click', function() {
+        if (expanded) {
+            treeEl.jstree('close_all');
+            this.innerHTML = '<i class="bi bi-arrows-expand"></i>';
+            this.title = 'Развернуть все';
+        } else {
+            treeEl.jstree('open_all');
+            this.innerHTML = '<i class="bi bi-arrows-collapse"></i>';
+            this.title = 'Свернуть все';
+        }
+        expanded = !expanded;
+    });
+});
 </script>
 {% endblock %}

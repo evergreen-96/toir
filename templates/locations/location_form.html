@@ -1,135 +1,107 @@
 {% extends "base.html" %}
-{% load form_extras %}
+{% block title %}{% if create %}Новая локация{% else %}Редактирование локации{% endif %}{% endblock %}
 
-{% block title %}
-{% if create %}Новая локация{% else %}Редактирование локации{% endif %}
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+<style>
+/* Tom Select */
+.ts-wrapper { width: 100% !important; }
+.ts-dropdown { z-index: 1060 !important; }
+/* Скрываем стрелку оригинального select когда Tom Select активен */
+#id_parent, #id_responsible { background-image: none !important; }
+[data-bs-theme="dark"] .ts-control { background-color: var(--bs-dark) !important; color: #e9ecef !important; }
+[data-bs-theme="dark"] .ts-dropdown { background-color: var(--bs-dark) !important; }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-10 col-lg-11">
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-
-                <!-- ===== Header ===== -->
-                <div class="mb-4">
-                    <h1 class="h4 mb-1">
-                        {% if create %}Новая локация{% else %}Редактирование локации{% endif %}
-                    </h1>
-                    <div class="text-muted small">
-                        Основные параметры и иерархия
-                    </div>
-                </div>
-
-                <!-- ===== Legend ===== -->
-                <div class="text-muted small mb-4">
-                    <span class="text-danger fw-semibold">*</span> — обязательные поля
-                </div>
-
-                <form method="post" novalidate>
-                    {% csrf_token %}
-
-                    <!-- ===== Main info ===== -->
-                    <div class="form-section">
-                        <div class="form-section-header">
-                            Основная информация
-                        </div>
-
-                        <div class="row g-3">
-
-                            <!-- Название -->
-                            <div class="col-md-6">
-                                <label class="form-label required">
-                                    {{ form.name.label }}
-                                </label>
-                                {{ form.name|add_class:"form-control" }}
-                                {% if form.name.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.name.errors|join:", " }}
-                                </div>
-                                {% endif %}
-                            </div>
-
-                            {% if not create %}
-                            <div class="col-md-3">
-                                <label class="form-label">Уровень</label>
-                                <div class="form-control-plaintext">
-                                    {{ obj.level }}
-                                </div>
-                            </div>
-                            {% endif %}
-
-
-                        </div>
-                    </div>
-
-                    <!-- ===== Hierarchy ===== -->
-                    <div class="form-section">
-                        <div class="form-section-header">
-                            Иерархия
-                        </div>
-
-                        <div class="row g-3">
-
-                            <!-- Родитель -->
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    {{ form.parent.label }}
-                                </label>
-                                {{ form.parent|add_class:"form-select" }}
-                                {% if form.parent.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.parent.errors|join:", " }}
-                                </div>
-                                {% endif %}
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- ===== Responsibility ===== -->
-                    <div class="form-section">
-                        <div class="form-section-header">
-                            Ответственный
-                        </div>
-
-                        <div class="row g-3">
-
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    {{ form.responsible.label }}
-                                </label>
-                                {{ form.responsible|add_class:"form-select" }}
-                                {% if form.responsible.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.responsible.errors|join:", " }}
-                                </div>
-                                {% endif %}
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- ===== Actions ===== -->
-                    <div class="d-flex justify-content-between mt-4">
-
-                        <a href="{% if create %}{% url 'locations:location_list' %}{% else %}{% url 'locations:location_detail' obj.pk %}{% endif %}"
-                           class="btn btn-outline-secondary">
-                            Отмена
-                        </a>
-
-                        <button type="submit" class="btn btn-primary">
-                            {% if create %}Создать{% else %}Сохранить изменения{% endif %}
-                        </button>
-
-                    </div>
-
-                </form>
-
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{% url 'locations:location_list' %}">Локации</a></li>
+                        <li class="breadcrumb-item active">{% if create %}Новая локация{% else %}{{ object.name|truncatechars:30 }}{% endif %}</li>
+                    </ol>
+                </nav>
+                <h1 class="h2 mb-1">
+                    <i class="bi bi-geo-alt me-2 text-primary"></i>
+                    {% if create %}Новая локация{% else %}Редактирование локации{% endif %}
+                </h1>
             </div>
-        </div>
 
+            <form method="post" id="location-form">
+                {% csrf_token %}
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark border-0">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Основная информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">{{ form.name.label }} <span class="text-danger">*</span></label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.parent.label }}</label>
+                                {{ form.parent }}
+                                {% if form.parent.errors %}<div class="invalid-feedback d-block">{{ form.parent.errors.0 }}</div>{% endif %}
+                                <div class="form-text">Оставьте пустым для корневой локации</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.responsible.label }}</label>
+                                {{ form.responsible }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% if create %}{% url 'locations:location_list' %}{% else %}{% url 'locations:location_detail' object.pk %}{% endif %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i>Отмена
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i>Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tom Select для родительской локации
+    const parentEl = document.getElementById('id_parent');
+    if (parentEl && !parentEl.classList.contains('tomselected')) {
+        new TomSelect(parentEl, {
+            maxOptions: null,
+            allowEmptyOption: true,
+            placeholder: 'Выберите родительскую локацию...',
+            searchField: ['text'],
+            sortField: { field: 'text', direction: 'asc' }
+        });
+    }
+
+    // Tom Select для ответственного
+    const responsibleEl = document.getElementById('id_responsible');
+    if (responsibleEl && !responsibleEl.classList.contains('tomselected')) {
+        new TomSelect(responsibleEl, {
+            maxOptions: null,
+            allowEmptyOption: true,
+            placeholder: 'Выберите ответственного...',
+            searchField: ['text'],
+            sortField: { field: 'text', direction: 'asc' }
+        });
+    }
+});
+</script>
 {% endblock %}

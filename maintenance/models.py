@@ -649,27 +649,3 @@ class WorkOrderAttachment(models.Model):
 
     def __str__(self):
         return f"Вложение {self.file} для {self.work_order}"
-
-
-class PlannedOrderAttachment(models.Model):
-    """Связь между плановой задачей и файлом."""
-
-    history = HistoricalRecords()
-
-    planned_order = models.ForeignKey(
-        PlannedOrder,
-        on_delete=models.CASCADE,
-        related_name="attachments",
-    )
-    file = models.ForeignKey(
-        File,
-        on_delete=models.CASCADE,
-        related_name="work_orders",
-    )
-    attached_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("work_order", "file")
-
-    def __str__(self):
-        return f"Вложение {self.file} для {self.planned_order}"
