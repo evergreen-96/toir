@@ -540,6 +540,11 @@ class WorkOrder(models.Model):
             self.workstation.status = WorkstationStatus.PROBLEM
             self.workstation.save(update_fields=["status"])
 
+        if (not is_new and self.workstation and
+                self.status == WorkOrderStatus.DONE):
+            self.workstation.status = WorkstationStatus.PROD
+            self.workstation.save(update_fields=["status"])
+
     # ------------------------------------------------------------------------
     # META И СТРОКОВОЕ ПРЕДСТАВЛЕНИЕ
     # ------------------------------------------------------------------------
