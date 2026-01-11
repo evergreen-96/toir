@@ -15,6 +15,11 @@
         <div class="d-flex flex-wrap gap-2 align-items-center">
             {% include "components/view_mode_toggle.html" with storage_key="assets_view_mode" %}
 
+            <!-- Кнопка настройки колонок -->
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#columnsModal" title="Настройка колонок">
+                <i class="bi bi-layout-three-columns me-1"></i>Колонки
+            </button>
+
             {% if perms.assets.view_workstation %}
             <a class="btn btn-outline-secondary" href="{% url 'assets:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
                 <i class="bi bi-download me-1"></i>Экспорт
@@ -80,7 +85,7 @@
                     </div>
                 </form>
                 <div class="mt-3 pt-3 border-top">
-                    {% include "components/filter_results_info.html" with count=paginator.count query=filter_params.q reset_url=request.path has_filters=request.GET %}
+                    {% include "components/filter_results_info.html" with count=paginator.count query=filter_params.q reset_url=request.path has_filters=filter_params %}
                 </div>
             </div>
         </div>
@@ -92,30 +97,31 @@
         <div class="row g-3">
             {% for ws in workstations %}
             <div class="col-xl-3 col-lg-4 col-md-6">
-                <div class="card h-100 border hover-shadow">
+                <div class="card h-100 border-0 shadow-sm">
                     {% if ws.photo %}
-                    <div class="card-img-top bg-light" style="height: 140px; overflow: hidden;">
-                        <img src="{{ ws.photo.url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ ws.name }}">
-                    </div>
+                    <img src="{{ ws.photo.url }}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="{{ ws.name }}">
                     {% else %}
-                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 140px;">
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
                         <i class="bi bi-cpu text-muted" style="font-size: 3rem;"></i>
                     </div>
                     {% endif %}
                     <div class="card-body d-flex flex-column">
                         <h6 class="card-title mb-1">
-                            <a href="{% url 'assets:asset_detail' ws.pk %}" class="text-decoration-none text-body">{{ ws.name|truncatechars:35 }}</a>
+                            <a href="{% url 'assets:asset_detail' ws.pk %}" class="text-decoration-none stretched-link">{{ ws.name|truncatechars:30 }}</a>
                         </h6>
                         <div class="text-muted small mb-2">{{ ws.type_name|default:"—" }}</div>
-                        <div class="mb-2">
-                            <span class="badge bg-light text-dark border">{{ ws.get_status_display }}</span>
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            <span class="badge bg-{{ ws.status|default:'secondary' }}-subtle text-{{ ws.status|default:'secondary' }}-emphasis border">{{ ws.get_status_display }}</span>
                             <span class="badge bg-light text-dark border">{{ ws.get_category_display }}</span>
                         </div>
-                        <div class="small text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>{{ ws.location.name }}</div>
-                        {% if ws.warranty_until %}
-                        <div class="small mb-2">
-                            {% if ws.is_under_warranty %}<span class="text-success"><i class="bi bi-shield-check me-1"></i>до {{ ws.warranty_until|date:"d.m.Y" }}</span>
-                            {% else %}<span class="text-muted"><i class="bi bi-shield-x me-1"></i>Истекла</span>{% endif %}
+                        {% if ws.location %}
+                        <div class="small text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>{{ ws.location.name|truncatechars:25 }}</div>
+                        {% endif %}
+                        {% if ws.is_under_warranty %}
+                        <div class="small">
+                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                                <i class="bi bi-shield-check me-1"></i>На гарантии до {{ ws.warranty_until|date:"d.m.Y" }}
+                            </span>
                         </div>
                         {% endif %}
                         <div class="mt-auto pt-3 border-top d-flex gap-1">
@@ -137,47 +143,391 @@
     <div id="table-view" class="d-none">
         {% if workstations %}
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle" id="assets-table">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 50px;"></th>
-                        <th>Название</th>
-                        <th>Категория</th>
-                        <th>Статус</th>
-                        <th>Локация</th>
-                        <th>Ответственный</th>
-                        <th>Гарантия</th>
-                        <th style="width: 100px;">Действия</th>
+                        <th style="width: 50px;" data-column="photo"></th>
+                        <th data-column="name">Название</th>
+                        <th data-column="type_name">Тип</th>
+                        <th data-column="category">Категория</th>
+                        <th data-column="status">Статус</th>
+                        <th data-column="location">Локация</th>
+                        <th data-column="responsible">Ответственный</th>
+                        <th data-column="manufacturer">Производитель</th>
+                        <th data-column="model">Модель</th>
+                        <th data-column="serial_number">Серийный номер</th>
+                        <th data-column="inventory_number">Инвентарный номер</th>
+                        <th data-column="commissioning_date">Дата ввода</th>
+                        <th data-column="warranty">Гарантия</th>
+                        <th data-column="global_state">Состояние</th>
+                        <th style="width: 100px;" data-column="actions">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ws in workstations %}
                     <tr>
-                        <td>{% if ws.photo %}<img src="{{ ws.photo.url }}" class="rounded" style="width: 40px; height: 40px; object-fit: cover;">{% else %}<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-cpu text-muted"></i></div>{% endif %}</td>
-                        <td><div class="fw-semibold"><a href="{% url 'assets:asset_detail' ws.pk %}" class="text-decoration-none">{{ ws.name }}</a></div><div class="text-muted small">{{ ws.type_name|default:"—" }}</div></td>
-                        <td><span class="badge bg-light text-dark border">{{ ws.get_category_display }}</span></td>
-                        <td><span class="badge bg-light text-dark border">{{ ws.get_status_display }}</span></td>
-                        <td>{{ ws.location.name }}</td>
-                        <td>{{ ws.responsible.name|default:"—" }}</td>
-                        <td>{% if ws.warranty_until %}{% if ws.is_under_warranty %}<span class="text-success small">{{ ws.warranty_until|date:"d.m.Y" }}</span>{% else %}<span class="text-muted small">Истекла</span>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                        <td><div class="d-flex gap-1">{% if perms.assets.change_workstation %}<a href="{% url 'assets:asset_edit' ws.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>{% endif %}{% if perms.assets.delete_workstation %}<button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'assets:asset_delete' ws.pk %}" data-delete-name="{{ ws.name }}"><i class="bi bi-trash"></i></button>{% endif %}</div></td>
+                        <td data-column="photo">{% if ws.photo %}<img src="{{ ws.photo.url }}" class="rounded" style="width: 40px; height: 40px; object-fit: cover;" alt="">{% else %}<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-cpu text-muted"></i></div>{% endif %}</td>
+                        <td data-column="name">
+                            <a href="{% url 'assets:asset_detail' ws.pk %}" class="text-decoration-none fw-semibold">{{ ws.name|truncatechars:30 }}</a>
+                        </td>
+                        <td data-column="type_name">{{ ws.type_name|default:"—" }}</td>
+                        <td data-column="category"><span class="badge bg-light text-dark border">{{ ws.get_category_display }}</span></td>
+                        <td data-column="status"><span class="badge bg-{{ ws.status|default:'secondary' }}-subtle text-{{ ws.status|default:'secondary' }}-emphasis border">{{ ws.get_status_display }}</span></td>
+                        <td data-column="location">{{ ws.location.name|default:"—"|truncatechars:20 }}</td>
+                        <td data-column="responsible">{{ ws.responsible.name|default:"—"|truncatechars:20 }}</td>
+                        <td data-column="manufacturer">{{ ws.manufacturer|default:"—" }}</td>
+                        <td data-column="model">{{ ws.model|default:"—" }}</td>
+                        <td data-column="serial_number"><code>{{ ws.serial_number|default:"—" }}</code></td>
+                        <td data-column="inventory_number"><code>{{ ws.inventory_number|default:"—" }}</code></td>
+                        <td data-column="commissioning_date">{{ ws.commissioning_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td data-column="warranty">
+                            {% if ws.warranty_until %}
+                                {% if ws.is_under_warranty %}
+                                <span class="badge bg-success-subtle text-success-emphasis border"><i class="bi bi-shield-check me-1"></i>{{ ws.warranty_until|date:"d.m.Y" }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis border">{{ ws.warranty_until|date:"d.m.Y" }}</span>
+                                {% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td data-column="global_state"><span class="badge bg-light text-dark border">{{ ws.get_global_state_display }}</span></td>
+                        <td data-column="actions">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'assets:asset_detail' ws.pk %}" class="btn btn-outline-primary" title="Просмотр"><i class="bi bi-eye"></i></a>
+                                {% if perms.assets.change_workstation %}<a href="{% url 'assets:asset_edit' ws.pk %}" class="btn btn-outline-secondary" title="Редактировать"><i class="bi bi-pencil"></i></a>{% endif %}
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% else %}
-        {% include "components/empty_state.html" with message="Оборудование не найдено" icon="bi-cpu" %}
+        {% include "components/empty_state.html" with message="Оборудование не найдено" icon="bi-cpu" subtitle="Попробуйте изменить фильтры" action_url="/assets/new/" action_text="Добавить" %}
         {% endif %}
     </div>
 
-    {% if page_obj.has_other_pages %}{% include "core/partials/pagination.html" with page_obj=page_obj %}{% endif %}
+    {% include "includes/pagination.html" %}
 </div>
 
-{% include "components/delete_modal.html" with modal_id="deleteModal" title="Удалить оборудование?" %}
+<!-- Модальное окно настройки колонок -->
+<div class="modal fade" id="columnsModal" tabindex="-1" aria-labelledby="columnsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="columnsModalLabel">
+                    <i class="bi bi-layout-three-columns me-2"></i>Настройка колонок
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Выберите колонки для отображения в таблице:</p>
+                <div class="row g-2" id="columns-checkboxes">
+                    <!-- Обязательные колонки (нельзя отключить) -->
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-photo" data-column="photo" checked disabled>
+                            <label class="form-check-label text-muted" for="col-photo">
+                                <i class="bi bi-image me-1"></i>Фото
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-name" data-column="name" checked disabled>
+                            <label class="form-check-label text-muted" for="col-name">
+                                <i class="bi bi-card-heading me-1"></i>Название
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-actions" data-column="actions" checked disabled>
+                            <label class="form-check-label text-muted" for="col-actions">
+                                <i class="bi bi-gear me-1"></i>Действия
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-12"><hr class="my-2"></div>
+
+                    <!-- Опциональные колонки -->
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-type_name" data-column="type_name">
+                            <label class="form-check-label" for="col-type_name">
+                                <i class="bi bi-tag me-1"></i>Тип
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-category" data-column="category">
+                            <label class="form-check-label" for="col-category">
+                                <i class="bi bi-bookmark me-1"></i>Категория
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-status" data-column="status">
+                            <label class="form-check-label" for="col-status">
+                                <i class="bi bi-activity me-1"></i>Статус
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-location" data-column="location">
+                            <label class="form-check-label" for="col-location">
+                                <i class="bi bi-geo-alt me-1"></i>Локация
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-responsible" data-column="responsible">
+                            <label class="form-check-label" for="col-responsible">
+                                <i class="bi bi-person me-1"></i>Ответственный
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-manufacturer" data-column="manufacturer">
+                            <label class="form-check-label" for="col-manufacturer">
+                                <i class="bi bi-building me-1"></i>Производитель
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-model" data-column="model">
+                            <label class="form-check-label" for="col-model">
+                                <i class="bi bi-box me-1"></i>Модель
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-serial_number" data-column="serial_number">
+                            <label class="form-check-label" for="col-serial_number">
+                                <i class="bi bi-upc me-1"></i>Серийный номер
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-inventory_number" data-column="inventory_number">
+                            <label class="form-check-label" for="col-inventory_number">
+                                <i class="bi bi-hash me-1"></i>Инвентарный номер
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-commissioning_date" data-column="commissioning_date">
+                            <label class="form-check-label" for="col-commissioning_date">
+                                <i class="bi bi-calendar-event me-1"></i>Дата ввода
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-warranty" data-column="warranty">
+                            <label class="form-check-label" for="col-warranty">
+                                <i class="bi bi-shield-check me-1"></i>Гарантия
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input column-toggle" type="checkbox" id="col-global_state" data-column="global_state">
+                            <label class="form-check-label" for="col-global_state">
+                                <i class="bi bi-circle me-1"></i>Состояние
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="reset-columns">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg me-1"></i>Готово
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно удаления -->
+{% include "components/delete_modal.html" %}
 {% endblock %}
 
 {% block extra_js %}
 {% include "components/view_mode_toggle_js.html" with storage_key="assets_view_mode" %}
-{% include "components/delete_modal_js.html" with modal_id="deleteModal" csrf_token=csrf_token %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // =====================================================
+    // УПРАВЛЕНИЕ КОЛОНКАМИ ТАБЛИЦЫ
+    // =====================================================
+
+    const STORAGE_KEY = 'assets_table_columns';
+
+    // Колонки по умолчанию (включены)
+    const DEFAULT_COLUMNS = ['photo', 'name', 'type_name', 'category', 'status', 'location', 'responsible', 'warranty', 'actions'];
+
+    // Обязательные колонки (нельзя отключить)
+    const REQUIRED_COLUMNS = ['photo', 'name', 'actions'];
+
+    // Загрузка сохранённых настроек
+    function loadColumnSettings() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.error('Error loading column settings:', e);
+        }
+        return DEFAULT_COLUMNS;
+    }
+
+    // Сохранение настроек
+    function saveColumnSettings(columns) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(columns));
+        } catch (e) {
+            console.error('Error saving column settings:', e);
+        }
+    }
+
+    // Применение видимости колонок
+    function applyColumnVisibility(columns) {
+        const table = document.getElementById('assets-table');
+        if (!table) return;
+
+        // Все возможные колонки
+        const allColumns = ['photo', 'name', 'type_name', 'category', 'status', 'location', 'responsible',
+                           'manufacturer', 'model', 'serial_number', 'inventory_number',
+                           'commissioning_date', 'warranty', 'global_state', 'actions'];
+
+        allColumns.forEach(col => {
+            const cells = table.querySelectorAll(`[data-column="${col}"]`);
+            const isVisible = columns.includes(col) || REQUIRED_COLUMNS.includes(col);
+
+            cells.forEach(cell => {
+                cell.style.display = isVisible ? '' : 'none';
+            });
+        });
+    }
+
+    // Обновление чекбоксов в модальном окне
+    function updateCheckboxes(columns) {
+        document.querySelectorAll('.column-toggle').forEach(checkbox => {
+            const col = checkbox.dataset.column;
+            checkbox.checked = columns.includes(col);
+        });
+    }
+
+    // Инициализация
+    const currentColumns = loadColumnSettings();
+    applyColumnVisibility(currentColumns);
+    updateCheckboxes(currentColumns);
+
+    // Обработчик изменения чекбоксов
+    document.querySelectorAll('.column-toggle').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const col = this.dataset.column;
+            let columns = loadColumnSettings();
+
+            if (this.checked) {
+                if (!columns.includes(col)) {
+                    columns.push(col);
+                }
+            } else {
+                columns = columns.filter(c => c !== col);
+            }
+
+            saveColumnSettings(columns);
+            applyColumnVisibility(columns);
+        });
+    });
+
+    // Сброс к настройкам по умолчанию
+    document.getElementById('reset-columns')?.addEventListener('click', function() {
+        saveColumnSettings(DEFAULT_COLUMNS);
+        applyColumnVisibility(DEFAULT_COLUMNS);
+        updateCheckboxes(DEFAULT_COLUMNS);
+    });
+
+    // =====================================================
+    // МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ
+    // =====================================================
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const url = button.getAttribute('data-delete-url');
+            const name = button.getAttribute('data-delete-name');
+
+            const form = deleteModal.querySelector('form');
+            const nameSpan = deleteModal.querySelector('.delete-item-name');
+
+            if (form) form.action = url;
+            if (nameSpan) nameSpan.textContent = name;
+        });
+    }
+});
+</script>
+
+<style>
+/* Стили для строк таблицы */
+.table-row-link {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.table-row-link:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Стили для карточек */
+.card {
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Улучшенные чекбоксы в модальном окне */
+#columns-checkboxes .form-check {
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease;
+}
+
+#columns-checkboxes .form-check:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Темная тема */
+[data-bs-theme="dark"] .card-header.bg-dark {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .table-light {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+</style>
 {% endblock %}
