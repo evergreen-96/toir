@@ -112,7 +112,7 @@ class MaterialForm(forms.ModelForm):
             "warehouse",
             "suitable_for",
             "image",
-            "is_active",
+            # "is_active",
             "notes",
         ]
         widgets = {
@@ -184,29 +184,30 @@ class MaterialForm(forms.ModelForm):
         from assets.models import Workstation
         self.fields["suitable_for"].queryset = Workstation.objects.all().order_by("name")
         
-        # Необязательные поля
-        optional_fields = [
+        # обязательные поля
+        req_fields = [
             "group", "article", "part_number", "vendor",
-            "warehouse", "suitable_for", "image", "notes", "min_stock_level"
+            "warehouse", "suitable_for", "image", "notes",
+            "min_stock_level", 'qty_available', 'qty_reserved',
         ]
-        for field in optional_fields:
+        for field in req_fields:
             self.fields[field].required = False
-    
+
     def clean_name(self):
         name = self.cleaned_data.get("name", "").strip()
         if len(name) < 2:
             raise forms.ValidationError("Название должно содержать минимум 2 символа")
         return name
     
-    def clean(self):
-        cleaned_data = super().clean()
-        qty_available = cleaned_data.get("qty_available")
-        qty_reserved = cleaned_data.get("qty_reserved")
-        
-        if qty_reserved and qty_available and qty_reserved > qty_available:
-            self.add_error(
-                "qty_reserved",
-                "Резерв не может превышать доступное количество"
-            )
-        
-        return cleaned_data
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     qty_available = cleaned_data.get("qty_available")
+    #     qty_reserved = cleaned_data.get("qty_reserved")
+    #
+        # if qty_reserved and qty_available and qty_reserved > qty_available:
+        #     self.add_error(
+        #         "qty_reserved",
+        #         "Резерв не может превышать доступное количество"
+        #     )
+    #
+    #     return cleaned_data

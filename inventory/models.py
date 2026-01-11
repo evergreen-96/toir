@@ -128,21 +128,27 @@ class Material(BaseInventoryModel):
         max_digits=12,
         decimal_places=2,
         default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0'))]
+        validators=[MinValueValidator(Decimal('0'))],
+        null=True,
+        blank=True
     )
     qty_reserved = models.DecimalField(
         "Количество (резерв)",
         max_digits=12,
         decimal_places=2,
         default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0'))]
+        validators=[MinValueValidator(Decimal('0'))],
+        null=True,
+        blank=True
     )
     min_stock_level = models.DecimalField(
         "Минимальный запас",
         max_digits=12,
         decimal_places=2,
         default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0'))]
+        validators=[MinValueValidator(Decimal('0'))],
+        null=True,
+        blank=True
     )
 
     # Связи
@@ -216,7 +222,10 @@ class Material(BaseInventoryModel):
     @property
     def qty_total(self):
         """Общее количество (свободно + в резерве)"""
-        return self.qty_available + self.qty_reserved
+        try:
+            return self.qty_available + self.qty_reserved
+        except TypeError:
+            return self.qty_available
 
     @property
     def can_reserve(self):
@@ -249,13 +258,15 @@ class Material(BaseInventoryModel):
         }
         return status_map.get(self.stock_status, '—')
 
-    def clean(self):
-        """Валидация на уровне модели"""
-        # Проверка, что резерв не превышает доступное количество
-        if self.qty_reserved > self.qty_total:
-            raise ValidationError({
-                'qty_reserved': 'Резерв не может превышать общее количество'
-            })
+    # def clean(self):
+    #     """Валидация на уровне модели"""
+    #     try:
+    #         if self.qty_reserved > self.qty_total:
+    #             raise ValidationError({
+    #                 'qty_reserved': 'Резерв не может превышать общее количество'
+    #             })
+    #     except TypeError:
+    #         pass
 
     def save(self, *args, **kwargs):
         self.full_clean()

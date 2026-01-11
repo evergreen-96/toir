@@ -28,12 +28,12 @@ class SearchUtils:
 class ValidationUtils:
     """Утилиты для валидации"""
 
-    @staticmethod
-    def validate_quantity(available, reserved):
-        """Проверка корректности количеств"""
-        if reserved > available:
-            return False, "Резерв не может превышать доступное количество"
-        return True, ""
+    # @staticmethod
+    # def validate_quantity(available, reserved):
+    #     """Проверка корректности количеств"""
+    #     if reserved > available:
+    #         return False, "Резерв не может превышать доступное количество"
+    #     return True, ""
 
     @staticmethod
     def validate_positive_number(value, field_name="Значение"):

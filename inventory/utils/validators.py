@@ -10,8 +10,8 @@ def validate_positive_number(value, field_name="Значение"):
 
 def validate_stock_levels(available, reserved, min_stock=0):
     """Проверка корректности уровней запаса"""
-    if reserved > available:
-        raise ValidationError("Резерв не может превышать доступное количество")
+    # if reserved > available:
+    #     raise ValidationError("Резерв не может превышать доступное количество")
 
     if min_stock < 0:
         raise ValidationError("Минимальный запас не может быть отрицательным")
