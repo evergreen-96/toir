@@ -1,3 +1,7 @@
+# =============================================================================
+# ЗАМЕНИТЬ ФАЙЛ assets/urls.py ПОЛНОСТЬЮ
+# =============================================================================
+
 from django.urls import path
 from .views import (
     WorkstationListView,
@@ -7,6 +11,7 @@ from .views import (
     WorkstationDeleteView,
     ajax_get_workstation_status,
     ajax_update_workstation_status,
+    ajax_type_name_autocomplete,  # НОВЫЙ ИМПОРТ
     # ajax_get_workstation_info,
     export_workstations_csv,
 )
@@ -24,12 +29,9 @@ urlpatterns = [
     # AJAX endpoints
     path("ajax/status/get/", ajax_get_workstation_status, name="ajax_get_status"),
     path("ajax/status/update/", ajax_update_workstation_status, name="ajax_update_status"),
-    # path("ajax/info/", ajax_get_workstation_info, name="ajax_get_info"), я хз для чего делал. Но оставлю, мало ли..
+    path("ajax/type-name/autocomplete/", ajax_type_name_autocomplete, name="ajax_type_autocomplete"),  # НОВЫЙ URL
+    # path("ajax/info/", ajax_get_workstation_info, name="ajax_get_info"),
 
     # Экспорт
     path("export/csv/", export_workstations_csv, name="export_csv"),
-
-    # Дополнительные страницы (можно добавить позже)
-    # path("dashboard/", WorkstationDashboardView.as_view(), name="dashboard"),
-    # path("reports/", WorkstationReportView.as_view(), name="reports"),
 ]

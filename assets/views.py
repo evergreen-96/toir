@@ -309,6 +309,36 @@ def ajax_get_workstation_info(request):
     except Workstation.DoesNotExist:
         return JsonResponse({"ok": False, "error": _("Оборудование не найдено")}, status=404)
 
+@require_GET
+@login_required
+@permission_required('assets.view_workstation', raise_exception=True)
+def ajax_type_name_autocomplete(request):
+    """Автодополнение для типов оборудования (TomSelect)."""
+    q = request.GET.get("q", "").strip()
+    load_all = request.GET.get("load_all", "")
+
+    qs = Workstation.objects.exclude(type_name="").exclude(type_name__isnull=True)
+
+    if load_all == "true" or not q:
+        # Загружаем все уникальные типы
+        types = (
+            qs.values_list("type_name", flat=True)
+            .distinct()
+            .order_by("type_name")[:100]
+        )
+    else:
+        # Фильтруем по запросу
+        qs = qs.filter(type_name__icontains=q)
+        types = (
+            qs.values_list("type_name", flat=True)
+            .distinct()
+            .order_by("type_name")[:20]
+        )
+
+    return JsonResponse({
+        "results": [{"value": t, "text": t} for t in types]
+    })
+
 
 # =============================================================================
 # EXPORT

@@ -53,6 +53,16 @@ class WorkstationForm(BaseModelForm):
         self.fields['location'].queryset = Location.objects.all().order_by('name')
         self.fields['responsible'].queryset = HumanResource.objects.filter(is_active=True).order_by('name')
 
+        # Тип оборудования — текстовое поле с TomSelect (с возможностью создания)
+        self.fields['type_name'] = forms.CharField(
+            label=_("Тип оборудования"),
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'form-control js-tom-select-type',
+                'data-placeholder': _('Выберите или введите тип...'),
+            })
+        )
+
     def clean_inventory_number(self):
         """Проверка уникальности инвентарного номера."""
         inventory_number = self.cleaned_data.get('inventory_number')
@@ -84,7 +94,8 @@ class WorkstationForm(BaseModelForm):
 
         if commissioning_date and warranty_until:
             if warranty_until < commissioning_date:
-                self.add_error('warranty_until', _('Дата окончания гарантии не может быть раньше даты ввода в эксплуатацию'))
+                self.add_error('warranty_until',
+                               _('Дата окончания гарантии не может быть раньше даты ввода в эксплуатацию'))
 
         global_state = cleaned_data.get('global_state')
         status = cleaned_data.get('status')
@@ -98,10 +109,14 @@ class WorkstationForm(BaseModelForm):
 class WorkstationSearchForm(BaseFilterForm):
     """Форма поиска оборудования."""
 
-    q = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': _('Название, тип, серийный номер...'), 'autofocus': True}))
+    q = forms.CharField(required=False, widget=forms.TextInput(
+        attrs={'placeholder': _('Название, тип, серийный номер...'), 'autofocus': True}))
     category = forms.ChoiceField(required=False, choices=[('', _('Все категории'))] + list(WorkstationCategory.choices))
     status = forms.ChoiceField(required=False, choices=[('', _('Все статусы'))] + list(WorkstationStatus.choices))
-    global_state = forms.ChoiceField(required=False, choices=[('', _('Все состояния'))] + list(WorkstationGlobalState.choices))
+    global_state = forms.ChoiceField(required=False,
+                                     choices=[('', _('Все состояния'))] + list(WorkstationGlobalState.choices))
     location = forms.ModelChoiceField(required=False, queryset=Location.objects.all(), empty_label=_('Все локации'))
-    responsible = forms.ModelChoiceField(required=False, queryset=HumanResource.objects.filter(is_active=True), empty_label=_('Все ответственные'))
-    warranty = forms.ChoiceField(required=False, choices=[('', _('Любая гарантия')), ('active', _('На гарантии')), ('expired', _('Гарантия истекла'))])
+    responsible = forms.ModelChoiceField(required=False, queryset=HumanResource.objects.filter(is_active=True),
+                                         empty_label=_('Все ответственные'))
+    warranty = forms.ChoiceField(required=False, choices=[('', _('Любая гарантия')), ('active', _('На гарантии')),
+                                                          ('expired', _('Гарантия истекла'))])

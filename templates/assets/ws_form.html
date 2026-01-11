@@ -3,6 +3,41 @@
 
 {% block title %}{% if create %}Новое оборудование{% else %}Редактирование оборудования{% endif %}{% endblock %}
 
+{% block extra_head %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+<style>
+/* Стили для Tom-select */
+.ts-wrapper {
+    width: 100% !important;
+}
+
+/* Кастомизация dropdown */
+.ts-dropdown {
+    z-index: 1060 !important;
+}
+
+/* Темная тема для Tom Select */
+[data-bs-theme="dark"] .ts-control {
+    background-color: var(--bs-dark) !important;
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option {
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .ts-wrapper.disabled .ts-control {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-3">
     <!-- HEADER -->
@@ -57,9 +92,15 @@
                                 {% if form.category.errors %}<div class="invalid-feedback d-block">{{ form.category.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold" for="{{ form.type_name.id_for_label }}">{{ form.type_name.label }}</label>
-                                {{ form.type_name|add_class:"form-control" }}
+                                <label class="form-label fw-semibold" for="id_type_name">{{ form.type_name.label }}</label>
+                                <input type="text"
+                                       name="type_name"
+                                       id="id_type_name"
+                                       class="form-control js-tom-select-type"
+                                       value="{{ form.type_name.value|default:'' }}"
+                                       placeholder="Выберите или введите тип...">
                                 {% if form.type_name.errors %}<div class="invalid-feedback d-block">{{ form.type_name.errors }}</div>{% endif %}
+                                <div class="form-text small">Выберите из списка или введите новый тип</div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="{{ form.manufacturer.id_for_label }}">{{ form.manufacturer.label }}</label>
@@ -196,4 +237,73 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // =====================================================
+    // TOM-SELECT: Тип оборудования (с возможностью создания)
+    // =====================================================
+    const typeInput = document.querySelector('.js-tom-select-type');
+    if (typeInput) {
+        new TomSelect(typeInput, {
+            valueField: 'value',
+            labelField: 'text',
+            searchField: ['text'],
+            placeholder: 'Выберите или введите тип...',
+            create: true,           // Разрешаем создание новых значений
+            createOnBlur: true,     // Создаем значение при потере фокуса
+            maxItems: 1,            // Только одно значение
+            openOnFocus: true,      // Открывать dropdown при фокусе
+            preload: true,          // Загрузить данные сразу
+
+            // Загрузка опций
+            load: function(query, callback) {
+                // Загружаем все при пустом запросе или фильтруем при вводе
+                const url = query
+                    ? '{% url "assets:ajax_type_autocomplete" %}?q=' + encodeURIComponent(query)
+                    : '{% url "assets:ajax_type_autocomplete" %}?load_all=true';
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
+            },
+
+            // Рендеринг элементов
+            render: {
+                option: function(data, escape) {
+                    return '<div class="py-1">' + escape(data.text) + '</div>';
+                },
+                item: function(data, escape) {
+                    return '<div>' + escape(data.text) + '</div>';
+                },
+                option_create: function(data, escape) {
+                    return '<div class="create py-2 px-3 text-primary">' +
+                           '<i class="bi bi-plus-circle me-1"></i>Создать: <strong>' + escape(data.input) + '</strong>' +
+                           '</div>';
+                },
+                no_results: function(data, escape) {
+                    return '<div class="no-results py-2 px-3 text-muted">Не найдено. Введите новый тип.</div>';
+                }
+            },
+
+            // Предзагрузка существующих типов (показываются сразу)
+            options: [
+                {% for type_name in all_type_names %}
+                { value: '{{ type_name|escapejs }}', text: '{{ type_name|escapejs }}' },
+                {% endfor %}
+            ],
+
+            // Текущее значение (при редактировании)
+            {% if form.type_name.value %}
+            items: ['{{ form.type_name.value|escapejs }}']
+            {% endif %}
+        });
+    }
+});
+</script>
 {% endblock %}
