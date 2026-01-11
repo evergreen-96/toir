@@ -494,7 +494,7 @@ class WorkOrder(models.Model):
         if new_status == WorkOrderStatus.DONE and not self.date_finish:
             self.date_finish = timezone.localdate()
 
-        # Управление статусом оборудования для аварийных работ
+        # Управление статусом оборудования
         self._update_equipment_status(prev_status, new_status)
 
         self.save(update_fields=["status", "date_start", "date_finish"])
@@ -517,11 +517,23 @@ class WorkOrder(models.Model):
         """
         Обновляет статус оборудования при изменении статуса работы.
         """
-        if (self.workstation and
-                self.category == WorkCategory.EMERGENCY and
-                prev_status == WorkOrderStatus.NEW and
-                new_status == WorkOrderStatus.IN_PROGRESS):
-            self.workstation.status = WorkstationStatus.PROBLEM
+        # Аварийные работы → аварийный статус
+        if not self.workstation:
+            return
+
+        # NEW → IN_PROGRESS
+        if prev_status == WorkOrderStatus.NEW and new_status == WorkOrderStatus.IN_PROGRESS:
+            if self.category == WorkCategory.EMERGENCY:
+                self.workstation.status = WorkstationStatus.PROBLEM
+            elif self.category == WorkCategory.PM:
+                self.workstation.status = WorkstationStatus.MAINT
+
+            self.workstation.save(update_fields=["status"])
+            return
+
+        # IN_PROGRESS → DONE
+        if prev_status == WorkOrderStatus.IN_PROGRESS and new_status == WorkOrderStatus.DONE:
+            self.workstation.status = WorkstationStatus.PROD
             self.workstation.save(update_fields=["status"])
 
     def save(self, *args, **kwargs):
@@ -532,7 +544,7 @@ class WorkOrder(models.Model):
 
         super().save(*args, **kwargs)
 
-        # Бизнес-правило: при создании аварийной работы
+        # # Бизнес-правило: при создании аварийной работы
         if (is_new and
                 self.category == WorkCategory.EMERGENCY and
                 self.workstation and
