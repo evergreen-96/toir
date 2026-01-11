@@ -180,6 +180,7 @@ class WorkOrderForm(forms.ModelForm):
             self._load_workstations_from_instance()
         self.fields["location"].empty_label = "Выберите локацию..."
         self.fields["workstation"].empty_label = "Выберите оборудование..."
+
     def _load_workstations_from_data(self):
         """
         Загружает оборудование на основе данных формы.
